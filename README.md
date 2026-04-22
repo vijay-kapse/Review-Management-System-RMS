@@ -46,6 +46,8 @@ Set these in the Vercel project:
   - `DEFAULT_APP_EMAIL`
   - `DEFAULT_APP_NAME`
   - `SURVEY_STATIC_DIR` (only needed when serving survey static files from a local filesystem path)
+  - `PORTAL_DATA_DIR` (defaults to `/tmp/rms-portal-data` on Vercel)
+  - `PORTAL_DB_PATH` (full sqlite path; set to `:memory:` to force in-memory sessions/users)
 
 ### 3) Deploy
 
@@ -58,3 +60,7 @@ Set these in the Vercel project:
   - `/launch/chatbot`
   - `/launch/survey`
   - `/launch/sysreview`
+
+### Vercel filesystem note
+
+On Vercel, writes under the deployed code directory are read-only. The portal now defaults its sqlite database to `/tmp/rms-portal-data/portal_auth.db` in that environment to avoid startup crashes.

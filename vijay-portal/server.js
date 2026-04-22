@@ -22,8 +22,9 @@ const SURVEY_TARGET = process.env.SURVEY_TARGET || 'http://127.0.0.1:8201';
 const API_TARGET = process.env.API_TARGET || 'http://127.0.0.1:8100';
 const SYSREVIEW_TARGET = process.env.SYSREVIEW_TARGET || 'http://127.0.0.1:3013';
 const SURVEY_STATIC_DIR = process.env.SURVEY_STATIC_DIR || '/home/vkapse/unified-apps/survey/survey_group8/static';
-const DATA_DIR = path.join(__dirname, 'data');
-const DB_PATH = path.join(DATA_DIR, 'portal_auth.db');
+const DEFAULT_DATA_DIR = IS_VERCEL ? '/tmp/rms-portal-data' : path.join(__dirname, 'data');
+const DATA_DIR = process.env.PORTAL_DATA_DIR || DEFAULT_DATA_DIR;
+const DB_PATH = process.env.PORTAL_DB_PATH || path.join(DATA_DIR, 'portal_auth.db');
 const COOKIE_SECURE = process.env.COOKIE_SECURE
   ? process.env.COOKIE_SECURE === 'true'
   : (IS_VERCEL || process.env.NODE_ENV === 'production' || EXTERNAL_BASE.startsWith('https://'));
@@ -39,8 +40,20 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 app.use(express.json({ limit: '25mb' }));
 
-fs.mkdirSync(DATA_DIR, { recursive: true });
-const db = new Database(DB_PATH);
+function ensureDbDirectory(dbPath) {
+  if (!dbPath || dbPath === ':memory:') return;
+  const dir = path.dirname(dbPath);
+  fs.mkdirSync(dir, { recursive: true });
+}
+
+let db;
+try {
+  ensureDbDirectory(DB_PATH);
+  db = new Database(DB_PATH);
+} catch (error) {
+  console.warn(`[rms-portal] Failed to open DB at ${DB_PATH}. Falling back to in-memory DB.`, error);
+  db = new Database(':memory:');
+}
 db.pragma('journal_mode = WAL');
 db.exec(`
   CREATE TABLE IF NOT EXISTS portal_users (
