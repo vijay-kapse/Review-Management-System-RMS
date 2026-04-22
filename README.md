@@ -63,4 +63,4 @@ Set these in the Vercel project:
 
 ### Vercel filesystem note
 
-On Vercel, writes under the deployed code directory are read-only. The portal now defaults its sqlite database to `/tmp/rms-portal-data/portal_auth.db` in that environment to avoid startup crashes.
+On Vercel/serverless runtimes, writes under the deployed code directory (for example `/var/task/...`) are read-only. The portal auto-detects this runtime pattern and defaults sqlite to `/tmp/rms-portal-data/portal_auth.db` to avoid startup crashes.

@@ -22,7 +22,12 @@ const SURVEY_TARGET = process.env.SURVEY_TARGET || 'http://127.0.0.1:8201';
 const API_TARGET = process.env.API_TARGET || 'http://127.0.0.1:8100';
 const SYSREVIEW_TARGET = process.env.SYSREVIEW_TARGET || 'http://127.0.0.1:3013';
 const SURVEY_STATIC_DIR = process.env.SURVEY_STATIC_DIR || '/home/vkapse/unified-apps/survey/survey_group8/static';
-const DEFAULT_DATA_DIR = IS_VERCEL ? '/tmp/rms-portal-data' : path.join(__dirname, 'data');
+const SERVERLESS_FS_HINTS = ['/var/task', '/opt/rust'];
+const RUN_DIR = `${process.cwd()} ${__dirname}`;
+const IS_SERVERLESS_FS = IS_VERCEL
+  || Boolean(process.env.VERCEL_ENV || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT)
+  || SERVERLESS_FS_HINTS.some((hint) => RUN_DIR.includes(hint));
+const DEFAULT_DATA_DIR = IS_SERVERLESS_FS ? '/tmp/rms-portal-data' : path.join(__dirname, 'data');
 const DATA_DIR = process.env.PORTAL_DATA_DIR || DEFAULT_DATA_DIR;
 const DB_PATH = process.env.PORTAL_DB_PATH || path.join(DATA_DIR, 'portal_auth.db');
 const COOKIE_SECURE = process.env.COOKIE_SECURE
@@ -53,6 +58,9 @@ try {
 } catch (error) {
   console.warn(`[rms-portal] Failed to open DB at ${DB_PATH}. Falling back to in-memory DB.`, error);
   db = new Database(':memory:');
+}
+if (IS_SERVERLESS_FS) {
+  console.info(`[rms-portal] Serverless filesystem detected. Using DB path: ${DB_PATH}`);
 }
 db.pragma('journal_mode = WAL');
 db.exec(`
@@ -1202,7 +1210,7 @@ app.use('/sysreview', requireLogin, (req, res, next) => {
   },
 }));
 
-if (!IS_VERCEL) {
+if (!IS_SERVERLESS_FS) {
   app.listen(PORT, HOST, () => {
     console.log(`Unified portal listening on ${EXTERNAL_BASE}`);
   });
