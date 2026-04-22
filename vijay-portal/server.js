@@ -10,17 +10,28 @@ const app = express();
 const HOST = '0.0.0.0';
 const PORT = 3005;
 const EXTERNAL_BASE = process.env.EXTERNAL_BASE || 'http://128.226.116.24:3005';
+const IS_VERCEL = process.env.VERCEL === '1';
 const SESSION_COOKIE = 'vijay_portal_session';
 const SESSION_TTL_MS = 14 * 24 * 60 * 60 * 1000;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const DEFAULT_APP_EMAIL = process.env.DEFAULT_APP_EMAIL || 'vkapse@binghamton.edu';
 const DEFAULT_APP_NAME = process.env.DEFAULT_APP_NAME || 'Vijay';
-const DATA_DIR = path.join(__dirname, 'data');
-const DB_PATH = path.join(DATA_DIR, 'portal_auth.db');
+const ARGUS_TARGET = process.env.ARGUS_TARGET || 'http://127.0.0.1:3011';
+const CHATBOT_TARGET = process.env.CHATBOT_TARGET || 'http://127.0.0.1:3010';
+const SURVEY_TARGET = process.env.SURVEY_TARGET || 'http://127.0.0.1:8201';
+const API_TARGET = process.env.API_TARGET || 'http://127.0.0.1:8100';
+const SYSREVIEW_TARGET = process.env.SYSREVIEW_TARGET || 'http://127.0.0.1:3013';
+const SURVEY_STATIC_DIR = process.env.SURVEY_STATIC_DIR || '/home/vkapse/unified-apps/survey/survey_group8/static';
+const DEFAULT_DATA_DIR = IS_VERCEL ? '/tmp/rms-portal-data' : path.join(__dirname, 'data');
+const DATA_DIR = process.env.PORTAL_DATA_DIR || DEFAULT_DATA_DIR;
+const DB_PATH = process.env.PORTAL_DB_PATH || path.join(DATA_DIR, 'portal_auth.db');
+const COOKIE_SECURE = process.env.COOKIE_SECURE
+  ? process.env.COOKIE_SECURE === 'true'
+  : (IS_VERCEL || process.env.NODE_ENV === 'production' || EXTERNAL_BASE.startsWith('https://'));
 const SESSION_COOKIE_OPTIONS = {
   httpOnly: true,
   sameSite: 'lax',
-  secure: EXTERNAL_BASE.startsWith('https://'),
+  secure: COOKIE_SECURE,
   path: '/',
   maxAge: SESSION_TTL_MS,
 };
@@ -29,8 +40,20 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 app.use(express.json({ limit: '25mb' }));
 
-fs.mkdirSync(DATA_DIR, { recursive: true });
-const db = new Database(DB_PATH);
+function ensureDbDirectory(dbPath) {
+  if (!dbPath || dbPath === ':memory:') return;
+  const dir = path.dirname(dbPath);
+  fs.mkdirSync(dir, { recursive: true });
+}
+
+let db;
+try {
+  ensureDbDirectory(DB_PATH);
+  db = new Database(DB_PATH);
+} catch (error) {
+  console.warn(`[rms-portal] Failed to open DB at ${DB_PATH}. Falling back to in-memory DB.`, error);
+  db = new Database(':memory:');
+}
 db.pragma('journal_mode = WAL');
 db.exec(`
   CREATE TABLE IF NOT EXISTS portal_users (
@@ -275,7 +298,7 @@ async function ensureSysreviewToken(req, res) {
     username: identity.email.split('@')[0],
   });
 
-  const response = await fetch(`http://127.0.0.1:3013/sysreview/api/v1/auth/shared-login?${params.toString()}`, {
+  const response = await fetch(`${SYSREVIEW_TARGET}/sysreview/api/v1/auth/shared-login?${params.toString()}`, {
     headers: { accept: 'application/json' },
   });
 
@@ -1010,7 +1033,7 @@ app.get('/apps', requireLogin, (req, res) => {
 });
 
 const surveyProxy = createProxyMiddleware({
-  target: 'http://127.0.0.1:8201',
+  target: SURVEY_TARGET,
   changeOrigin: true,
   xfwd: true,
   pathRewrite: (path) => {
@@ -1022,8 +1045,8 @@ const surveyProxy = createProxyMiddleware({
   on: {
     proxyReq(proxyReq, req) {
       proxyReq.setHeader('X-Forwarded-Prefix', '/survey');
-      proxyReq.setHeader('X-Forwarded-Host', '127.0.0.1:8201');
-      proxyReq.setHeader('Host', '127.0.0.1:8201');
+      proxyReq.setHeader('X-Forwarded-Host', req.headers.host || '');
+      proxyReq.setHeader('Host', req.headers.host || '');
       proxyReq.setHeader('X-Portal-Auth-Mode', 'shared-session');
       const identity = getPortalIdentity(req);
       if (identity) {
@@ -1112,7 +1135,7 @@ app.use('/api', (req, _res, next) => {
   }
   next();
 }, createProxyMiddleware({
-  target: 'http://127.0.0.1:8100',
+  target: API_TARGET,
   changeOrigin: true,
   xfwd: true,
   on: {
@@ -1124,7 +1147,7 @@ app.use('/api', (req, _res, next) => {
 }));
 
 app.use('/argus', createProxyMiddleware({
-  target: 'http://127.0.0.1:3011',
+  target: ARGUS_TARGET,
   changeOrigin: true,
   pathRewrite: (path) => path.replace(/^\/argus/, '') || '/',
   onProxyRes(proxyRes) {
@@ -1138,7 +1161,7 @@ app.use('/chatbot', requireLogin, (req, _res, next) => {
   if (req.portalSession?.email) req.headers['x-portal-user'] = req.portalSession.email;
   next();
 }, createProxyMiddleware({
-  target: 'http://127.0.0.1:3010',
+  target: CHATBOT_TARGET,
   changeOrigin: true,
   pathRewrite: (path) => path.startsWith('/chatbot') ? path : `/chatbot${path}`,
   on: {
@@ -1152,7 +1175,7 @@ app.use('/chatbot', requireLogin, (req, _res, next) => {
   },
 }));
 
-app.use('/survey/static', express.static('/home/vkapse/unified-apps/survey/survey_group8/static'));
+app.use('/survey/static', express.static(SURVEY_STATIC_DIR));
 app.use('/survey', surveyProxy);
 
 app.use('/sysreview', requireLogin, (req, res, next) => {
@@ -1164,7 +1187,7 @@ app.use('/sysreview', requireLogin, (req, res, next) => {
     })
     .catch(next);
 }, createProxyMiddleware({
-  target: 'http://127.0.0.1:3013',
+  target: SYSREVIEW_TARGET,
   changeOrigin: true,
   xfwd: true,
   pathRewrite: (path) => path.startsWith('/sysreview') ? path : `/sysreview${path}`,
@@ -1179,6 +1202,10 @@ app.use('/sysreview', requireLogin, (req, res, next) => {
   },
 }));
 
-app.listen(PORT, HOST, () => {
-  console.log(`Unified portal listening on ${EXTERNAL_BASE}`);
-});
+if (!IS_VERCEL) {
+  app.listen(PORT, HOST, () => {
+    console.log(`Unified portal listening on ${EXTERNAL_BASE}`);
+  });
+}
+
+module.exports = app;
