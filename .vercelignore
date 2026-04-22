@@ -1,0 +1,8 @@
+# Keep deployment package small; Vercel only serves vijay-portal in this repo.
+unified-apps/
+runtime-manager/
+
+# Local artifacts
+**/node_modules/
+**/data/
+*.log
