@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "version": 2,
+  "installCommand": "npm install --prefix vijay-portal",
+  "builds": [
+    {
+      "src": "vijay-portal/server.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "vijay-portal/server.js"
+    }
+  ]
+}
