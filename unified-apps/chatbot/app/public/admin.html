@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Chatbot - Unified Admin Entry</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #0f172a;
+        }
+        .login-container {
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.18);
+            width: 100%;
+            max-width: 520px;
+        }
+        .logo { text-align: center; margin-bottom: 24px; }
+        .logo h1 { color: #111827; font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+        .logo p { color: #475569; font-size: 15px; line-height: 1.5; }
+        .panel {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1e3a8a;
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 18px;
+            line-height: 1.6;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+        .btn {
+            flex: 1;
+            text-align: center;
+            padding: 14px 16px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+        }
+        .btn-secondary {
+            background: #f8fafc;
+            color: #0f172a;
+            border: 1px solid #cbd5e1;
+        }
+        .footnote {
+            color: #64748b;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <h1>PDF Chatbot Admin</h1>
+            <p>Shared admin entry for the copied unified-platform integration workspace</p>
+        </div>
+
+        <div class="panel">
+            This copied admin experience is being shifted away from standalone in-app registration and password login.
+            Use the shared platform login entry first, then continue into chatbot administration.
+        </div>
+
+        <div class="button-group">
+            <a class="btn btn-primary" href="/unified-login.html?app=chatbot">Continue to Unified Login</a>
+            <a class="btn btn-secondary" href="/chatbot/">Back to Chatbot</a>
+        </div>
+
+        <p class="footnote">
+            Next integration step: replace local in-memory admin identity with shared platform identity checks in the copied chatbot backend.
+        </p>
+    </div>
+</body>
+</html>

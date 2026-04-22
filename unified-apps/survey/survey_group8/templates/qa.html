@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Take Survey{% endblock %}
+{% block header %}
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/survey_taker.css' %}">
+{% endblock %}
+
+{% block content %}
+<iframe id="myf" src="{% url 'thankyou' id=survey.id %}" 
+        width="0" 
+        height="0" 
+        style="border: none; display: none;" 
+        onload="checkIframeContent()">
+</iframe>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var iframe = document.getElementById("myf");
+
+        iframe.onload = function () {
+            try {
+                var iframeDocument = iframe.contentDocument || iframe.contentWindow.document;
+
+                // 如果 iframe 有内容，则显示并动态调整宽高
+                if (iframeDocument.body.innerHTML.trim()) {
+                    iframe.style.display = "block";
+                    iframe.style.width = "100%";
+                    iframe.style.height = iframeDocument.body.scrollHeight + "px"; // 根据内容动态调整高度
+                } else {
+                    iframe.style.display = "none"; // 隐藏 iframe
+                    iframe.style.width = "0"; // 防止占位
+                    iframe.style.height = "0";
+                }
+            } catch (e) {
+                console.error("无法访问 iframe 内容，可能是跨域问题");
+            }
+        };
+    });
+</script>
+
+
+    
+<div class="survey-container">
+    <form method="post" action="{% url 'qa_submit' %}">
+        {% csrf_token %}
+        <input type="hidden" name="survey_id" value="{{ survey.id }}">
+        <input type="hidden" name="user" value="{{ user }}">
+
+
+        <div class="survey-header">
+            <h2 class="survey-title">{{ survey.name }}</h2>
+            <p class="survey-description">{{ survey.description }}</p>
+            <p class="survey-version">Republished Version: {{ survey.republished }}</p>
+        </div>
+
+
+        <div class="questions-section">
+            {% for question in questions %}
+                <fieldset class="question-fieldset">
+                    <legend class="question-legend">{{ question.question }}</legend>
+                    <table class="answers-table">
+                        <colgroup>
+                            <col style="width: 10%;"> 
+                            <col style="width: 90%;"> 
+                        </colgroup>
+                        {% if question.type == "Radio" %}
+                            {% for answer in question.answers.all %}
+                                <tr>
+                                    <td>
+                                        <input type="radio" name="question_{{ question.id }}" value="{{ answer.id }}">
+                                    </td>
+                                    <td>
+                                        <label>{{ answer.answer }}</label>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% elif question.type == "Checkboxes" %}
+                            {% for answer in question.answers.all %}
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" name="question_{{ question.id }}" value="{{ answer.id }}">
+                                    </td>
+                                    <td>
+                                        <label>{{ answer.answer }}</label>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% endif %}
+                    </table>
+                </fieldset>
+            {% endfor %}
+        </div>
+
+        <div class="button-container">
+            <button type="submit" class="submit-button">Submit</button>
+            <a class="button-link button-link-match" href="{% url 'home' %}">HOME</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

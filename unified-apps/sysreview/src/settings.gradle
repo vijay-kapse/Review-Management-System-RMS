@@ -1,0 +1,4 @@
+rootProject.name = 'sysreview'
+
+include('sysreview-api')
+include('sysreview-ui')

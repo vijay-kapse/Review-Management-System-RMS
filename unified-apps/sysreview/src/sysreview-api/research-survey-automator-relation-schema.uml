@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>Persistence</ID>
+  <OriginalElement>JavaeeElement:/dea200d8/entityManagerFactory/research-survey-extractor-api.main/jpa/JPA/PersistenceModel</OriginalElement>
+  <nodes>
+    <node x="354.0545460281407" y="436.99999999999994">User#file:///Users/rishank/Programming/codebase/scientific-research-survey-automator/research-survey-extractor-api/src/main/java/com/bing/researchsurveyextractorapi/models/User.java</node>
+    <node x="-147.75" y="-104.0">Category#file:///Users/rishank/Programming/codebase/scientific-research-survey-automator/research-survey-extractor-api/src/main/java/com/bing/researchsurveyextractorapi/models/Category.java</node>
+    <node x="-54.074074074074076" y="485.0">Project#file:///Users/rishank/Programming/codebase/scientific-research-survey-automator/research-survey-extractor-api/src/main/java/com/bing/researchsurveyextractorapi/models/Project.java</node>
+    <node x="159.92592592592587" y="-104.0">AbstractPersistable#jar:///Users/rishank/.gradle/caches/modules-2/files-2.1/org.springframework.data/spring-data-jpa/2.5.6/8e0ec2f54f3fcda49dfb3123f3a40f34b55df92a/spring-data-jpa-2.5.6.jar!/org/springframework/data/jpa/domain/AbstractPersistable.class</node>
+    <node x="162.92592592592587" y="9.0">AbstractAuditable#jar:///Users/rishank/.gradle/caches/modules-2/files-2.1/org.springframework.data/spring-data-jpa/2.5.6/8e0ec2f54f3fcda49dfb3123f3a40f34b55df92a/spring-data-jpa-2.5.6.jar!/org/springframework/data/jpa/domain/AbstractAuditable.class</node>
+    <node x="-256.5740740740741" y="284.0">DocumentCollection#file:///Users/rishank/Programming/codebase/scientific-research-survey-automator/research-survey-extractor-api/src/main/java/com/bing/researchsurveyextractorapi/models/DocumentCollection.java</node>
+    <node x="-212.6574074074074" y="648.0">Query#file:///Users/rishank/Programming/codebase/scientific-research-survey-automator/research-survey-extractor-api/src/main/java/com/bing/researchsurveyextractorapi/models/Query.java</node>
+    <node x="-280.0" y="83.0">SearchResult#file:///Users/rishank/Programming/codebase/scientific-research-survey-automator/research-survey-extractor-api/src/main/java/com/bing/researchsurveyextractorapi/models/SearchResult.java</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="DocumentCollection#file:///Users/rishank/Programming/codebase/scientific-research-survey-automator/research-survey-extractor-api/src/main/java/com/bing/researchsurveyextractorapi/models/DocumentCollection.java" target="SearchResult#file:///Users/rishank/Programming/codebase/scientific-research-survey-automator/research-survey-extractor-api/src/main/java/com/bing/researchsurveyextractorapi/models/SearchResult.java" relationship="RELATION">
+      <point x="61.16947441478959" y="-44.905451448040935" />
+      <point x="-99.40459965928449" y="267.55195911413966" />
+      <point x="-100.40371632279636" y="267.55195911413966" />
+      <point x="-100.40371632279636" y="126.5" />
+      <point x="-211.0" y="126.5" />
+      <point x="0.0" y="43.5" />
+    </edge>
+    <edge source="Query#file:///Users/rishank/Programming/codebase/scientific-research-survey-automator/research-survey-extractor-api/src/main/java/com/bing/researchsurveyextractorapi/models/Query.java" target="Project#file:///Users/rishank/Programming/codebase/scientific-research-survey-automator/research-survey-extractor-api/src/main/java/com/bing/researchsurveyextractorapi/models/Project.java" relationship="RELATION">
+      <point x="0.0" y="-55.5" />
+      <point x="-109.65740740740739" y="703.5" />
+      <point x="26.925925925925924" y="703.5" />
+      <point x="0.0" y="55.5" />
+    </edge>
+    <edge source="Query#file:///Users/rishank/Programming/codebase/scientific-research-survey-automator/research-survey-extractor-api/src/main/java/com/bing/researchsurveyextractorapi/models/Query.java" target="SearchResult#file:///Users/rishank/Programming/codebase/scientific-research-survey-automator/research-survey-extractor-api/src/main/java/com/bing/researchsurveyextractorapi/models/SearchResult.java" relationship="RELATION">
+      <point x="0.0" y="-55.5" />
+      <point x="-109.65740740740739" y="718.2725724020443" />
+      <point x="-366.35516436368226" y="718.2725724020443" />
+      <point x="-366.35516436368226" y="126.5" />
+      <point x="-211.0" y="126.5" />
+      <point x="0.0" y="43.5" />
+    </edge>
+    <edge source="User#file:///Users/rishank/Programming/codebase/scientific-research-survey-automator/research-survey-extractor-api/src/main/java/com/bing/researchsurveyextractorapi/models/User.java" target="Project#file:///Users/rishank/Programming/codebase/scientific-research-survey-automator/research-survey-extractor-api/src/main/java/com/bing/researchsurveyextractorapi/models/Project.java" relationship="RELATION">
+      <point x="0.0" y="103.5" />
+      <point x="425.5545460281407" y="548.2555366269164" />
+      <point x="26.925925925925924" y="548.2555366269164" />
+      <point x="0.0" y="-55.5" />
+    </edge>
+    <edge source="Project#file:///Users/rishank/Programming/codebase/scientific-research-survey-automator/research-survey-extractor-api/src/main/java/com/bing/researchsurveyextractorapi/models/Project.java" target="User#file:///Users/rishank/Programming/codebase/scientific-research-survey-automator/research-survey-extractor-api/src/main/java/com/bing/researchsurveyextractorapi/models/User.java" relationship="RELATION">
+      <point x="0.0" y="-55.5" />
+      <point x="26.925925925925924" y="548.2555366269164" />
+      <point x="425.5545460281407" y="548.2555366269164" />
+      <point x="0.0" y="103.5" />
+    </edge>
+    <edge source="Project#file:///Users/rishank/Programming/codebase/scientific-research-survey-automator/research-survey-extractor-api/src/main/java/com/bing/researchsurveyextractorapi/models/Project.java" target="DocumentCollection#file:///Users/rishank/Programming/codebase/scientific-research-survey-automator/research-survey-extractor-api/src/main/java/com/bing/researchsurveyextractorapi/models/DocumentCollection.java" relationship="RELATION">
+      <point x="0.0" y="-55.5" />
+      <point x="26.925925925925924" y="540.5" />
+      <point x="-160.57407407407408" y="540.5" />
+      <point x="0.0" y="43.5" />
+    </edge>
+    <edge source="SearchResult#file:///Users/rishank/Programming/codebase/scientific-research-survey-automator/research-survey-extractor-api/src/main/java/com/bing/researchsurveyextractorapi/models/SearchResult.java" target="Category#file:///Users/rishank/Programming/codebase/scientific-research-survey-automator/research-survey-extractor-api/src/main/java/com/bing/researchsurveyextractorapi/models/Category.java" relationship="RELATION">
+      <point x="0.0" y="-43.5" />
+      <point x="-211.0" y="-28.74275979557069" />
+      <point x="-76.25" y="-28.74275979557069" />
+      <point x="0.0" y="67.5" />
+    </edge>
+    <edge source="AbstractAuditable#jar:///Users/rishank/.gradle/caches/modules-2/files-2.1/org.springframework.data/spring-data-jpa/2.5.6/8e0ec2f54f3fcda49dfb3123f3a40f34b55df92a/spring-data-jpa-2.5.6.jar!/org/springframework/data/jpa/domain/AbstractAuditable.class" target="AbstractPersistable#jar:///Users/rishank/.gradle/caches/modules-2/files-2.1/org.springframework.data/spring-data-jpa/2.5.6/8e0ec2f54f3fcda49dfb3123f3a40f34b55df92a/spring-data-jpa-2.5.6.jar!/org/springframework/data/jpa/domain/AbstractPersistable.class" relationship="INHERITANCE">
+      <point x="0.0" y="-43.5" />
+      <point x="0.0" y="31.5" />
+    </edge>
+    <edge source="Project#file:///Users/rishank/Programming/codebase/scientific-research-survey-automator/research-survey-extractor-api/src/main/java/com/bing/researchsurveyextractorapi/models/Project.java" target="Category#file:///Users/rishank/Programming/codebase/scientific-research-survey-automator/research-survey-extractor-api/src/main/java/com/bing/researchsurveyextractorapi/models/Category.java" relationship="RELATION">
+      <point x="0.0" y="-55.5" />
+      <point x="26.925925925925924" y="458.0" />
+      <point x="108.92592592592592" y="458.0" />
+      <point x="108.92592592592592" y="-28.74275979557069" />
+      <point x="-76.25" y="-28.74275979557069" />
+      <point x="0.0" y="67.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic" zoom="0.6647791619479049" showDependencies="false" x="43.5" y="337.49999999999994" />
+  <SelectedNodes />
+  <Categories>
+    <Category>Embeddables</Category>
+    <Category>Properties</Category>
+    <Category>Superclasses</Category>
+  </Categories>
+</Diagram>
+

@@ -1,0 +1,124 @@
+
+.survey-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.survey-header {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.survey-title {
+    font-size: 1.8em;
+    color: #004080;
+    margin-bottom: 10px;
+}
+
+.survey-description {
+    font-size: 1.2em;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.survey-version {
+    font-size: 1em;
+    color: #888;
+}
+
+
+.questions-section {
+    margin-top: 20px;
+}
+
+.question-fieldset {
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 5px;
+}
+
+.question-legend {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #003366;
+    margin-bottom: 10px;
+}
+
+
+.answers-table {
+    width: 100%;
+    table-layout: fixed; 
+    border-spacing: 5px;
+}
+
+.answers-table td {
+    vertical-align: middle; 
+    padding: 5px;
+}
+
+.answers-table input {
+    margin-right: 8px;
+}
+
+
+.button-container {
+    text-align: center;
+    margin-top: 30px;
+}
+
+.submit-button {
+    background-color: #1a75ff;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1em;
+    cursor: pointer;
+}
+
+.submit-button:hover {
+    background-color: #0056b3;
+}
+
+
+.submit-button {
+    background-color: #1a75ff;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1em;
+    cursor: pointer;
+    margin-right: 10px;
+    text-align: center;
+    display: inline-block;
+    width: auto;
+}
+
+.submit-button:hover {
+    background-color: #0056b3;
+}
+
+
+.button-link.button-link-match {
+    display: inline-block; 
+    background-color: #1a75ff;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1em;
+    text-decoration: none;
+    cursor: pointer;
+    width: auto;
+    text-align: center;
+}
+
+.button-link.button-link-match:hover {
+    background-color: #0056b3;
+}

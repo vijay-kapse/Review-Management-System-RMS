@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Survey Overview</h2>
+    <hr/>
+    <a class="button-link" href="{% url 'survey_create' %}">Create a new Survey</a>
+    <br>
+    <table class="survey-table">
+        <tr>
+            <th>DRAFT</th>
+            <th>PUBLISHED</th>
+            <th>CLOSED</th>
+        </tr>
+        <tr>
+            <td>
+                {% for survey in draft_surveys %}
+                <div class="survey-entry">
+                    <div class="survey-name" title="{{ survey.name }}">{{ survey.name }}</div>
+                    <div class="survey-options">
+                        <a href="edit/{{ survey.id }}" onclick="return confirm('Are you sure you want to edit the survey?')">EDIT</a> |
+                        <a href="publishsurvey/{{ survey.id }}" onclick="return confirm('Are you sure you want to publish the survey?')">PUBLISH</a> |
+                        <a href="deletesurvey/{{ survey.id }}" onclick="return confirm('Are you sure you want to delete the survey?')">DELETE</a>
+                    </div>
+                </div>
+                {% empty %}
+                No drafts available.
+                {% endfor %}
+            </td>
+            <td>
+                {% for survey in published_surveys %}
+                <div class="survey-entry">
+                    <div class="survey-name" title="{{ survey.name }}">{{ survey.name }}</div>
+                    <div class="survey-options">
+                        <a href="closesurvey/{{ survey.id }}" onclick="return confirm('Are you sure you want to close the survey?')">CLOSE</a> |
+                        <a href="draftsurvey/{{ survey.id }}" onclick="return confirm('Are you sure you want to draft the survey?')">DRAFT</a> |
+                        <a href="results/published/{{ survey.id }}">RESULTS</a>
+                    </div>
+                </div>
+                {% empty %}
+                No published surveys.
+                {% endfor %}
+            </td>
+            <td>
+                {% for survey in closed_surveys %}
+                <div class="survey-entry">
+                    <div class="survey-name" title="{{ survey.name }}">{{ survey.name }}</div>
+                    <div class="survey-options">
+                        <a href="results/closed/{{ survey.id }}">RESULTS</a> |
+                        <a href="republishsurvey/{{ survey.id }}" onclick="return confirm('Are you sure you want to republish the survey?')">REPUBLISH</a>
+                    </div>
+                </div>
+                {% empty %}
+                No closed surveys.
+                {% endfor %}
+            </td>
+        </tr>
+    </table>
+</div>
+{% endblock %}

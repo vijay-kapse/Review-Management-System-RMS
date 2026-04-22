@@ -1,0 +1,9 @@
+{
+  "Article Title": "title",
+  "ISSN": "issn",
+  "Publication Date": "articleDate",
+  "Author Full Names": "authorNames",
+  "Affiliations": "affiliationNames",
+  "affiliationCountry": "affiliationCountry",
+  "DOI Link": "url"
+}

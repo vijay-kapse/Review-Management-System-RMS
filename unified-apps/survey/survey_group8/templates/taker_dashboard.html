@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block header %}
+{% endblock %}
+
+{% block content %}
+<h1>Published Surveys</h1>
+<table border = "1">
+    <tr>
+        <th>Survey ID</th>
+        <th>Survey Items</th>
+        <th>Survey Description</th>
+        <th>Actions</th>
+    </tr>
+    {% for survey in surveys %}
+        <tr>
+            <td>{{ survey.id }}</td>
+            <td>{{ survey.name }}</td>
+            <td>{{ survey.description }}</td>
+            {% if survey.republished > 1 %}
+            <td><a href="{% url 'qa_view' survey.id %}">Change Mind</a></td>
+            {% elif not_exist == 'not_exist' %}
+            <td><a href="{% url 'qa_view' survey.id %}">Click to Start</a></td> <!--match with survey_take()中的dict-->
+
+            {% endif %}
+        </tr>
+    {% empty %}
+        <tr>
+            <td>No Published Surveys</td>
+        </tr>
+    {% endfor %}
+</table>
+{% endblock %}

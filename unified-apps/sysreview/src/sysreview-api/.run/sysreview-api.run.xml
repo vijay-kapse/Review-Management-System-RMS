@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="sysreview-api" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+    <module name="sysreview.sysreview-api.main" />
+    <option name="PROGRAM_PARAMETERS" value="--spring.config.import=$ProjectFileDir$/secrets.properties" />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="com.bing.researchsurveyextractorapi.SysReviewApplication" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

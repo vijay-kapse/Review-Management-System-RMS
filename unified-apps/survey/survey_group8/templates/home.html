@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<main class="home-container">
+  <h1 class="home-title">Welcome to the Survey Management System</h1>
+  {% if user.is_authenticated %}
+  <section class="auth-section">
+      <p>Hi {{ user.username }}!</p>
+      <form action="{% url 'logout' %}" method="post">
+          {% csrf_token %}
+          <button type="submit">Log Out</button>
+      </form>
+  </section>
+  {% else %}
+  <section class="auth-section">
+      <p>You are not logged in.</p>
+      <a class="button-link" href="{% url 'login' %}">Log In</a>
+      <p>Don't have an account?</p>
+      <a class="button-link" href="{% url 'signup' %}">Sign Up</a>
+  </section>
+  {% endif %}
+</main>
+{% endblock %}

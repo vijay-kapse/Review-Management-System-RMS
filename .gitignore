@@ -1,0 +1,39 @@
+# OS/editor noise
+.DS_Store
+*.swp
+*.tmp
+
+# Dependencies
+node_modules/
+venv/
+.venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Runtime data and generated uploads
+*.log
+*.sqlite3
+*.sqlite3_*
+*.sqlite3-*
+*.db
+*.db_*
+*.db-*
+corpus/
+highlighted_pdfs/
+media/
+uploads/
+temp_*
+
+# Local secrets
+.env
+.env.*
+secrets.properties
+portal_auth.db
+
+# Local backups
+*.bak
+*.bak.*
+*.bkp
+backups/

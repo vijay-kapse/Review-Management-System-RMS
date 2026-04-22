@@ -1,0 +1,15 @@
+
+allprojects {
+    group = 'com.bing'
+    version = 'latest'
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        jcenter()
+    }
+}
+
+subprojects {
+    project.buildDir = '../../build/'
+}

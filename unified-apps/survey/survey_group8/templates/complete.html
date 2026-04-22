@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="thank-you-container">
+    <div class="thank-you-header">
+        <h1 class="thank-you-title">Survey Complete:Thank You For Your Participation! </h1>
+        <p class="thank-you-message">{{data}}</p>
+    </div>
+    <div class="button-container">
+        <a class="button-link" href="{% url 'home' %}">HOME</a>
+    </div>
+</div>
+{% endblock %}

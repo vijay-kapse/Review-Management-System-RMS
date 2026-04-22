@@ -1,0 +1,142 @@
+/* Container styling of the  results page */
+.results-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden; /* Prevents the  overflow */
+}
+
+/* Title and description styling */
+.results-title {
+    font-size: 2em;
+    color: #004080;
+    margin-bottom: 10px;
+}
+
+.results-description {
+    font-size: 1.2em;
+    margin-bottom: 20px;
+    color: #666;
+}
+
+/* Message for no Responses */
+.no-responses {
+    text-align: center;
+    font-size: 1.2em;
+    color: #888;
+    margin-top: 20px;
+}
+
+/* Question section */
+.question-section {
+    margin-bottom: 40px;
+}
+
+.question-title {
+    font-size: 1.5em;
+    color: #003366;
+    margin-bottom: 15px;
+}
+
+/* Table styling */
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.results-table th,
+.results-table td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+    font-size: 1em;
+}
+
+.results-table th {
+    background-color: #f0f8ff;
+    color: #004080;
+    font-weight: bold;
+}
+
+.results-table td {
+    color: #333;
+}
+
+/* Styling the Chart */
+.results-chart {
+    margin-top: 20px;
+    max-width: 60%; /* Constrain the chart width to 60% of the container */
+    width: 100%; /* Ensure responsiveness */
+    height: auto; /* Allow the chart height to adjust naturally */
+    max-height: 300px; /* Optional: Cap the chart height */
+    display: block;
+    margin-left: auto;
+    margin-right: auto; /* Center the chart */
+}
+
+/* Resets the  default canvas styling */
+canvas {
+    max-width: 100%; /* Ensure the canvas never exceeds its parent container */
+    height: auto; /* Maintain aspect ratio */
+}
+
+/* Button styling */
+.button-container {
+    margin-top: 30px;
+    text-align: center;
+}
+
+.button-link,
+.print-button {
+    background-color: #1a75ff;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-size: 1em;
+    text-decoration: none;
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+.button-link:hover,
+.print-button:hover {
+    background-color: #0056b3;
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+    .results-container {
+        padding: 15px;
+    }
+
+    .results-title {
+        font-size: 1.5em;
+    }
+
+    .question-title {
+        font-size: 1.2em;
+    }
+
+    .results-table th,
+    .results-table td {
+        font-size: 0.9em;
+    }
+
+    .button-link,
+    .print-button {
+        font-size: 0.9em;
+        padding: 8px 12px;
+    }
+
+    .results-chart {
+        max-width: 100%; /* Allow full width on smaller screens */
+    }
+}

@@ -1,0 +1,10 @@
+{
+  "files": {
+    "main.js": "/argus/static/js/main.287872c0.js",
+    "index.html": "/argus/index.html",
+    "main.287872c0.js.map": "/argus/static/js/main.287872c0.js.map"
+  },
+  "entrypoints": [
+    "static/js/main.287872c0.js"
+  ]
+}

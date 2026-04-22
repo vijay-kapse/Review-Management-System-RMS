@@ -1,0 +1,115 @@
+/* Full-width container aligned with the navigation bar */
+.results-container {
+    width: 100%; /* uses the Full width of the page */
+    padding: 20px 0; /* Removes the horizontal padding to match the nav */
+    background-color: #f9f9f9;
+    border-radius: 0; /* Remove rounded corners */
+    box-shadow: none; /* Remove shadows */
+    box-sizing: border-box; /* Ensures the  padding is included in the total width */
+}
+
+/* Content inside the container is centered and constrained. */
+.results-container .inner-container {
+    max-width: 1200px; /* restricts the content's width */
+    margin: 0 auto; /* Center the content */
+    padding: 0 20px; /* For inner space, add padding.  */
+}
+
+/* Styling the Title and description  */
+.results-title {
+    font-size: 2em;
+    color: #004080;
+    margin-bottom: 10px;
+}
+
+.results-description {
+    font-size: 1.2em;
+    margin-bottom: 20px;
+    color: #666;
+}
+
+/* Table styling */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+th,
+td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+    font-size: 1em;
+}
+
+th {
+    background-color: #f0f8ff;
+    color: #004080;
+    font-weight: bold;
+}
+
+td {
+    color: #333;
+}
+
+/* Chart styling */
+canvas {
+    max-width: 80%; /* Allow the chart to take up to 80% of the container */
+    height: 400px; /* For larger charts, set a fixed height. */
+    display: block;
+    margin: 20px auto; /* Center the chart */
+}
+
+/* Button styling */
+.button-container {
+    margin-top: 30px;
+    text-align: center;
+}
+
+.button-link,
+.print-button {
+    background-color: #1a75ff;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-size: 1em;
+    text-decoration: none;
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+.button-link:hover,
+.print-button:hover {
+    background-color: #0056b3;
+}
+
+/* Design that is responsive */
+@media (max-width: 600px) {
+    .results-title {
+        font-size: 1.5em;
+    }
+
+    .results-description {
+        font-size: 1em;
+    }
+
+    th,
+    td {
+        font-size: 0.9em;
+    }
+
+    .button-link,
+    .print-button {
+        font-size: 0.9em;
+        padding: 8px 12px;
+    }
+
+    canvas {
+        max-width: 100%;
+    }
+}

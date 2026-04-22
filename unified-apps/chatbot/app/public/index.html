@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Unified PDF Chatbot</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, Arial, sans-serif;
+      background: linear-gradient(180deg, #e0f2fe 0%, #f8fafc 100%);
+      color: #0f172a;
+      min-height: 100vh;
+    }
+    .shell {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 28px 18px 40px;
+    }
+    .hero, .panel {
+      background: rgba(255,255,255,0.96);
+      border: 1px solid #cbd5e1;
+      border-radius: 20px;
+      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.10);
+    }
+    .hero { padding: 26px; margin-bottom: 18px; }
+    .hero h1 { margin: 0 0 8px; }
+    .hero p { margin: 0; color: #475569; line-height: 1.6; }
+    .grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 18px;
+    }
+    .panel { padding: 22px; }
+    .stack { display: flex; flex-direction: column; gap: 12px; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-primary { background: #0284c7; color: white; }
+    .btn-secondary { background: #e2e8f0; color: #0f172a; }
+    textarea, input[type="file"] {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 12px;
+      font: inherit;
+      background: white;
+    }
+    textarea { min-height: 120px; resize: vertical; }
+    ul { margin: 0; padding-left: 18px; color: #334155; }
+    .answer {
+      white-space: pre-wrap;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 14px;
+      min-height: 120px;
+      color: #0f172a;
+    }
+    .status {
+      background: #ecfeff;
+      color: #155e75;
+      border: 1px solid #a5f3fc;
+      border-radius: 12px;
+      padding: 12px;
+    }
+    .error {
+      background: #fef2f2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+      border-radius: 12px;
+      padding: 12px;
+    }
+    @media (max-width: 860px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="hero">
+      <h1>PDF Chatbot Workspace</h1>
+      <p>Upload documents, ask questions about the uploaded set, and stay inside the unified session without another login page.</p>
+    </section>
+
+    <div id="statusBox" class="status">Checking shared chatbot session...</div>
+
+    <div class="grid" style="margin-top:18px">
+      <section class="panel stack">
+        <h2 style="margin:0">Document Upload</h2>
+        <input id="fileInput" type="file" multiple accept=".pdf" />
+        <div class="row">
+          <button id="uploadBtn" class="btn btn-primary">Upload PDFs</button>
+          <button id="clearBtn" class="btn btn-secondary">Clear Uploaded Files</button>
+        </div>
+        <h3 style="margin:6px 0 0">Uploaded Files</h3>
+        <ul id="filesList"><li>No files uploaded yet.</li></ul>
+      </section>
+
+      <section class="panel stack">
+        <h2 style="margin:0">Ask the Chatbot</h2>
+        <textarea id="queryInput" placeholder="Ask a question about the uploaded documents..."></textarea>
+        <div class="row">
+          <button id="askBtn" class="btn btn-primary">Ask Question</button>
+          <a class="btn btn-secondary" href="/">Back to Portal</a>
+        </div>
+        <h3 style="margin:6px 0 0">Response</h3>
+        <div id="answerBox" class="answer">Your chatbot response will appear here.</div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const statusBox = document.getElementById('statusBox');
+    const filesList = document.getElementById('filesList');
+    const answerBox = document.getElementById('answerBox');
+    const fileInput = document.getElementById('fileInput');
+    const queryInput = document.getElementById('queryInput');
+
+    function setStatus(message, isError = false) {
+      statusBox.textContent = message;
+      statusBox.className = isError ? 'error' : 'status';
+    }
+
+    async function ensureSession() {
+      const response = await fetch('/chatbot/admin/check', { credentials: 'include' });
+      const data = await response.json();
+      if (!data.logged_in) {
+        setStatus('Shared chatbot session is missing. Returning to the unified login page...', true);
+        setTimeout(() => { window.location.href = '/unified-login/chatbot'; }, 800);
+        return false;
+      }
+      setStatus(`Signed in to Chatbot as ${data.username}.`);
+      return true;
+    }
+
+    async function refreshFiles() {
+      const response = await fetch('/chatbot/uploaded_files', { credentials: 'include' });
+      const data = await response.json();
+      const files = data.files || [];
+      filesList.innerHTML = files.length ? files.map((name) => `<li>${name}</li>`).join('') : '<li>No files uploaded yet.</li>';
+    }
+
+    async function uploadFiles() {
+      if (!fileInput.files.length) {
+        setStatus('Select one or more PDF files first.', true);
+        return;
+      }
+      const formData = new FormData();
+      Array.from(fileInput.files).forEach((file) => formData.append('files', file));
+      setStatus('Uploading and indexing documents...');
+      const response = await fetch('/chatbot/upload', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setStatus(data.message || 'Upload failed.', true);
+        return;
+      }
+      setStatus(data.message || 'Upload completed.');
+      fileInput.value = '';
+      await refreshFiles();
+    }
+
+    async function clearFiles() {
+      setStatus('Clearing uploaded files...');
+      const response = await fetch('/chatbot/uploaded_files', {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setStatus(data.message || 'Failed to clear files.', true);
+        return;
+      }
+      setStatus(data.message || 'Uploaded files cleared.');
+      answerBox.textContent = 'Your chatbot response will appear here.';
+      await refreshFiles();
+    }
+
+    async function askQuestion() {
+      const query = queryInput.value.trim();
+      if (!query) {
+        setStatus('Enter a question first.', true);
+        return;
+      }
+      setStatus('Generating chatbot response...');
+      const formData = new FormData();
+      formData.append('query', query);
+      const response = await fetch('/chatbot/query', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setStatus(data.message || 'Chatbot request failed.', true);
+        return;
+      }
+      answerBox.textContent = data.response || 'No response returned.';
+      setStatus('Response ready.');
+    }
+
+    document.getElementById('uploadBtn').addEventListener('click', uploadFiles);
+    document.getElementById('clearBtn').addEventListener('click', clearFiles);
+    document.getElementById('askBtn').addEventListener('click', askQuestion);
+
+    ensureSession().then((ok) => {
+      if (ok) refreshFiles();
+    }).catch(() => {
+      setStatus('Could not verify the chatbot session.', true);
+    });
+  </script>
+</body>
+</html>

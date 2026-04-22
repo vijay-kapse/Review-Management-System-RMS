@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Survey Results{% endblock %}
+
+{% block header %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/single_results.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="results-container">
+    <h1 class="results-title">Results for Survey: {{ survey.name }}</h1>
+    <p class="results-description">{{ survey.description }}</p>
+    <p><strong>Total Respondents:</strong> {{ total_respondents }}</p>
+
+    <!-- Include Chart.js for bar chart generation -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script type="application/json" id="question-data">
+        [
+            {% for question in question_data %}
+            {
+                "question_text": "{{ question.question_text }}",
+                "total_respondents_question": {{ question.total_respondents_question }},
+                "answers": [
+                    {% for answer in question.answers %}
+                    {
+                        "answer_text": "{{ answer.answer_text }}",
+                        "count": {{ answer.count }}
+                    }{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                ]
+            }{% if not forloop.last %}, {% endif %}
+            {% endfor %}
+        ]
+    </script>
+
+    {% if total_respondents == 0 %}
+        <div class="no-responses">
+            <p>No responses yet</p>
+        </div>
+    {% else %}
+        {% for question in question_data %}
+        <div class="question-section">
+            <h2 class="question-title">Question: {{ question.question_text }}</h2>
+
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th>Answer</th>
+                        <th>Responses</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for answer in question.answers %}
+                    <tr>
+                        <td>{{ answer.answer_text }}</td>
+                        <td>{{ answer.count }} ({{ answer.percentage }}%)</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <!-- Chart below the table -->
+            <canvas id="chart-{{ forloop.counter }}" class="results-chart"></canvas>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="button-container">
+        <a class="button-link" href="{% url 'home' %}">HOME</a>
+        <button class="print-button" onclick="window.print()">Print Results</button>
+    </div>
+</div>
+
+<script src="{% static 'js/survey_results.js' %}"></script>
+{% endblock %}

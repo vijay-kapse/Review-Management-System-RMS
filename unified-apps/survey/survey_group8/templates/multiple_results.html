@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Survey Results{% endblock %}
+
+{% block header %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/multiple_results.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="results-container">
+    <div class="inner-container">
+        <h1 class="results-title" id="survey-name">Results for Survey: {{ survey.name }}</h1>
+        <p class="results-description" id="survey-description">{{ survey.description }}</p>
+
+        <div id="results-container">
+            <!-- This container will be dynamically filled with results tables by the JavaScript. -->
+        </div>
+
+        <div class="button-container">
+            <a class="button-link" href="{% url 'home' %}">HOME</a>
+            <button class="print-button" onclick="window.print()">Print Results</button>
+        </div>
+    </div>
+</div>
+<script src="{% static 'js/survey_multiple_results.js' %}"></script>
+{% endblock %}
+

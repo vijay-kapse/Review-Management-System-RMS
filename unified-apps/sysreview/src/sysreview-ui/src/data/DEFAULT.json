@@ -1,0 +1,10 @@
+{
+  "title": "title",
+  "issn": "issn",
+  "articleDate": "articleDate",
+  "authorNames": "authorNames",
+  "publicationName": "publicationName",
+  "affiliationNames": "affiliationNames",
+  "affiliationCountry": "affiliationCountry",
+  "url": "url"
+}

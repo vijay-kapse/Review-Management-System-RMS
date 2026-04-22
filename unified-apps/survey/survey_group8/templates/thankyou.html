@@ -1,0 +1,35 @@
+{% load static %}
+<head>
+    <link rel="stylesheet" href="{% static 'css/thank_you.css' %}">
+</head>
+
+<div class="survey-results-container">
+    <h2 class="results-header">Previous Results</h2>
+
+    {% for question_id, stats in grouped_stats.items %}
+    <div class="question-section">
+        <h3 class="question-title">Question {{ forloop.counter }}</h3>
+        <table class="compact-results-table">
+            <thead>
+                <tr>
+                    <th>Answer</th>
+                    <th>Count</th>
+                    <th>%</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stat in stats %}
+                <tr>
+                    <td>{{ stat.answer_id }}</td>
+                    <td>{{ stat.count }}</td>
+                    <td>{{ stat.percentage|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% empty %}
+    <p class="no-results-message">No results are available for this survey yet.</p>
+    {% endfor %}
+</div>
+

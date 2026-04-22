@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Unified Platform Logout</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Inter, Arial, sans-serif;
+      background: #f8fafc;
+      color: #0f172a;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      width: min(720px, 94vw);
+      background: white;
+      border-radius: 18px;
+      padding: 28px;
+      box-shadow: 0 16px 36px rgba(15, 23, 42, 0.1);
+      border: 1px solid #e2e8f0;
+    }
+    h1 { margin-top: 0; }
+    p { color: #475569; line-height: 1.6; }
+    .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
+    a {
+      text-decoration: none;
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-weight: 700;
+    }
+    .primary { background: #2563eb; color: white; }
+    .secondary { background: #e2e8f0; color: #0f172a; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Platform Logout</h1>
+    <p>
+      This copied integration workspace uses a staged shared-login model. Local application sessions may still need app-specific logout handling,
+      but this page acts as the common platform return point for sign-out flows.
+    </p>
+    <div class="actions">
+      <a class="primary" href="/index.html">Return to Unified Portal</a>
+      <a class="secondary" href="/unified-login.html">Sign in again</a>
+    </div>
+  </div>
+</body>
+</html>

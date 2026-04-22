@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Survey{% endblock %}
+
+{% block header %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% load static %}
+{% endblock %}
+
+{% block content %}
+<div class="new-survey-container">
+    <h2 class="new-survey-title">Edit Survey: {{ survey.name }}</h2>
+    <p>{{ survey.description }}</p>
+    <hr/>
+
+    <form id="surveyEditForm" data-survey-id="{{ survey.id }}" method="post">
+        {% csrf_token %}
+        <table class="new-survey-table">
+            <tr>
+                <td>Survey Name</td>
+                <td>
+                    <input type="text" name="name" value="{{ survey.name }}" placeholder="Enter Survey Name..">
+                    <span class="error" id="nameError"></span>
+                </td>
+            </tr>
+            <tr>
+                <td>Survey Description</td>
+                <td>
+                    <input type="text" name="description" value="{{ survey.description }}" placeholder="Enter Survey Description..">
+                    <span class="error" id="descriptionError"></span>
+                </td>
+            </tr>
+        </table>
+
+        <div id="questionsContainer">
+            <h3 class="new-survey-questions-title">Questions</h3>
+            {% for item in questions_data %}
+                <div class="question-block" id="qBlock_{{ item.question.id }}">
+                    <table class="new-survey-table">
+                        <tr>
+                            <td>Question</td>
+                            <td>
+                                <input type="text" name="question_{{ item.question.id }}" value="{{ item.question.question }}" placeholder="Enter Question">
+                                <span class="error" id="qError{{ item.question.id }}"></span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Question Type</td>
+                            <td>
+                                <label>
+                                    <input type="radio" name="type_{{ item.question.id }}" value="Radio" {% if item.question.type == 'Radio' %}checked{% endif %}>
+                                    Radio Buttons
+                                </label>
+                                <label style="margin-left: 20px;">
+                                    <input type="radio" name="type_{{ item.question.id }}" value="Checkboxes" {% if item.question.type == 'Checkboxes' %}checked{% endif %}>
+                                    Checkboxes
+                                </label>
+                            </td>
+                        </tr>
+                        <tbody id="aContainer_{{ item.question.id }}">
+                            {% for answer_id, answer_text in item.answers.items %}
+                            <tr class="new-answer-row" id="aField_{{ item.question.id }}_{{ answer_id }}">
+                                <td>Answer</td>
+                                <td>
+                                    <div class="answer-row">
+                                        <input type="text" name="answer_{{ item.question.id }}_{{ answer_id }}" value="{{ answer_text }}" placeholder="Enter Answer">
+                                        <button type="button" class="new-survey-btn" onclick="removeAnswer({{ item.question.id }}, {{ answer_id }})">Remove Answer</button>
+                                    </div>
+                                    <span class="error" id="aError{{ item.question.id }}_{{ answer_id }}"></span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <div class="question-buttons">
+                        <button type="button" class="new-survey-btn" onclick="addAnswerField({{ item.question.id }})">Add Another Answer</button>
+                        <button type="button" class="new-survey-btn" onclick="removeQuestion({{ item.question.id }})" id="removeQBtn{{ item.question.id }}">Remove Question</button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <button type="button" class="new-survey-btn" onclick="addQuestion()">Add Question</button>
+
+        <div class="new-survey-navigation">
+            <a class="button-link" href="{% url 'home' %}">HOME</a>
+            <button type="submit" class="button-link">Update Survey</button>
+        </div>
+    </form>
+</div>
+
+{% load static %}
+<script src="{% static 'js/survey_edit.js' %}"></script>
+{% endblock %}

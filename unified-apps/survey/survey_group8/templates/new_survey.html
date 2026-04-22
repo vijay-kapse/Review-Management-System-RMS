@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Create New Survey{% endblock %}
+
+{% block header %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% load static %}
+{% endblock %}
+
+{% block content %}
+<div class="new-survey-container">
+    <h2 class="new-survey-title">Create New Survey!</h2>
+    <hr/>
+    <form id="surveyCreateForm">
+        {% csrf_token %}
+        <table class="new-survey-table">
+            <tr>
+                <td>Survey Name</td>
+                <td>
+                    <input type="text" name="name" placeholder="Enter Survey Name..">
+                    <span class="error" id="nameError"></span>
+                </td>
+            </tr>
+            <tr>
+                <td>Survey Description</td>
+                <td>
+                    <input type="text" name="description" placeholder="Enter Survey Description..">
+                    <span class="error" id="descriptionError"></span>
+                </td>
+            </tr>
+        </table>
+
+        <div id="questionsContainer">
+            <h3 class="new-survey-questions-title">Questions</h3>
+        </div>
+
+        <button type="button" class="new-survey-btn" onclick="addQuestion()">Add Question</button>
+
+        <div class="new-survey-navigation">
+            <a class="button-link" href="{% url 'home' %}">HOME</a>
+            <button type="submit" class="button-link" style="display: inline-block;">Create Survey</button>
+        </div>
+    </form>
+</div>
+
+{% load static %}
+<script src="{% static 'js/survey.js' %}"></script>
+{% endblock %}

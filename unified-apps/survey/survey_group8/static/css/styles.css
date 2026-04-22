@@ -1,0 +1,655 @@
+/* Using CSS for general styles */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f0f8ff; /* Alice's blue backdrop */
+    margin: 0;
+    padding: 0;
+    color: #003366; /* Deep blue for text */
+}
+
+/* Main container */
+main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Centered container for the home page */
+.home-container {
+    text-align: center;
+    padding: 20px;
+}
+
+.home-title {
+    font-size: 2em;
+    color: #004080; /* Navy blue */
+    margin-bottom: 20px;
+}
+
+/* Auth section styling */
+.auth-section {
+    margin: 20px auto;
+    display: inline-block; /* Centers the content */
+    text-align: center;
+}
+
+.auth-section p {
+    font-size: 1.2em;
+    margin-bottom: 10px;
+}
+
+/* Navigation bar */
+nav {
+    background-color: #004080; /* Navy blue */
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+    border-radius: 8px;
+}
+
+nav .greeting {
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+nav form {
+    margin: 0;
+}
+
+nav button {
+    background-color: #1a75ff; /* Bright blue */
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+}
+
+nav button:hover {
+    background-color: #0056b3; /* Darker blue */
+}
+
+/* Links */
+a {
+    color: #1a75ff; /* Bright blue for links */
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Button-link styles */
+.button-link {
+    display: inline-block;
+    background-color: #1a75ff; /* Bright blue */
+    color: white;
+    padding: 10px 15px;
+    margin: 10px 0;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 1em;
+    text-align: center;
+    width: 150px; /* Ensures consistent button size */
+}
+
+.button-link:hover {
+    background-color: #0056b3; /* Darker blue */
+    text-decoration: none;
+}
+
+/* Content blocks */
+main {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+}
+
+/* Forms */
+form {
+    margin-top: 10px;
+}
+
+form input, form textarea {
+    width: 100%;
+    padding: 8px;
+    margin: 8px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+/* Headings */
+h1, h2, h3 {
+    color: #004080; /* Navy blue for headings */
+}
+
+/* Buttons */
+button {
+    background-color: #1a75ff;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+}
+
+button:hover {
+    background-color: #0056b3; /* Darker blue */
+}
+
+/* Footer (optional if needed) */
+footer {
+    background-color: #004080;
+    color: white;
+    text-align: center;
+    padding: 10px;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    border-top: 2px solid #003366;
+}
+/* Centered container for login page */
+.login-container {
+    text-align: center;
+    margin: 0 auto;
+    padding: 40px;
+    max-width: 400px;
+    background-color: #ffffff; /* White background for contrast */
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Soft shadow */
+}
+
+/* Login title */
+.login-title {
+    font-size: 1.8em;
+    color: #004080; /* Navy blue */
+    margin-bottom: 20px;
+}
+
+/* Login form styling */
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Space between form fields */
+}
+
+.login-form button {
+    background-color: #1a75ff; /* Bright blue */
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+}
+
+.login-form button:hover {
+    background-color: #0056b3; /* Darker blue */
+}
+
+/* Button group for form buttons */
+.button-group {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px; /* Space between buttons */
+}
+
+/* Styling for the Home button */
+.home-button {
+    display: inline-block;
+    background-color: #cccccc; /* Light gray for secondary button */
+    color: #003366; /* Deep blue for text */
+    padding: 10px 15px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 1em;
+    text-align: center;
+    border: 1px solid #aaa;
+    cursor: pointer;
+}
+
+.home-button:hover {
+    background-color: #b3b3b3; /* Slightly darker gray on hover */
+    border-color: #888;
+}
+/* General container styling */
+.container {
+    max-width: 800px; /* Limits the container width */
+    margin: 0 auto; /* Centers the container */
+    padding: 20px;
+    background-color: #ffffff; /* White background for contrast */
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Soft shadow for elevation */
+    text-align: center;
+}
+
+/* Header styling */
+.container h2 {
+    font-size: 1.8em;
+    color: #004080; /* Navy blue for titles */
+    margin-bottom: 10px;
+}
+
+hr {
+    border: 0;
+    border-top: 1px solid #ccc;
+    margin: 20px 0;
+}
+
+/* Button styling */
+.button-link {
+    display: inline-block;
+    background-color: #1a75ff; /* Bright blue for primary action */
+    color: white;
+    padding: 10px 15px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 1em;
+    margin-bottom: 20px;
+}
+
+.button-link:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+    text-decoration: none;
+}
+
+/* Table styling */
+table {
+    width: 100%; /* Full width table */
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+
+table th, table td {
+    text-align: left;
+    padding: 10px;
+    border: 1px solid #ddd; /* Light border for cells */
+}
+
+table th {
+    background-color: #f0f8ff; /* Alice blue for table header */
+    color: #004080; /* Navy blue for text */
+    font-weight: bold;
+}
+
+table td {
+    background-color: #ffffff; /* White background for cells */
+    color: #003366; /* Deep blue for text */
+}
+
+/* Survey name styling */
+table td strong {
+    font-weight: bold;
+    color: #004080; /* Navy blue for emphasis */
+    display: block;
+    margin-bottom: 5px; /* Add space below the survey name */
+}
+
+/* Action links styling */
+table td a {
+    font-size: 0.9em; /* Smaller font for action links */
+    color: #1a75ff; /* Bright blue */
+    text-decoration: none;
+    font-weight: normal; /* Make links not bold */
+    margin-right: 5px; /* Add spacing between links */
+}
+
+table td a:hover {
+    text-decoration: underline;
+}
+
+/* Add spacing between survey entries */
+table td > div {
+    margin-bottom: 15px; /* Space between survey entries */
+}
+
+/* No surveys message */
+table td:empty {
+    text-align: center;
+    font-style: italic;
+    color: #666; /* Light gray for empty message */
+}
+
+/* Mobile responsiveness */
+@media (max-width: 600px) {
+    .container {
+        padding: 15px;
+    }
+
+    table {
+        font-size: 0.9em; /* Smaller font size for tables */
+    }
+
+    .button-link {
+        width: 100%;
+        display: block;
+        margin-bottom: 10px;
+    }
+}
+
+/* Container styling */
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+/* Survey table styling */
+.survey-table {
+    width: 100%;
+    table-layout: fixed; /* Ensures all columns have equal width */
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+
+.survey-table th, .survey-table td {
+    text-align: center;
+    padding: 10px;
+    border: 1px solid #ddd;
+    vertical-align: top; /* Ensures alignment at the top */
+    width: 33%; /* Equal width for all columns */
+}
+
+.survey-table th {
+    background-color: #f0f8ff;
+    color: #004080;
+    font-weight: bold;
+}
+
+/* Survey entry styling */
+.survey-entry {
+    text-align: left; /* Align content to the left */
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px dotted #ccc; /* Fine dotted border */
+    border-radius: 5px; /* Rounded corners */
+}
+
+/* Survey name styling with ellipsis for overflow */
+.survey-name {
+    font-weight: bold;
+    color: #004080;
+    white-space: nowrap; /* Prevent text from wrapping */
+    overflow: hidden;
+    text-overflow: ellipsis; /* Truncate text with "..." */
+    display: block;
+    max-width: 100%;
+}
+
+/* Action links (options) always on the second row */
+.survey-options {
+    margin-top: 5px; /* Small space above options */
+    font-size: 0.9em; /* Slightly smaller font for action links */
+}
+
+.survey-options a {
+    color: #1a75ff;
+    text-decoration: none;
+    margin: 0 5px;
+}
+
+.survey-options a:hover {
+    text-decoration: underline;
+}
+
+/* No surveys message styling */
+table td:empty {
+    text-align: center;
+    font-style: italic;
+    color: #666;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 600px) {
+    .container {
+        padding: 15px;
+    }
+
+    .survey-table th, .survey-table td {
+        font-size: 0.9em;
+    }
+}
+
+/* General container styling */
+.register-container {
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: left; /* Align form content to the left */
+}
+
+/* Title styling */
+.register-title {
+    font-size: 1.8em;
+    color: #004080;
+    margin-bottom: 20px;
+}
+
+/* Form styling */
+.register-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Space between form groups */
+}
+
+/* Form group styling */
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Radio group styling */
+.radio-group {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Space between radio buttons and labels */
+}
+
+.radio-group label {
+    font-weight: normal;
+    margin-left: 5px; /* Space between radio button and text */
+}
+
+/* Form inputs */
+.register-form input, .register-form select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1em;
+}
+
+/* Submit button */
+.register-form button {
+    background-color: #1a75ff;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    width: 100%;
+    margin-top: 15px; /* Separate from form fields */
+}
+
+.register-form button:hover {
+    background-color: #0056b3;
+}
+/* General container styling */
+.new-survey-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: left;
+}
+
+/* Title styling */
+.new-survey-title, .new-survey-questions-title {
+    font-size: 1.8em;
+    color: #004080; /* Navy blue for titles */
+    margin-bottom: 20px;
+}
+
+/* Survey table styling */
+.new-survey-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+.new-survey-table td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    vertical-align: top;
+}
+
+/* Bold labels */
+.new-survey-table td:first-child {
+    font-weight: bold;
+    color: #003366;
+}
+
+/* Question block styling */
+.question-block {
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px dashed #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+/* Answer row alignment */
+.answer-row {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Space between input and button */
+}
+
+.answer-row input[type="text"] {
+    flex: 1; /* Input takes up remaining space */
+    padding: 6px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+/* Buttons for answer rows */
+.answer-row button {
+    background-color: #4da6ff; /* Light blue */
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    flex-shrink: 0; /* Prevent button from shrinking */
+}
+
+.answer-row button:hover {
+    background-color: #007acc; /* Darker blue */
+}
+
+/* Buttons for adding and removing questions */
+.question-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.question-buttons button {
+    background-color: #4da6ff; /* Light blue */
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+.question-buttons button:hover {
+    background-color: #007acc; /* Darker blue */
+}
+
+/* Navigation buttons (Home and Update Survey) */
+.new-survey-navigation {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.new-survey-navigation .button-link {
+    display: inline-block;
+    background-color: #1a75ff; /* Bright blue */
+    color: white;
+    padding: 10px 15px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 1em;
+    margin-right: 10px;
+}
+
+.new-survey-navigation .button-link:hover {
+    background-color: #0056b3;
+}
+
+/* Error message styling */
+.error {
+    color: red;
+    font-size: 0.9em;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 600px) {
+    .new-survey-container {
+        padding: 15px;
+    }
+
+    .new-survey-table td {
+        font-size: 0.9em;
+    }
+
+    .question-buttons button {
+        font-size: 0.8em;
+    }
+
+    .answer-row input[type="text"] {
+        font-size: 0.9em;
+    }
+}
+
+/* Question Type Table */
+.question-type-table {
+    width: 100%;
+    border-spacing: 0; 
+}
+
+.question-type-table td {
+    vertical-align: middle; 
+    text-align: center; 
+    padding: 0; 
+    height: 40px; 
+}
+
+.question-type-table input {
+    margin: 0; 
+    display: inline-block;
+}
+
+.question-type-table label {
+    display: inline-block;
+    font-size: 1em;
+    color: #333;
+}

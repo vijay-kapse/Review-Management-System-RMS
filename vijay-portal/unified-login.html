@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Unified Platform Login</title>
+  <style>
+    body { margin: 0; font-family: Inter, Arial, sans-serif; background: #f8fafc; color: #0f172a; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    .card { width: min(720px, 92vw); background: white; border-radius: 18px; padding: 28px; box-shadow: 0 16px 36px rgba(15, 23, 42, 0.1); border: 1px solid #e2e8f0; }
+    h1 { margin-top: 0; }
+    p { color: #475569; line-height: 1.6; }
+    label { display: block; font-weight: 600; margin: 14px 0 6px; }
+    input, select { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 15px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .actions { margin-top: 18px; display: flex; gap: 12px; flex-wrap: wrap; }
+    button, a { padding: 12px 18px; border-radius: 10px; font-weight: 700; text-decoration: none; border: none; cursor: pointer; }
+    button { background: #2563eb; color: white; }
+    .secondary { background: #e2e8f0; color: #0f172a; }
+    .hint { margin-top: 18px; background: #eff6ff; color: #1e3a8a; padding: 14px; border-radius: 12px; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Unified Platform Login</h1>
+    <p>Route into the strongest externally reachable app target available now.</p>
+    <form id="loginForm">
+      <label for="app">Target application</label>
+      <select id="app" name="app">
+        <option value="survey">Survey</option>
+        <option value="argus">Argus</option>
+        <option value="sysreview">Sysreview</option>
+        <option value="chatbot">Chatbot</option>
+      </select>
+      <div class="row">
+        <div>
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" required placeholder="researcher@example.edu" />
+        </div>
+        <div>
+          <label for="next">Target path</label>
+          <input id="next" name="next" type="text" value="" placeholder="auto-selected per app" />
+        </div>
+      </div>
+      <div class="actions">
+        <button type="submit">Continue</button>
+        <a class="secondary" href="http://128.226.116.24:3005/">Back to portal</a>
+      </div>
+    </form>
+    <div class="hint" id="hintBox"></div>
+  </div>
+  <script>
+    const appField = document.getElementById('app');
+    const nextField = document.getElementById('next');
+    const hintBox = document.getElementById('hintBox');
+    const params = new URLSearchParams(window.location.search);
+    const requestedApp = params.get('app');
+    if (requestedApp) appField.value = requestedApp;
+    const defaults = {
+      survey: {
+        next: '/survey/',
+        route: () => 'http://128.226.116.24:8200/survey/',
+        hint: 'Survey is externally reachable on port 8200 using the /survey/ path.'
+      },
+      argus: {
+        next: '/',
+        route: () => 'http://128.226.116.24:3011',
+        hint: 'Argus copied frontend is externally reachable on port 3011.'
+      },
+      sysreview: {
+        next: '/',
+        route: () => 'http://128.226.116.24:3013',
+        hint: 'Sysreview copied static UI is externally reachable on port 3013.'
+      },
+      chatbot: {
+        next: '/chatbot/',
+        route: (email, next) => `http://128.226.116.24:3010/chatbot/shared-entry?sharedEmail=${encodeURIComponent(email)}&next=${encodeURIComponent(next)}`,
+        hint: 'Chatbot copied runtime will use the live shared-entry bridge on port 3010.'
+      }
+    };
+    function syncDefaults() {
+      const selected = defaults[appField.value];
+      nextField.value = selected.next;
+      hintBox.textContent = selected.hint;
+    }
+    appField.addEventListener('change', syncDefaults);
+    document.getElementById('loginForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const app = appField.value;
+      const email = document.getElementById('email').value;
+      const next = nextField.value || defaults[app].next;
+      window.location.href = defaults[app].route(email, next);
+    });
+    syncDefaults();
+  </script>
+</body>
+</html>

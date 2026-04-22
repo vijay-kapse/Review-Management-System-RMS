@@ -1,0 +1,67 @@
+/* Container Styling */
+.survey-results-container {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 10px;
+    background: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-family: Arial, sans-serif;
+}
+
+/* Header Styling */
+.results-header {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #333;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+/* Question Section */
+.question-section {
+    margin-bottom: 20px;
+}
+
+.question-title {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #444;
+    margin-bottom: 5px;
+}
+
+/* Compact Table */
+.compact-results-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    color: #333;
+}
+
+.compact-results-table th,
+.compact-results-table td {
+    text-align: center;
+    padding: 5px 8px;
+    border: 1px solid #ccc;
+}
+
+.compact-results-table th {
+    background-color: #f5f5f5;
+    font-weight: bold;
+}
+
+.compact-results-table td {
+    background-color: #ffffff;
+}
+
+.compact-results-table tr:nth-child(even) td {
+    background-color: #f9f9f9;
+}
+
+/* No Results Message */
+.no-results-message {
+    font-size: 0.9rem;
+    color: #666;
+    text-align: center;
+    margin-top: 10px;
+}

@@ -1,0 +1,17 @@
+{
+  "files": {
+    "main.css": "/sysreview/static/css/main.1ab7f649.css",
+    "main.js": "/sysreview/static/js/main.6a21555e.js",
+    "static/js/901.6dd4191b.chunk.js": "/sysreview/static/js/901.6dd4191b.chunk.js",
+    "static/js/300.aa3ae618.chunk.js": "/sysreview/static/js/300.aa3ae618.chunk.js",
+    "index.html": "/sysreview/index.html",
+    "main.1ab7f649.css.map": "/sysreview/static/css/main.1ab7f649.css.map",
+    "main.6a21555e.js.map": "/sysreview/static/js/main.6a21555e.js.map",
+    "901.6dd4191b.chunk.js.map": "/sysreview/static/js/901.6dd4191b.chunk.js.map",
+    "300.aa3ae618.chunk.js.map": "/sysreview/static/js/300.aa3ae618.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.1ab7f649.css",
+    "static/js/main.6a21555e.js"
+  ]
+}
