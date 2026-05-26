@@ -1,6 +1,4 @@
-# app/__init__.py
+# app/__init__.py compatibility for copied runtimes.
 from .main import app
-from .indexer import index_document
-from .searcher import search
-from .text_extractor import extract_text_from_pdf
-from .chatbot import chatbot_response
+
+__all__ = ["app"]

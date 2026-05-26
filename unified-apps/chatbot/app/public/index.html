@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Unified PDF Chatbot</title>
+  <title>QUEST Chatbot Workspace</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -85,7 +85,7 @@
 <body>
   <div class="shell">
     <section class="hero">
-      <h1>PDF Chatbot Workspace</h1>
+      <h1>QUEST Chatbot Workspace</h1>
       <p>Upload documents, ask questions about the uploaded set, and stay inside the unified session without another login page.</p>
     </section>
 
@@ -94,9 +94,9 @@
     <div class="grid" style="margin-top:18px">
       <section class="panel stack">
         <h2 style="margin:0">Document Upload</h2>
-        <input id="fileInput" type="file" multiple accept=".pdf" />
+        <input id="fileInput" type="file" multiple accept=".pdf,.txt,.csv" />
         <div class="row">
-          <button id="uploadBtn" class="btn btn-primary">Upload PDFs</button>
+          <button id="uploadBtn" class="btn btn-primary">Upload Documents</button>
           <button id="clearBtn" class="btn btn-secondary">Clear Uploaded Files</button>
         </div>
         <h3 style="margin:6px 0 0">Uploaded Files</h3>
@@ -112,6 +112,8 @@
         </div>
         <h3 style="margin:6px 0 0">Response</h3>
         <div id="answerBox" class="answer">Your chatbot response will appear here.</div>
+        <h3 style="margin:6px 0 0">Sources</h3>
+        <ul id="sourcesList"><li>No sources yet.</li></ul>
       </section>
     </div>
   </div>
@@ -120,12 +122,23 @@
     const statusBox = document.getElementById('statusBox');
     const filesList = document.getElementById('filesList');
     const answerBox = document.getElementById('answerBox');
+    const sourcesList = document.getElementById('sourcesList');
     const fileInput = document.getElementById('fileInput');
     const queryInput = document.getElementById('queryInput');
 
     function setStatus(message, isError = false) {
       statusBox.textContent = message;
       statusBox.className = isError ? 'error' : 'status';
+    }
+
+    function escapeHTML(value) {
+      return String(value).replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[char]));
     }
 
     async function ensureSession() {
@@ -136,7 +149,7 @@
         setTimeout(() => { window.location.href = '/unified-login/chatbot'; }, 800);
         return false;
       }
-      setStatus(`Signed in to Chatbot as ${data.username}.`);
+      setStatus(`Signed in to QUEST as ${data.username}.`);
       return true;
     }
 
@@ -144,12 +157,12 @@
       const response = await fetch('/chatbot/uploaded_files', { credentials: 'include' });
       const data = await response.json();
       const files = data.files || [];
-      filesList.innerHTML = files.length ? files.map((name) => `<li>${name}</li>`).join('') : '<li>No files uploaded yet.</li>';
+      filesList.innerHTML = files.length ? files.map((name) => `<li>${escapeHTML(name)}</li>`).join('') : '<li>No files uploaded yet.</li>';
     }
 
     async function uploadFiles() {
       if (!fileInput.files.length) {
-        setStatus('Select one or more PDF files first.', true);
+        setStatus('Select one or more PDF, TXT, or CSV files first.', true);
         return;
       }
       const formData = new FormData();
@@ -162,7 +175,7 @@
       });
       const data = await response.json();
       if (!response.ok) {
-        setStatus(data.message || 'Upload failed.', true);
+        setStatus(data.message || data.detail || 'Upload failed.', true);
         return;
       }
       setStatus(data.message || 'Upload completed.');
@@ -178,11 +191,12 @@
       });
       const data = await response.json();
       if (!response.ok) {
-        setStatus(data.message || 'Failed to clear files.', true);
+        setStatus(data.message || data.detail || 'Failed to clear files.', true);
         return;
       }
       setStatus(data.message || 'Uploaded files cleared.');
       answerBox.textContent = 'Your chatbot response will appear here.';
+      sourcesList.innerHTML = '<li>No sources yet.</li>';
       await refreshFiles();
     }
 
@@ -202,10 +216,12 @@
       });
       const data = await response.json();
       if (!response.ok) {
-        setStatus(data.message || 'Chatbot request failed.', true);
+        setStatus(data.message || data.detail || 'Chatbot request failed.', true);
         return;
       }
       answerBox.textContent = data.response || 'No response returned.';
+      const sources = data.sources || [];
+      sourcesList.innerHTML = sources.length ? sources.map((source) => `<li>${escapeHTML(source)}</li>`).join('') : '<li>No sources returned.</li>';
       setStatus('Response ready.');
     }
 
