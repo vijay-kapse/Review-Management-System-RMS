@@ -5,130 +5,582 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>QUEST Chatbot Workspace</title>
   <style>
+    :root {
+      --bg: #eef6fb;
+      --panel: #ffffff;
+      --panel-soft: #f8fafc;
+      --text: #0f172a;
+      --muted: #475569;
+      --border: #cbd5e1;
+      --border-strong: #94a3b8;
+      --primary: #0369a1;
+      --primary-hover: #075985;
+      --secondary: #e2e8f0;
+      --success-bg: #ecfeff;
+      --success-text: #155e75;
+      --error-bg: #fff1f2;
+      --error-text: #be123c;
+      --accent: #0f766e;
+      --warning: #a16207;
+      --shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+    }
+
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
-      font-family: Inter, Arial, sans-serif;
-      background: linear-gradient(180deg, #e0f2fe 0%, #f8fafc 100%);
-      color: #0f172a;
       min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        linear-gradient(180deg, rgba(224, 242, 254, 0.92) 0%, rgba(248, 250, 252, 0.96) 46%, #f8fafc 100%);
+      color: var(--text);
+      line-height: 1.5;
     }
-    .shell {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 28px 18px 40px;
-    }
-    .hero, .panel {
-      background: rgba(255,255,255,0.96);
-      border: 1px solid #cbd5e1;
-      border-radius: 20px;
-      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.10);
-    }
-    .hero { padding: 26px; margin-bottom: 18px; }
-    .hero h1 { margin: 0 0 8px; }
-    .hero p { margin: 0; color: #475569; line-height: 1.6; }
-    .grid {
-      display: grid;
-      grid-template-columns: 1.1fr 0.9fr;
-      gap: 18px;
-    }
-    .panel { padding: 22px; }
-    .stack { display: flex; flex-direction: column; gap: 12px; }
-    .row { display: flex; gap: 10px; flex-wrap: wrap; }
-    .btn {
-      border: none;
-      border-radius: 12px;
-      padding: 12px 16px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .btn-primary { background: #0284c7; color: white; }
-    .btn-secondary { background: #e2e8f0; color: #0f172a; }
-    textarea, input[type="file"] {
-      width: 100%;
-      border: 1px solid #cbd5e1;
-      border-radius: 12px;
-      padding: 12px;
+
+    button, input, textarea {
       font: inherit;
-      background: white;
     }
-    textarea { min-height: 120px; resize: vertical; }
-    ul { margin: 0; padding-left: 18px; color: #334155; }
-    .answer {
-      white-space: pre-wrap;
-      background: #f8fafc;
-      border: 1px solid #cbd5e1;
-      border-radius: 12px;
-      padding: 14px;
-      min-height: 120px;
-      color: #0f172a;
+
+    .shell {
+      width: min(1360px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 18px 0 28px;
     }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .brand {
+      min-width: 0;
+    }
+
+    .eyebrow {
+      margin: 0 0 3px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    h1, h2, h3, p {
+      margin-top: 0;
+    }
+
+    h1 {
+      margin-bottom: 0;
+      font-size: clamp(28px, 3vw, 40px);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin-bottom: 0;
+      font-size: 20px;
+      line-height: 1.2;
+    }
+
+    h3 {
+      margin-bottom: 0;
+      font-size: 15px;
+      line-height: 1.25;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
     .status {
-      background: #ecfeff;
-      color: #155e75;
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      max-width: 520px;
+      padding: 9px 12px;
       border: 1px solid #a5f3fc;
-      border-radius: 12px;
+      border-radius: 8px;
+      background: var(--success-bg);
+      color: var(--success-text);
+      font-size: 14px;
+      font-weight: 650;
+    }
+
+    .status.is-error {
+      border-color: #fecdd3;
+      background: var(--error-bg);
+      color: var(--error-text);
+    }
+
+    .portal-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 38px;
+      padding: 9px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 750;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(280px, 330px) minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .panel {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: var(--shadow);
+    }
+
+    .document-panel {
+      position: sticky;
+      top: 16px;
+      padding: 16px;
+    }
+
+    .chat-panel {
+      min-width: 0;
+      padding: 16px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .count-pill {
+      flex: none;
+      border: 1px solid #bae6fd;
+      border-radius: 999px;
+      background: #f0f9ff;
+      color: #075985;
+      padding: 4px 9px;
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .upload-stack {
+      display: grid;
+      gap: 10px;
+    }
+
+    .file-input {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel-soft);
+      color: var(--text);
+      padding: 8px;
+      font-size: 14px;
+    }
+
+    .selected-files {
+      min-height: 28px;
+      color: var(--muted);
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+    }
+
+    .btn {
+      min-height: 42px;
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+    }
+
+    .btn:disabled {
+      cursor: wait;
+      opacity: 0.68;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #ffffff;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      border: 1px solid var(--border);
+      background: var(--secondary);
+      color: var(--text);
+    }
+
+    .btn-secondary:hover:not(:disabled), .portal-link:hover {
+      border-color: var(--border-strong);
+      background: #f1f5f9;
+    }
+
+    .library {
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    .file-list {
+      display: grid;
+      gap: 8px;
+      max-height: calc(100vh - 330px);
+      min-height: 46px;
+      margin: 10px 0 0;
+      padding: 0;
+      overflow: auto;
+      list-style: none;
+    }
+
+    .file-item {
+      display: grid;
+      gap: 2px;
+      padding: 9px 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background: var(--panel-soft);
+    }
+
+    .file-name {
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+
+    .file-meta {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .empty-state {
+      display: flex;
+      align-items: center;
+      min-height: 74px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 650;
+    }
+
+    .question-area {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 150px;
+      gap: 10px;
+      align-items: stretch;
+      margin-bottom: 14px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 104px;
+      max-height: 220px;
+      resize: vertical;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #ffffff;
+      color: var(--text);
+      padding: 12px 13px;
+      font-size: 16px;
+      line-height: 1.45;
+    }
+
+    textarea:focus, .file-input:focus {
+      outline: 3px solid rgba(14, 165, 233, 0.18);
+      border-color: #0284c7;
+    }
+
+    .question-actions {
+      display: grid;
+      gap: 8px;
+      align-content: start;
+    }
+
+    .result-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .result-meta {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .answer {
+      min-height: 300px;
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #ffffff;
+      color: var(--text);
+      overflow-wrap: anywhere;
+    }
+
+    .answer-prose {
+      max-width: 82ch;
+      font-size: 16px;
+      line-height: 1.68;
+    }
+
+    .answer-prose p {
+      margin: 0 0 12px;
+    }
+
+    .answer-prose p:last-child {
+      margin-bottom: 0;
+    }
+
+    .evidence-stack {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .evidence-card {
+      border-left: 4px solid var(--primary);
+      border-radius: 8px;
+      background: var(--panel-soft);
+      padding: 12px 13px;
+    }
+
+    .evidence-citation {
+      display: block;
+      margin-bottom: 5px;
+      color: #075985;
+      font-size: 13px;
+      font-weight: 850;
+      overflow-wrap: anywhere;
+    }
+
+    .evidence-text {
+      color: #1e293b;
+      font-size: 15px;
+      line-height: 1.58;
+    }
+
+    .sources-panel {
+      margin-top: 14px;
+      border: 1px solid #dbeafe;
+      border-radius: 8px;
+      background: #f8fbff;
       padding: 12px;
     }
-    .error {
-      background: #fef2f2;
-      color: #b91c1c;
-      border: 1px solid #fecaca;
-      border-radius: 12px;
-      padding: 12px;
+
+    .sources-panel summary {
+      cursor: pointer;
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 850;
     }
-    @media (max-width: 860px) {
-      .grid { grid-template-columns: 1fr; }
+
+    .sources-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 8px;
+      margin: 10px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .source-item {
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+      padding: 9px 10px;
+      border: 1px solid #dbeafe;
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .source-name {
+      color: #1e293b;
+      font-size: 13px;
+      font-weight: 800;
+      overflow-wrap: anywhere;
+    }
+
+    .source-meta {
+      color: var(--warning);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    @media (max-width: 980px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .document-panel {
+        position: static;
+      }
+
+      .file-list {
+        max-height: 220px;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .shell {
+        width: min(100vw - 20px, 680px);
+        padding-top: 10px;
+      }
+
+      .topbar {
+        grid-template-columns: 1fr;
+      }
+
+      .header-actions {
+        justify-content: stretch;
+      }
+
+      .status, .portal-link {
+        width: 100%;
+      }
+
+      .question-area, .button-row {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 28px;
+      }
+
+      .answer {
+        min-height: 220px;
+        padding: 14px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="shell">
-    <section class="hero">
-      <h1>QUEST Chatbot Workspace</h1>
-      <p>Upload documents, ask questions about the uploaded set, and stay inside the unified session without another login page.</p>
-    </section>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <p class="eyebrow">QUEST Document Assistant</p>
+        <h1>QUEST Chatbot Workspace</h1>
+      </div>
+      <div class="header-actions">
+        <div id="statusBox" class="status">Checking shared chatbot session...</div>
+        <a class="portal-link" href="/">Back to Portal</a>
+      </div>
+    </header>
 
-    <div id="statusBox" class="status">Checking shared chatbot session...</div>
-
-    <div class="grid" style="margin-top:18px">
-      <section class="panel stack">
-        <h2 style="margin:0">Document Upload</h2>
-        <input id="fileInput" type="file" multiple accept=".pdf,.txt,.csv" />
-        <div class="row">
-          <button id="uploadBtn" class="btn btn-primary">Upload Documents</button>
-          <button id="clearBtn" class="btn btn-secondary">Clear Uploaded Files</button>
+    <div class="workspace">
+      <aside class="panel document-panel">
+        <div class="section-head">
+          <h2>Documents</h2>
+          <span id="fileCount" class="count-pill">0 files</span>
         </div>
-        <h3 style="margin:6px 0 0">Uploaded Files</h3>
-        <ul id="filesList"><li>No files uploaded yet.</li></ul>
-      </section>
 
-      <section class="panel stack">
-        <h2 style="margin:0">Ask the Chatbot</h2>
-        <textarea id="queryInput" placeholder="Ask a question about the uploaded documents..."></textarea>
-        <div class="row">
-          <button id="askBtn" class="btn btn-primary">Ask Question</button>
-          <a class="btn btn-secondary" href="/">Back to Portal</a>
+        <div class="upload-stack">
+          <input id="fileInput" class="file-input" type="file" multiple accept=".pdf,.txt,.csv" />
+          <div id="selectedFiles" class="selected-files">No files selected.</div>
+          <div class="button-row">
+            <button id="uploadBtn" class="btn btn-primary">Upload</button>
+            <button id="clearBtn" class="btn btn-secondary">Clear</button>
+          </div>
         </div>
-        <h3 style="margin:6px 0 0">Response</h3>
-        <div id="answerBox" class="answer">Your chatbot response will appear here.</div>
-        <h3 style="margin:6px 0 0">Sources</h3>
-        <ul id="sourcesList"><li>No sources yet.</li></ul>
+
+        <section class="library" aria-labelledby="libraryTitle">
+          <div class="section-head">
+            <h3 id="libraryTitle">Uploaded Files</h3>
+          </div>
+          <ul id="filesList" class="file-list">
+            <li class="empty-state">No files uploaded yet.</li>
+          </ul>
+        </section>
+      </aside>
+
+      <section class="panel chat-panel">
+        <div class="section-head">
+          <h2>Ask the Chatbot</h2>
+        </div>
+
+        <div class="question-area">
+          <textarea id="queryInput" placeholder="Ask a question about the uploaded documents..."></textarea>
+          <div class="question-actions">
+            <button id="askBtn" class="btn btn-primary">Ask Question</button>
+          </div>
+        </div>
+
+        <div class="result-head">
+          <h2>Response</h2>
+          <span id="resultMeta" class="result-meta">Ready</span>
+        </div>
+
+        <div id="answerBox" class="answer">
+          <div class="empty-state">Your chatbot response will appear here.</div>
+        </div>
+
+        <details class="sources-panel" open>
+          <summary>Sources</summary>
+          <ul id="sourcesList" class="sources-list">
+            <li class="empty-state">No sources yet.</li>
+          </ul>
+        </details>
       </section>
     </div>
-  </div>
+  </main>
 
   <script>
     const statusBox = document.getElementById('statusBox');
     const filesList = document.getElementById('filesList');
+    const fileCount = document.getElementById('fileCount');
     const answerBox = document.getElementById('answerBox');
     const sourcesList = document.getElementById('sourcesList');
+    const resultMeta = document.getElementById('resultMeta');
+    const selectedFiles = document.getElementById('selectedFiles');
     const fileInput = document.getElementById('fileInput');
     const queryInput = document.getElementById('queryInput');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const askBtn = document.getElementById('askBtn');
 
     function setStatus(message, isError = false) {
       statusBox.textContent = message;
-      statusBox.className = isError ? 'error' : 'status';
+      statusBox.className = isError ? 'status is-error' : 'status';
+    }
+
+    function setBusy(isBusy) {
+      uploadBtn.disabled = isBusy;
+      clearBtn.disabled = isBusy;
+      askBtn.disabled = isBusy;
     }
 
     function escapeHTML(value) {
@@ -141,23 +593,130 @@
       }[char]));
     }
 
+    function renderEmpty(container, message) {
+      const tag = container.tagName === 'UL' ? 'li' : 'div';
+      container.innerHTML = `<${tag} class="empty-state">${escapeHTML(message)}</${tag}>`;
+    }
+
+    function responseMessage(data, fallback) {
+      if (!data) return fallback;
+      if (typeof data.message === 'string') return data.message;
+      if (typeof data.detail === 'string') return data.detail;
+      if (Array.isArray(data.detail) && data.detail.length) {
+        return data.detail.map((item) => item.msg || item.message || String(item)).join(' ');
+      }
+      return fallback;
+    }
+
+    function renderSelectedFiles() {
+      const files = Array.from(fileInput.files || []);
+      if (!files.length) {
+        selectedFiles.textContent = 'No files selected.';
+        return;
+      }
+      const names = files.map((file) => file.name).join(', ');
+      selectedFiles.textContent = `${files.length} selected: ${names}`;
+    }
+
+    function renderFiles(files) {
+      fileCount.textContent = `${files.length} ${files.length === 1 ? 'file' : 'files'}`;
+      if (!files.length) {
+        renderEmpty(filesList, 'No files uploaded yet.');
+        return;
+      }
+      filesList.innerHTML = files.map((name) => `
+        <li class="file-item">
+          <span class="file-name">${escapeHTML(name)}</span>
+          <span class="file-meta">Indexed for this session</span>
+        </li>
+      `).join('');
+    }
+
+    function splitEvidenceLine(line) {
+      const separatorIndex = line.indexOf(':');
+      if (separatorIndex === -1) {
+        return { citation: 'Supporting evidence', text: line };
+      }
+      return {
+        citation: line.slice(0, separatorIndex).trim(),
+        text: line.slice(separatorIndex + 1).trim()
+      };
+    }
+
+    function renderAnswer(text) {
+      const value = (text || '').trim();
+      if (!value) {
+        renderEmpty(answerBox, 'No response returned.');
+        return;
+      }
+
+      const lines = value.split(/\n+/).map((line) => line.trim()).filter(Boolean);
+      const evidence = [];
+      const prose = [];
+
+      lines.forEach((line) => {
+        if (line.startsWith('- ')) {
+          evidence.push(line.slice(2).trim());
+        } else {
+          prose.push(line);
+        }
+      });
+
+      const proseMarkup = prose.length
+        ? `<div class="answer-prose">${prose.map((line) => `<p>${escapeHTML(line)}</p>`).join('')}</div>`
+        : '';
+
+      const evidenceMarkup = evidence.length
+        ? `<div class="evidence-stack">${evidence.map((line) => {
+            const evidenceLine = splitEvidenceLine(line);
+            return `
+              <article class="evidence-card">
+                <span class="evidence-citation">${escapeHTML(evidenceLine.citation)}</span>
+                <div class="evidence-text">${escapeHTML(evidenceLine.text)}</div>
+              </article>
+            `;
+          }).join('')}</div>`
+        : '';
+
+      answerBox.innerHTML = proseMarkup + evidenceMarkup;
+    }
+
+    function renderSources(sources) {
+      resultMeta.textContent = sources.length ? `${sources.length} sources` : 'No sources';
+      if (!sources.length) {
+        renderEmpty(sourcesList, 'No sources returned.');
+        return;
+      }
+
+      sourcesList.innerHTML = sources.map((source) => {
+        const parts = String(source).split(' - ');
+        const name = parts.shift() || source;
+        const meta = parts.join(' - ') || 'Source';
+        return `
+          <li class="source-item">
+            <span class="source-name">${escapeHTML(name)}</span>
+            <span class="source-meta">${escapeHTML(meta)}</span>
+          </li>
+        `;
+      }).join('');
+    }
+
     async function ensureSession() {
       const response = await fetch('/chatbot/admin/check', { credentials: 'include' });
       const data = await response.json();
       if (!data.logged_in) {
-        setStatus('Shared chatbot session is missing. Returning to the unified login page...', true);
+        setStatus('Shared chatbot session is missing. Returning to login...', true);
         setTimeout(() => { window.location.href = '/unified-login/chatbot'; }, 800);
         return false;
       }
-      setStatus(`Signed in to QUEST as ${data.username}.`);
+      setStatus(`Signed in as ${data.username}.`);
       return true;
     }
 
     async function refreshFiles() {
       const response = await fetch('/chatbot/uploaded_files', { credentials: 'include' });
       const data = await response.json();
-      const files = data.files || [];
-      filesList.innerHTML = files.length ? files.map((name) => `<li>${escapeHTML(name)}</li>`).join('') : '<li>No files uploaded yet.</li>';
+      renderFiles(data.files || []);
     }
 
     async function uploadFiles() {
@@ -165,39 +724,52 @@
         setStatus('Select one or more PDF, TXT, or CSV files first.', true);
         return;
       }
+
       const formData = new FormData();
       Array.from(fileInput.files).forEach((file) => formData.append('files', file));
+
+      setBusy(true);
       setStatus('Uploading and indexing documents...');
-      const response = await fetch('/chatbot/upload', {
-        method: 'POST',
-        body: formData,
-        credentials: 'include'
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        setStatus(data.message || data.detail || 'Upload failed.', true);
-        return;
+      try {
+        const response = await fetch('/chatbot/upload', {
+          method: 'POST',
+          body: formData,
+          credentials: 'include'
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          setStatus(responseMessage(data, 'Upload failed.'), true);
+          return;
+        }
+        setStatus(data.message || 'Upload completed.');
+        fileInput.value = '';
+        renderSelectedFiles();
+        await refreshFiles();
+      } finally {
+        setBusy(false);
       }
-      setStatus(data.message || 'Upload completed.');
-      fileInput.value = '';
-      await refreshFiles();
     }
 
     async function clearFiles() {
+      setBusy(true);
       setStatus('Clearing uploaded files...');
-      const response = await fetch('/chatbot/uploaded_files', {
-        method: 'DELETE',
-        credentials: 'include'
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        setStatus(data.message || data.detail || 'Failed to clear files.', true);
-        return;
+      try {
+        const response = await fetch('/chatbot/uploaded_files', {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          setStatus(responseMessage(data, 'Failed to clear files.'), true);
+          return;
+        }
+        setStatus(data.message || 'Uploaded files cleared.');
+        renderEmpty(answerBox, 'Your chatbot response will appear here.');
+        renderSources([]);
+        await refreshFiles();
+      } finally {
+        setBusy(false);
       }
-      setStatus(data.message || 'Uploaded files cleared.');
-      answerBox.textContent = 'Your chatbot response will appear here.';
-      sourcesList.innerHTML = '<li>No sources yet.</li>';
-      await refreshFiles();
     }
 
     async function askQuestion() {
@@ -206,28 +778,38 @@
         setStatus('Enter a question first.', true);
         return;
       }
+
+      setBusy(true);
       setStatus('Generating chatbot response...');
-      const formData = new FormData();
-      formData.append('query', query);
-      const response = await fetch('/chatbot/query', {
-        method: 'POST',
-        body: formData,
-        credentials: 'include'
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        setStatus(data.message || data.detail || 'Chatbot request failed.', true);
-        return;
+      renderEmpty(answerBox, 'Generating response...');
+      resultMeta.textContent = 'Working';
+
+      try {
+        const formData = new FormData();
+        formData.append('query', query);
+        const response = await fetch('/chatbot/query', {
+          method: 'POST',
+          body: formData,
+          credentials: 'include'
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          setStatus(responseMessage(data, 'Chatbot request failed.'), true);
+          resultMeta.textContent = 'Error';
+          return;
+        }
+        renderAnswer(data.response);
+        renderSources(data.sources || []);
+        setStatus('Response ready.');
+      } finally {
+        setBusy(false);
       }
-      answerBox.textContent = data.response || 'No response returned.';
-      const sources = data.sources || [];
-      sourcesList.innerHTML = sources.length ? sources.map((source) => `<li>${escapeHTML(source)}</li>`).join('') : '<li>No sources returned.</li>';
-      setStatus('Response ready.');
     }
 
-    document.getElementById('uploadBtn').addEventListener('click', uploadFiles);
-    document.getElementById('clearBtn').addEventListener('click', clearFiles);
-    document.getElementById('askBtn').addEventListener('click', askQuestion);
+    fileInput.addEventListener('change', renderSelectedFiles);
+    uploadBtn.addEventListener('click', uploadFiles);
+    clearBtn.addEventListener('click', clearFiles);
+    askBtn.addEventListener('click', askQuestion);
 
     ensureSession().then((ok) => {
       if (ok) refreshFiles();
