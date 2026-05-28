@@ -62,6 +62,7 @@ SECTION_BOUNDARY_TERMS = (
     "experience",
     "education",
     "technical skills",
+    "selected projects",
     "projects",
     "publications",
 )
@@ -605,19 +606,34 @@ def focus_excerpt(text: str, keywords: Sequence[str], limit: int) -> str:
     anchor = keyword_positions[0]
     start = best_excerpt_start(text, lowered_text, anchor, limit)
     end = min(len(text), start + limit)
-
-    sentence_end = max(text.rfind(separator, start, end) for separator in (". ", "! ", "? "))
-    if sentence_end > start + limit // 2:
-        end = sentence_end + 1
+    section_end = next_section_start(lowered_text, anchor, end)
+    ended_at_section = section_end is not None and section_end > start
+    if ended_at_section:
+        end = section_end
     else:
-        end = text.rfind(" ", start, end)
-        if end <= start:
-            end = min(len(text), start + limit)
+        sentence_end = max(text.rfind(separator, start, end) for separator in (". ", "! ", "? "))
+        if sentence_end > start + limit // 2:
+            end = sentence_end + 1
+        else:
+            end = text.rfind(" ", start, end)
+            if end <= start:
+                end = min(len(text), start + limit)
 
     focused = clean_excerpt(text[start:end])
-    if end < len(text) and not focused.endswith((".", "!", "?")):
+    if ended_at_section and focused and not focused.endswith((".", "!", "?")):
+        focused = f"{focused}."
+    elif end < len(text) and not focused.endswith((".", "!", "?")):
         focused = f"{focused}..."
     return focused
+
+
+def next_section_start(lowered_text: str, anchor: int, end: int) -> Optional[int]:
+    starts = [
+        lowered_text.find(term, anchor + 1, end)
+        for term in SECTION_BOUNDARY_TERMS
+    ]
+    starts = [start for start in starts if start >= 0]
+    return min(starts) if starts else None
 
 
 def best_excerpt_start(text: str, lowered_text: str, anchor: int, limit: int) -> int:
