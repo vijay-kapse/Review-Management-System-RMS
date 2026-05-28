@@ -33,6 +33,38 @@ BROAD_QUESTION_KEYWORDS = (
     "explain the document",
     "overview",
 )
+FIT_QUESTION_KEYWORDS = (
+    "good fit",
+    "fit for",
+    "suitable",
+    "qualified",
+    "match for",
+    "right fit",
+)
+FIT_SIGNAL_TERMS = (
+    "ai/ml",
+    "artificial intelligence",
+    "machine learning",
+    "deep learning",
+    "pytorch",
+    "tensorflow",
+    "llm",
+    "neural",
+    "model",
+    "models",
+    "computer vision",
+    "segmentation",
+    "classification",
+    "gpu",
+)
+SECTION_BOUNDARY_TERMS = (
+    "professional summary",
+    "experience",
+    "education",
+    "technical skills",
+    "projects",
+    "publications",
+)
 STOP_WORDS = {
     "the", "a", "an", "and", "or", "but", "for", "with", "from", "into",
     "that", "this", "what", "which", "when", "where", "who", "whom", "why",
@@ -41,6 +73,7 @@ STOP_WORDS = {
     "are", "is", "be", "been", "being", "does", "did", "can", "could",
     "should", "would", "will", "shall", "than", "then", "also", "please",
     "tell", "give", "show", "document", "documents", "file", "files",
+    "good", "fit", "work",
 }
 
 
@@ -156,26 +189,74 @@ def split_text(text: str, chunk_size: int = CHUNK_SIZE, overlap: int = CHUNK_OVE
     if len(text) <= chunk_size:
         return [text]
 
-    chunks = []
-    start = 0
-    while start < len(text):
-        end = min(start + chunk_size, len(text))
-        if end < len(text):
-            window = text[start:end]
-            break_candidates = [window.rfind(separator) for separator in ("\n\n", "\n", ". ", " ")]
-            break_at = max(break_candidates)
-            if break_at > chunk_size // 2:
-                end = start + break_at + 1
+    chunks: List[str] = []
+    current_units: List[str] = []
 
-        chunk = text[start:end].strip()
-        if chunk:
-            chunks.append(chunk)
+    for unit in split_text_units(text):
+        if len(unit) > chunk_size:
+            if current_units:
+                chunks.append(" ".join(current_units).strip())
+                current_units = []
+            chunks.extend(split_long_unit(unit, chunk_size))
+            continue
 
-        if end >= len(text):
+        candidate_units = current_units + [unit]
+        candidate = " ".join(candidate_units).strip()
+        if current_units and len(candidate) > chunk_size:
+            chunks.append(" ".join(current_units).strip())
+            current_units = trailing_overlap_units(current_units, overlap)
+            candidate_units = current_units + [unit]
+            if len(" ".join(candidate_units).strip()) > chunk_size:
+                current_units = []
+        current_units.append(unit)
+
+    if current_units:
+        chunks.append(" ".join(current_units).strip())
+
+    return [chunk for chunk in chunks if chunk]
+
+
+def split_text_units(text: str) -> List[str]:
+    units = re.split(r"(?<=[.!?])\s+(?=[A-Z0-9\[])|\s+(?=\u2022\s)|(?<=\u2022)\s+", normalize_text(text))
+    return [unit.strip() for unit in units if unit.strip()]
+
+
+def split_long_unit(unit: str, chunk_size: int) -> List[str]:
+    pieces = []
+    remaining = unit.strip()
+    while len(remaining) > chunk_size:
+        window = remaining[:chunk_size]
+        break_candidates = [window.rfind(separator) for separator in (". ", "; ", ", ", " | ", " ")]
+        break_at = max(break_candidates)
+        if break_at < chunk_size // 3:
+            break_at = window.rfind(" ")
+        if break_at <= 0:
+            break_at = chunk_size
+
+        piece = remaining[:break_at + 1].strip(" ,;|")
+        if piece:
+            pieces.append(piece)
+        remaining = remaining[break_at + 1:].strip(" ,;|")
+
+    if remaining:
+        pieces.append(remaining)
+    return pieces
+
+
+def trailing_overlap_units(units: Sequence[str], overlap: int) -> List[str]:
+    if overlap <= 0:
+        return []
+
+    selected: List[str] = []
+    selected_length = 0
+    for unit in reversed(units):
+        projected_length = selected_length + len(unit) + (1 if selected else 0)
+        if projected_length > overlap:
             break
-        start = max(end - overlap, start + 1)
+        selected.insert(0, unit)
+        selected_length = projected_length
 
-    return chunks
+    return selected if len(selected) < len(units) else []
 
 
 def build_collection(files: Sequence[UploadedDocument]) -> DocumentCollection:
@@ -277,7 +358,7 @@ def extract_keywords(question: str) -> List[str]:
 def build_context(chunks: Sequence[DocumentChunk]) -> str:
     context_parts = []
     for index, chunk in enumerate(chunks, start=1):
-        content = chunk.content.strip()[:1200]
+        content = trim_excerpt(chunk.content, 1200)
         context_parts.append(
             f"[Source {index}: {chunk.source}, Page {chunk.page}, Chunk {chunk.chunk_id}]\n{content}"
         )
@@ -428,33 +509,163 @@ def answer_question(
 
     answer = _ollama_client.generate(prompt)
     if not answer:
-        answer = build_extractive_answer(retrieved_chunks, collection.embedding_error)
+        answer = build_extractive_answer(retrieved_chunks, question, collection.embedding_error)
 
     sources = format_sources(retrieved_chunks)
     return answer, sources
 
 
-def build_extractive_answer(chunks: Sequence[DocumentChunk], embedding_error: str = "") -> str:
-    intro = "I found the following support in the uploaded documents:"
-    if embedding_error:
-        intro = (
-            "The local Llama model or semantic index is not available, "
-            "so I found the following support directly in the uploaded documents:"
-        )
-
-    lines = [intro]
+def build_extractive_answer(
+    chunks: Sequence[DocumentChunk],
+    question: str,
+    embedding_error: str = "",
+) -> str:
+    lines = [build_extractive_intro(chunks, question, embedding_error)]
     for chunk in chunks[:3]:
-        excerpt = trim_excerpt(chunk.content, 420)
+        excerpt = build_relevant_excerpt(chunk.content, question, 560)
         lines.append(f"- {chunk.source}, Page {chunk.page}: {excerpt}")
     return "\n".join(lines)
+
+
+def build_extractive_intro(chunks: Sequence[DocumentChunk], question: str, embedding_error: str = "") -> str:
+    if detect_fit_question(question):
+        if has_fit_evidence(chunks):
+            return (
+                "Based on the uploaded document, this appears to be a good fit. "
+                "The strongest supporting evidence is:"
+            )
+        return (
+            "I found related passages, but the uploaded document does not clearly prove fit. "
+            "The closest evidence is:"
+        )
+
+    if embedding_error:
+        return "I found the clearest matching passages in the uploaded documents:"
+    return "I found the following support in the uploaded documents:"
+
+
+def detect_fit_question(question: str) -> bool:
+    lowered_question = question.lower()
+    return any(keyword in lowered_question for keyword in FIT_QUESTION_KEYWORDS)
+
+
+def has_fit_evidence(chunks: Sequence[DocumentChunk]) -> bool:
+    evidence_text = " ".join(chunk.content for chunk in chunks).lower()
+    return any(term in evidence_text for term in FIT_SIGNAL_TERMS)
+
+
+def build_relevant_excerpt(text: str, question: str, limit: int) -> str:
+    text = normalize_text(text)
+    if len(text) <= limit:
+        return clean_excerpt(text)
+
+    units = split_text_units(text)
+    keywords = extract_keywords(question)
+    if not units or not keywords:
+        return trim_excerpt(text, limit)
+
+    scored_units = [
+        (sum(unit.lower().count(keyword) for keyword in keywords), index, unit)
+        for index, unit in enumerate(units)
+    ]
+    scored_units.sort(key=lambda item: (-item[0], item[1]))
+    if not scored_units or scored_units[0][0] <= 0:
+        return trim_excerpt(text, limit)
+
+    selected_indexes = []
+    selected_length = 0
+    for score, index, unit in scored_units:
+        if score <= 0:
+            break
+        projected_length = selected_length + len(unit) + (1 if selected_indexes else 0)
+        if projected_length > limit and selected_indexes:
+            continue
+        selected_indexes.append(index)
+        selected_length = projected_length
+        if selected_length >= limit * 0.7:
+            break
+
+    selected_text = " ".join(units[index] for index in sorted(selected_indexes))
+    return trim_excerpt(focus_excerpt(selected_text or text, keywords, limit), limit)
+
+
+def focus_excerpt(text: str, keywords: Sequence[str], limit: int) -> str:
+    if len(text) <= limit:
+        return text
+
+    lowered_text = text.lower()
+    keyword_positions = [
+        lowered_text.find(keyword)
+        for keyword in sorted(keywords, key=len, reverse=True)
+        if keyword and lowered_text.find(keyword) >= 0
+    ]
+    if not keyword_positions:
+        return text
+
+    anchor = keyword_positions[0]
+    start = best_excerpt_start(text, lowered_text, anchor, limit)
+    end = min(len(text), start + limit)
+
+    sentence_end = max(text.rfind(separator, start, end) for separator in (". ", "! ", "? "))
+    if sentence_end > start + limit // 2:
+        end = sentence_end + 1
+    else:
+        end = text.rfind(" ", start, end)
+        if end <= start:
+            end = min(len(text), start + limit)
+
+    focused = clean_excerpt(text[start:end])
+    if end < len(text) and not focused.endswith((".", "!", "?")):
+        focused = f"{focused}..."
+    return focused
+
+
+def best_excerpt_start(text: str, lowered_text: str, anchor: int, limit: int) -> int:
+    section_starts = [
+        lowered_text.rfind(term, 0, anchor + 1)
+        for term in SECTION_BOUNDARY_TERMS
+    ]
+    section_start = max(section_starts)
+    if section_start >= 0 and anchor - section_start <= limit // 2:
+        return section_start
+
+    start = max(0, anchor - limit // 4)
+    boundary = max(text.rfind(separator, 0, start) for separator in (". ", "! ", "? ", "\u2022 "))
+    if boundary >= 0:
+        return boundary + 2
+
+    if start > 0:
+        next_space = text.find(" ", start)
+        if next_space >= 0 and next_space < anchor:
+            return next_space + 1
+    return start
 
 
 def trim_excerpt(text: str, limit: int) -> str:
     text = normalize_text(text)
     if len(text) <= limit:
-        return text
-    cut = text[:limit].rsplit(" ", 1)[0]
-    return f"{cut}..."
+        return clean_excerpt(text)
+
+    window = text[:limit].rstrip()
+    sentence_breaks = [window.rfind(separator) for separator in (". ", "! ", "? ")]
+    sentence_break = max(sentence_breaks)
+    if sentence_break >= limit // 2:
+        return clean_excerpt(window[:sentence_break + 1])
+
+    cut = window.rsplit(" ", 1)[0].strip(" ,;|\u2022")
+    if not cut:
+        cut = window
+    suffix = "" if cut.endswith((".", "!", "?")) else "..."
+    return clean_excerpt(f"{cut}{suffix}")
+
+
+def clean_excerpt(text: str) -> str:
+    text = normalize_text(text)
+    text = re.sub(r"\s*\u2022\s*", "; ", text)
+    text = re.sub(r"(;\s*)+", "; ", text)
+    text = re.sub(r"\s+(SELECTED|PROJECTS|EXPERIENCE|EDUCATION|PUBLICATIONS)\.\.\.$", "...", text)
+    text = text.replace(".;", ".")
+    return text.strip(" ,;|")
 
 
 def format_sources(chunks: Iterable[DocumentChunk]) -> List[str]:
