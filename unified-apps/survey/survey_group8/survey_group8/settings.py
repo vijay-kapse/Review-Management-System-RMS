@@ -11,7 +11,11 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
-import os   
+import os
+
+
+def env_list(name):
+    return [item.strip() for item in os.getenv(name, '').split(',') if item.strip()]
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -35,7 +39,9 @@ ALLOWED_HOSTS = [
     'localhost',
     'sysrev.cs.binghamton.edu',
     'sysrev2.cs.binghamton.edu',
-]
+    'rms.cs.binghamton.edu',
+    'www.rms.cs.binghamton.edu',
+] + env_list('RMS_ALLOWED_HOSTS')
 
 STATIC_VERSION = 1 
 # Application definition
@@ -176,5 +182,8 @@ CSRF_TRUSTED_ORIGINS = [
     'http://128.226.116.24:3005',
     'http://sysrev2.cs.binghamton.edu:3005',
     'https://sysrev.cs.binghamton.edu',
-]
+    'http://rms.cs.binghamton.edu',
+    'https://rms.cs.binghamton.edu',
+    'https://www.rms.cs.binghamton.edu',
+] + env_list('RMS_CSRF_TRUSTED_ORIGINS')
 LOGIN_URL = '/survey/accounts/login/'

@@ -11,6 +11,11 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+
+
+def env_list(name):
+    return [item.strip() for item in os.getenv(name, '').split(',') if item.strip()]
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -32,9 +37,9 @@ ALLOWED_HOSTS = [
     '128.226.116.24',
     '127.0.0.1',
     'localhost',
-]
-
-import os 
+    'rms.cs.binghamton.edu',
+    'www.rms.cs.binghamton.edu',
+] + env_list('RMS_ALLOWED_HOSTS')
 
 from dotenv import load_dotenv
 
@@ -64,7 +69,10 @@ CORS_ALLOWED_ORIGINS = [
     'https://sysrev.cs.binghamton.edu',
     'http://128.226.116.24:3005',
     'http://sysrev2.cs.binghamton.edu:3005',
-]
+    'http://rms.cs.binghamton.edu',
+    'https://rms.cs.binghamton.edu',
+    'https://www.rms.cs.binghamton.edu',
+] + env_list('RMS_CORS_ALLOWED_ORIGINS')
 
 AUTHENTICATION_BACKENDS = [
     'app.backends.EmailBackend',
@@ -187,7 +195,10 @@ CSRF_TRUSTED_ORIGINS = [
     'https://sysrev.cs.binghamton.edu',
     'http://128.226.116.24:3005',
     'http://sysrev2.cs.binghamton.edu:3005',
-    ]
+    'http://rms.cs.binghamton.edu',
+    'https://rms.cs.binghamton.edu',
+    'https://www.rms.cs.binghamton.edu',
+] + env_list('RMS_CSRF_TRUSTED_ORIGINS')
 
 
 CORS_ALLOW_METHODS = [

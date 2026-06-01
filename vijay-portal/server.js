@@ -8,8 +8,8 @@ const Database = require('better-sqlite3');
 
 const app = express();
 const HOST = '0.0.0.0';
-const PORT = 3005;
-const EXTERNAL_BASE = process.env.EXTERNAL_BASE || 'http://128.226.116.24:3005';
+const PORT = Number(process.env.PORT || 3005);
+const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || process.env.EXTERNAL_BASE || '';
 const IS_VERCEL = process.env.VERCEL === '1';
 const SESSION_COOKIE = 'vijay_portal_session';
 const SESSION_TTL_MS = 14 * 24 * 60 * 60 * 1000;
@@ -32,7 +32,7 @@ const DATA_DIR = process.env.PORTAL_DATA_DIR || DEFAULT_DATA_DIR;
 const DB_PATH = process.env.PORTAL_DB_PATH || path.join(DATA_DIR, 'portal_auth.db');
 const COOKIE_SECURE = process.env.COOKIE_SECURE
   ? process.env.COOKIE_SECURE === 'true'
-  : (IS_VERCEL || process.env.NODE_ENV === 'production' || EXTERNAL_BASE.startsWith('https://'));
+  : (IS_VERCEL || PUBLIC_BASE_URL.startsWith('https://'));
 const SESSION_COOKIE_OPTIONS = {
   httpOnly: true,
   sameSite: 'lax',
@@ -42,6 +42,7 @@ const SESSION_COOKIE_OPTIONS = {
 };
 
 app.use(cookieParser());
+app.set('trust proxy', true);
 app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 app.use(express.json({ limit: '25mb' }));
 
@@ -1212,7 +1213,8 @@ app.use('/sysreview', requireLogin, (req, res, next) => {
 
 if (!IS_SERVERLESS_FS) {
   app.listen(PORT, HOST, () => {
-    console.log(`Unified portal listening on ${EXTERNAL_BASE}`);
+    const displayUrl = PUBLIC_BASE_URL || `http://${HOST}:${PORT}`;
+    console.log(`RMS portal listening on ${displayUrl}`);
   });
 }
 
