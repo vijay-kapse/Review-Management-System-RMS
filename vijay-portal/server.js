@@ -10,6 +10,7 @@ const app = express();
 const HOST = '0.0.0.0';
 const PORT = Number(process.env.PORT || 3005);
 const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || process.env.EXTERNAL_BASE || '';
+const PUBLIC_PATH_PREFIX = normalizePathPrefix(process.env.PUBLIC_PATH_PREFIX || '');
 const IS_VERCEL = process.env.VERCEL === '1';
 const SESSION_COOKIE = 'vijay_portal_session';
 const SESSION_TTL_MS = 14 * 24 * 60 * 60 * 1000;
@@ -45,6 +46,55 @@ app.use(cookieParser());
 app.set('trust proxy', true);
 app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 app.use(express.json({ limit: '25mb' }));
+
+function normalizePathPrefix(prefix) {
+  const raw = String(prefix || '').trim();
+  if (!raw || raw === '/') return '';
+  const normalized = `/${raw.replace(/^\/+|\/+$/g, '')}`;
+  return normalized === '/' ? '' : normalized;
+}
+
+function stripPublicPrefix(value) {
+  const pathValue = String(value || '/');
+  if (!PUBLIC_PATH_PREFIX) return pathValue || '/';
+  if (pathValue === PUBLIC_PATH_PREFIX) return '/';
+  if (pathValue.startsWith(`${PUBLIC_PATH_PREFIX}/`)) {
+    return pathValue.slice(PUBLIC_PATH_PREFIX.length) || '/';
+  }
+  return pathValue || '/';
+}
+
+function publicPath(value = '/') {
+  const pathValue = String(value || '/');
+  if (!PUBLIC_PATH_PREFIX) return pathValue;
+  if (!pathValue.startsWith('/')) return pathValue;
+  if (pathValue === PUBLIC_PATH_PREFIX || pathValue.startsWith(`${PUBLIC_PATH_PREFIX}/`)) return pathValue;
+  if (pathValue === '/') return `${PUBLIC_PATH_PREFIX}/`;
+  return `${PUBLIC_PATH_PREFIX}${pathValue}`;
+}
+
+function publicRedirectTarget(target) {
+  const value = String(target || '/');
+  if (!PUBLIC_PATH_PREFIX) return value;
+  if (!value.startsWith('/') || value.startsWith('//')) return value;
+  return publicPath(value);
+}
+
+app.use((req, res, next) => {
+  if (PUBLIC_PATH_PREFIX && (req.url === PUBLIC_PATH_PREFIX || req.url.startsWith(`${PUBLIC_PATH_PREFIX}/`))) {
+    req.url = req.url.slice(PUBLIC_PATH_PREFIX.length) || '/';
+  }
+
+  const redirect = res.redirect.bind(res);
+  res.redirect = (statusOrUrl, maybeUrl) => {
+    if (typeof statusOrUrl === 'number') {
+      return redirect(statusOrUrl, publicRedirectTarget(maybeUrl));
+    }
+    return redirect(publicRedirectTarget(statusOrUrl));
+  };
+
+  next();
+});
 
 function ensureDbDirectory(dbPath) {
   if (!dbPath || dbPath === ':memory:') return;
@@ -459,10 +509,10 @@ function renderArgusBootstrap(res, identity) {
 <body>
   <script>
     localStorage.setItem('user', ${JSON.stringify(JSON.stringify(argusUser))});
-    fetch('/api/results/', { credentials: 'include' })
+    fetch(${JSON.stringify(publicPath('/api/results/'))}, { credentials: 'include' })
       .catch(() => null)
       .finally(() => {
-        window.location.replace('/argus/home');
+        window.location.replace(${JSON.stringify(publicPath('/argus/home'))});
       });
   </script>
 </body>
@@ -519,7 +569,7 @@ function componentCards({ authenticated = false } = {}) {
       <p class="app-full-name">${component.fullName}</p>
       <p>${component.description}</p>
       <div class="actions">
-        <a class="btn btn-secondary" href="${authenticated ? component.route : component.directRoute}">
+        <a class="btn btn-secondary" href="${publicPath(authenticated ? component.route : component.directRoute)}">
           ${authenticated ? `Launch ${component.name}` : `Open ${component.name}`}
         </a>
       </div>
@@ -529,8 +579,8 @@ function componentCards({ authenticated = false } = {}) {
 
 function page(title, body, session) {
   const nav = session?.email
-    ? `<div class="nav-links"><span class="session-chip">Signed in as <strong>${escapeHtml(session.email)}</strong></span><a class="nav-link" href="/logout">Logout</a></div>`
-    : `<div class="nav-links"><a class="nav-link" href="/login">Login</a><a class="nav-cta" href="/signup">Sign up</a></div>`;
+    ? `<div class="nav-links"><span class="session-chip">Signed in as <strong>${escapeHtml(session.email)}</strong></span><a class="nav-link" href="${publicPath('/logout')}">Logout</a></div>`
+    : `<div class="nav-links"><a class="nav-link" href="${publicPath('/login')}">Login</a><a class="nav-cta" href="${publicPath('/signup')}">Sign up</a></div>`;
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -824,8 +874,8 @@ app.get(['/', '/index.html'], (req, res) => {
       <h1>A focused workspace for systematic review work.</h1>
       <p>RMS brings TRACE, ARGUS, QUEST, and SPARK into one calm, secure entry point for literature discovery, assisted reading, scholarly Q&A, and academic survey workflows.</p>
       <div class="actions">
-        <a class="btn btn-primary" href="${session?.email ? '/apps' : '/login'}">${session?.email ? 'Open RMS workspace' : 'Sign in to RMS'}</a>
-        ${session?.email ? '<a class="btn btn-secondary" href="/logout">Logout</a>' : ''}
+        <a class="btn btn-primary" href="${publicPath(session?.email ? '/apps' : '/login')}">${session?.email ? 'Open RMS workspace' : 'Sign in to RMS'}</a>
+        ${session?.email ? `<a class="btn btn-secondary" href="${publicPath('/logout')}">Logout</a>` : ''}
       </div>
     </section>
     <div class="metrics">
@@ -841,7 +891,7 @@ app.get(['/', '/index.html'], (req, res) => {
 
 app.get(['/login', '/unified-login.html'], (req, res) => {
   const session = parseSession(req);
-  const next = req.query.next || '/apps';
+  const next = publicPath(stripPublicPrefix(req.query.next || '/apps'));
   const mode = req.query.mode === 'signup' ? 'signup' : 'login';
   if (session?.email) {
     return res.redirect(next);
@@ -869,7 +919,7 @@ app.get(['/login', '/unified-login.html'], (req, res) => {
           const formData = new URLSearchParams();
           formData.set('credential', response.credential);
           formData.set('next', ${JSON.stringify(next)});
-          const loginResponse = await fetch('/auth/google', {
+          const loginResponse = await fetch(${JSON.stringify(publicPath('/auth/google'))}, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: formData.toString()
@@ -879,7 +929,7 @@ app.get(['/login', '/unified-login.html'], (req, res) => {
             return;
           }
           const result = await loginResponse.json().catch(() => ({ error: 'Google sign-in failed.' }));
-          window.location.href = '/login?error=' + encodeURIComponent(result.error || 'Google sign-in failed.') + '&next=' + encodeURIComponent(${JSON.stringify(next)});
+          window.location.href = ${JSON.stringify(publicPath('/login'))} + '?error=' + encodeURIComponent(result.error || 'Google sign-in failed.') + '&next=' + encodeURIComponent(${JSON.stringify(next)});
         }
       </script>`
     : `
@@ -894,7 +944,7 @@ app.get(['/login', '/unified-login.html'], (req, res) => {
       <p>Use one secure account for TRACE, ARGUS, QUEST, and SPARK. Passwords are hashed on the server, and RMS stores opaque session records instead of placing identity data in browser cookies.</p>
     </section>
     <div class="grid grid-auth">
-      <form class="card" method="post" action="/login">
+      <form class="card" method="post" action="${publicPath('/login')}">
         <h2>Login</h2>
         <p>Continue into the Review Management System without separate app-level login screens.</p>
         ${googleSection}
@@ -905,10 +955,10 @@ app.get(['/login', '/unified-login.html'], (req, res) => {
         <input id="login-password" name="password" type="password" placeholder="Your password" autocomplete="current-password" required />
         <div class="actions">
           <button class="btn btn-primary" type="submit">Login</button>
-          <a class="btn btn-secondary" href="/">Back to home</a>
+          <a class="btn btn-secondary" href="${publicPath('/')}">Back to home</a>
         </div>
       </form>
-      <form class="card" method="post" action="/signup">
+      <form class="card" method="post" action="${publicPath('/signup')}">
         <h2>Sign Up</h2>
         <p>Create a secure RMS account stored on this server.</p>
         <input type="hidden" name="next" value="${escapeHtml(next)}" />
@@ -1070,7 +1120,7 @@ const surveyProxy = createProxyMiddleware({
     proxyRes(proxyRes) {
       const location = proxyRes.headers.location;
       if (location && location.startsWith('/')) {
-        proxyRes.headers.location = location.startsWith('/survey/') ? location : `/survey${location}`;
+        proxyRes.headers.location = publicRedirectTarget(location.startsWith('/survey/') ? location : `/survey${location}`);
       }
     },
   },
@@ -1161,7 +1211,7 @@ app.use('/argus', createProxyMiddleware({
   pathRewrite: (path) => path.replace(/^\/argus/, '') || '/',
   onProxyRes(proxyRes) {
     const location = proxyRes.headers.location;
-    if (location && location.startsWith('/')) proxyRes.headers.location = `/argus${location}`;
+    if (location && location.startsWith('/')) proxyRes.headers.location = publicRedirectTarget(`/argus${location}`);
   }
 }));
 
@@ -1179,7 +1229,7 @@ app.use('/chatbot', requireLogin, (req, _res, next) => {
     },
     proxyRes(proxyRes) {
       const location = proxyRes.headers.location;
-      if (location && location.startsWith('/')) proxyRes.headers.location = location;
+      if (location && location.startsWith('/')) proxyRes.headers.location = publicRedirectTarget(location);
     },
   },
 }));
@@ -1206,7 +1256,9 @@ app.use('/sysreview', requireLogin, (req, res, next) => {
     },
     proxyRes(proxyRes) {
       const location = proxyRes.headers.location;
-      if (location && location.startsWith('/') && !location.startsWith('/sysreview')) proxyRes.headers.location = `/sysreview${location}`;
+      if (location && location.startsWith('/')) {
+        proxyRes.headers.location = publicRedirectTarget(location.startsWith('/sysreview') ? location : `/sysreview${location}`);
+      }
     },
   },
 }));

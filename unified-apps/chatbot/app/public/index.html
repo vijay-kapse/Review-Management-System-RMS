@@ -497,7 +497,7 @@
       </div>
       <div class="header-actions">
         <div id="statusBox" class="status">Checking shared chatbot session...</div>
-        <a class="portal-link" href="/">Back to Portal</a>
+        <a id="portalLink" class="portal-link" href="/">Back to Portal</a>
       </div>
     </header>
 
@@ -571,6 +571,14 @@
     const uploadBtn = document.getElementById('uploadBtn');
     const clearBtn = document.getElementById('clearBtn');
     const askBtn = document.getElementById('askBtn');
+    const portalLink = document.getElementById('portalLink');
+    const publicPrefix = window.location.pathname.startsWith('/rms/') || window.location.pathname === '/rms' ? '/rms' : '';
+
+    function appPath(path) {
+      return `${publicPrefix}${path}`;
+    }
+
+    portalLink.href = appPath('/');
 
     function setStatus(message, isError = false) {
       statusBox.textContent = message;
@@ -702,11 +710,11 @@
     }
 
     async function ensureSession() {
-      const response = await fetch('/chatbot/admin/check', { credentials: 'include' });
+      const response = await fetch(appPath('/chatbot/admin/check'), { credentials: 'include' });
       const data = await response.json();
       if (!data.logged_in) {
         setStatus('Shared chatbot session is missing. Returning to login...', true);
-        setTimeout(() => { window.location.href = '/unified-login/chatbot'; }, 800);
+        setTimeout(() => { window.location.href = appPath('/unified-login/chatbot'); }, 800);
         return false;
       }
       setStatus(`Signed in as ${data.username}.`);
@@ -714,7 +722,7 @@
     }
 
     async function refreshFiles() {
-      const response = await fetch('/chatbot/uploaded_files', { credentials: 'include' });
+      const response = await fetch(appPath('/chatbot/uploaded_files'), { credentials: 'include' });
       const data = await response.json();
       renderFiles(data.files || []);
     }
@@ -731,7 +739,7 @@
       setBusy(true);
       setStatus('Uploading and indexing documents...');
       try {
-        const response = await fetch('/chatbot/upload', {
+        const response = await fetch(appPath('/chatbot/upload'), {
           method: 'POST',
           body: formData,
           credentials: 'include'
@@ -754,7 +762,7 @@
       setBusy(true);
       setStatus('Clearing uploaded files...');
       try {
-        const response = await fetch('/chatbot/uploaded_files', {
+        const response = await fetch(appPath('/chatbot/uploaded_files'), {
           method: 'DELETE',
           credentials: 'include'
         });
@@ -787,7 +795,7 @@
       try {
         const formData = new FormData();
         formData.append('query', query);
-        const response = await fetch('/chatbot/query', {
+        const response = await fetch(appPath('/chatbot/query'), {
           method: 'POST',
           body: formData,
           credentials: 'include'
