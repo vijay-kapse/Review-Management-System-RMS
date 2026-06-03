@@ -80,6 +80,130 @@ function publicRedirectTarget(target) {
   return publicPath(value);
 }
 
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function shouldRewriteTextResponse(proxyRes) {
+  const contentType = String(proxyRes.headers?.['content-type'] || '').toLowerCase();
+  return [
+    'text/html',
+    'text/css',
+    'application/javascript',
+    'text/javascript',
+    'application/json',
+  ].some((type) => contentType.includes(type));
+}
+
+function rewriteMountPathForPublicPrefix(responseBuffer, proxyRes, mountPath, extraMountPaths = []) {
+  const contentType = String(proxyRes.headers?.['content-type'] || '').toLowerCase();
+  if (!PUBLIC_PATH_PREFIX || !shouldRewriteTextResponse(proxyRes)) {
+    return responseBuffer;
+  }
+
+  const publicMountPath = publicPath(mountPath);
+  if (publicMountPath === mountPath) return responseBuffer;
+
+  const originalBody = responseBuffer.toString('utf8');
+  let rewrittenBody = originalBody;
+
+  [mountPath, ...extraMountPaths].forEach((pathToRewrite) => {
+    const publicPathToRewrite = publicPath(pathToRewrite);
+    if (publicPathToRewrite === pathToRewrite) return;
+    const sourcePattern = new RegExp(`(?<!${escapeRegExp(PUBLIC_PATH_PREFIX)})${escapeRegExp(pathToRewrite)}(?=\\b|/)`, 'g');
+    rewrittenBody = rewrittenBody.replace(sourcePattern, publicPathToRewrite);
+  });
+
+  if (mountPath === '/sysreview' && contentType.includes('javascript')) {
+    const mountName = mountPath.replace(/^\/+/, '');
+    const publicMountName = publicMountPath.replace(/^\/+/, '');
+    const sysreviewBasePattern = new RegExp(`(const\\s+[A-Za-z_$][\\w$]*=)"${escapeRegExp(mountName)}"(,[A-Za-z_$][\\w$]*="argus")`);
+    rewrittenBody = rewrittenBody.replace(sysreviewBasePattern, `$1"${publicMountName}"$2`);
+  }
+
+  return rewrittenBody === originalBody ? responseBuffer : rewrittenBody;
+}
+
+function publicProxyRedirectTarget(location, mountPath, upstreamTarget) {
+  const value = String(location || '');
+  if (!value) return value;
+
+  let pathValue = value;
+  if (!value.startsWith('/')) {
+    try {
+      const redirectUrl = new URL(value);
+      const upstreamUrl = new URL(upstreamTarget);
+      const localhostNames = new Set(['127.0.0.1', 'localhost']);
+      const sameOrigin = redirectUrl.origin === upstreamUrl.origin
+        || (
+          localhostNames.has(redirectUrl.hostname)
+          && localhostNames.has(upstreamUrl.hostname)
+          && redirectUrl.protocol === upstreamUrl.protocol
+          && redirectUrl.port === upstreamUrl.port
+        );
+      if (!sameOrigin) return value;
+      pathValue = `${redirectUrl.pathname}${redirectUrl.search}${redirectUrl.hash}`;
+    } catch (_error) {
+      return value;
+    }
+  }
+
+  const duplicateMountPrefix = `${mountPath}${mountPath}/`;
+  while (pathValue.startsWith(duplicateMountPrefix)) {
+    pathValue = `${mountPath}/${pathValue.slice(duplicateMountPrefix.length)}`;
+  }
+
+  if (!pathValue.startsWith(mountPath)) {
+    pathValue = `${mountPath}${pathValue.startsWith('/') ? '' : '/'}${pathValue}`;
+  }
+
+  return publicRedirectTarget(pathValue);
+}
+
+function applyProxyRedirect(proxyRes, mountPath, upstreamTarget) {
+  const location = proxyRes.headers?.location;
+  if (location) {
+    proxyRes.headers.location = publicProxyRedirectTarget(location, mountPath, upstreamTarget);
+  }
+}
+
+function createPublicPrefixResponseHandler(mountPath, upstreamTarget, extraMountPaths = []) {
+  if (!PUBLIC_PATH_PREFIX) {
+    return (proxyRes) => applyProxyRedirect(proxyRes, mountPath, upstreamTarget);
+  }
+
+  return (proxyRes, _req, res) => {
+    applyProxyRedirect(proxyRes, mountPath, upstreamTarget);
+
+    const chunks = [];
+    proxyRes.on('data', (chunk) => chunks.push(chunk));
+    proxyRes.on('end', () => {
+      const responseBuffer = Buffer.concat(chunks);
+      const rewrittenResponse = rewriteMountPathForPublicPrefix(responseBuffer, proxyRes, mountPath, extraMountPaths);
+      const outputBuffer = Buffer.isBuffer(rewrittenResponse)
+        ? rewrittenResponse
+        : Buffer.from(String(rewrittenResponse), 'utf8');
+
+      Object.entries(proxyRes.headers || {}).forEach(([name, value]) => {
+        const lowerName = name.toLowerCase();
+        if (lowerName === 'content-length' || lowerName === 'transfer-encoding') return;
+        res.setHeader(name, value);
+      });
+
+      res.statusCode = proxyRes.statusCode || 200;
+      res.setHeader('content-length', String(outputBuffer.length));
+      res.end(outputBuffer);
+    });
+    proxyRes.on('error', () => {
+      if (!res.headersSent) {
+        res.status(502).send('Proxy response error');
+      } else {
+        res.end();
+      }
+    });
+  };
+}
+
 app.use((req, res, next) => {
   if (PUBLIC_PATH_PREFIX && (req.url === PUBLIC_PATH_PREFIX || req.url.startsWith(`${PUBLIC_PATH_PREFIX}/`))) {
     req.url = req.url.slice(PUBLIC_PATH_PREFIX.length) || '/';
@@ -1095,6 +1219,7 @@ const surveyProxy = createProxyMiddleware({
   target: SURVEY_TARGET,
   changeOrigin: true,
   xfwd: true,
+  selfHandleResponse: Boolean(PUBLIC_PATH_PREFIX),
   pathRewrite: (path) => {
     if (path.startsWith('/survey/static/')) {
       return path;
@@ -1103,6 +1228,7 @@ const surveyProxy = createProxyMiddleware({
   },
   on: {
     proxyReq(proxyReq, req) {
+      proxyReq.setHeader('accept-encoding', 'identity');
       proxyReq.setHeader('X-Forwarded-Prefix', '/survey');
       proxyReq.setHeader('X-Forwarded-Host', req.headers.host || '');
       proxyReq.setHeader('Host', req.headers.host || '');
@@ -1117,12 +1243,7 @@ const surveyProxy = createProxyMiddleware({
       }
       fixRequestBody(proxyReq, req);
     },
-    proxyRes(proxyRes) {
-      const location = proxyRes.headers.location;
-      if (location && location.startsWith('/')) {
-        proxyRes.headers.location = publicRedirectTarget(location.startsWith('/survey/') ? location : `/survey${location}`);
-      }
-    },
+    proxyRes: createPublicPrefixResponseHandler('/survey', SURVEY_TARGET),
   },
 });
 
@@ -1208,11 +1329,15 @@ app.use('/api', (req, _res, next) => {
 app.use('/argus', createProxyMiddleware({
   target: ARGUS_TARGET,
   changeOrigin: true,
+  selfHandleResponse: Boolean(PUBLIC_PATH_PREFIX),
   pathRewrite: (path) => path.replace(/^\/argus/, '') || '/',
-  onProxyRes(proxyRes) {
-    const location = proxyRes.headers.location;
-    if (location && location.startsWith('/')) proxyRes.headers.location = publicRedirectTarget(`/argus${location}`);
-  }
+  on: {
+    proxyReq(proxyReq, req) {
+      proxyReq.setHeader('accept-encoding', 'identity');
+      fixRequestBody(proxyReq, req);
+    },
+    proxyRes: createPublicPrefixResponseHandler('/argus', ARGUS_TARGET, ['/api']),
+  },
 }));
 
 app.use('/chatbot', requireLogin, (req, _res, next) => {
@@ -1249,17 +1374,14 @@ app.use('/sysreview', requireLogin, (req, res, next) => {
   target: SYSREVIEW_TARGET,
   changeOrigin: true,
   xfwd: true,
+  selfHandleResponse: Boolean(PUBLIC_PATH_PREFIX),
   pathRewrite: (path) => path.startsWith('/sysreview') ? path : `/sysreview${path}`,
   on: {
     proxyReq(proxyReq, req) {
+      proxyReq.setHeader('accept-encoding', 'identity');
       fixRequestBody(proxyReq, req);
     },
-    proxyRes(proxyRes) {
-      const location = proxyRes.headers.location;
-      if (location && location.startsWith('/')) {
-        proxyRes.headers.location = publicRedirectTarget(location.startsWith('/sysreview') ? location : `/sysreview${location}`);
-      }
-    },
+    proxyRes: createPublicPrefixResponseHandler('/sysreview', SYSREVIEW_TARGET),
   },
 }));
 
