@@ -16,6 +16,7 @@ import {
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DocumentCard from './DocumentCard';
+import { apiUrl } from '../../services/api';
 
 const SEARCH_HISTORY_KEY = 'document_search_history';
 
@@ -51,7 +52,7 @@ const SearchResults = () => {
 
   const fetchSessionDocuments = async () => {
     try {
-      const response = await fetch('/api/results/', {
+      const response = await fetch(apiUrl('/results/'), {
         credentials: 'include'
       });
       if (response.ok) {
@@ -114,7 +115,7 @@ const SearchResults = () => {
       }
 
       // Send the CSRF token in headers
-      const response = await fetch('/api/search/', {
+      const response = await fetch(apiUrl('/search/'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -12,6 +12,7 @@ import {
   Center  // Add this
 } from '@chakra-ui/react';
 import { ArrowBackIcon } from '@chakra-ui/icons';
+import { apiUrl } from '../../services/api';
 
 
 const ColorPanel = ({ matches, onToggle }) => {
@@ -159,7 +160,7 @@ const DocumentViewer = () => {
     if (activeTerms.length === 0) {
       // Show original document if no terms are active
       try {
-        const response = await fetch(`/api/view/${id}/`, {
+        const response = await fetch(apiUrl(`/view/${id}/`), {
           method: 'GET',
           credentials: 'include',
         });
@@ -202,7 +203,7 @@ const DocumentViewer = () => {
       );
 
       const response = await fetch(
-        `/api/view/${id}/?query=${queryStr}&colors=${colorStr}`,
+        apiUrl(`/view/${id}/?query=${queryStr}&colors=${colorStr}`),
         {
           method: 'GET',
           credentials: 'include',
@@ -236,17 +237,17 @@ const DocumentViewer = () => {
   useEffect(() => {
     const loadDocument = async () => {
       try {
-        let apiUrl = `/api/view/${id}/`;
+        let requestUrl = apiUrl(`/view/${id}/`);
         if (query) {
           const colors = [
             'yellow', 'blue', 'green', 'pink', 'purple', 
             'orange', 'cyan', 'teal', 'red', 'lime'
           ];
           const terms = query.split('|||');
-          apiUrl += `?query=${encodeURIComponent(query)}&colors=${encodeURIComponent(terms.map((_, i) => colors[i % colors.length]).join(','))}`;
+          requestUrl += `?query=${encodeURIComponent(query)}&colors=${encodeURIComponent(terms.map((_, i) => colors[i % colors.length]).join(','))}`;
         }
         
-        const response = await fetch(apiUrl, {
+        const response = await fetch(requestUrl, {
           method: 'GET',
           credentials: 'include',
           headers: {

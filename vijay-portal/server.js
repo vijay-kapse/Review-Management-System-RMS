@@ -1296,12 +1296,20 @@ app.get(['/sysreview/ui/auth', '/sysreview/ui/auth/'], (req, res) => {
   res.redirect(`/login?next=${encodeURIComponent('/launch/sysreview')}`);
 });
 
-app.get(['/argus', '/argus/', '/argus/login', '/argus/login/', '/argus/register', '/argus/register/'], (req, res, next) => {
+app.get(['/argus', '/argus/', '/argus/login', '/argus/login/', '/argus/register', '/argus/register/'], (req, res) => {
   const identity = getPortalIdentity(req);
   if (!identity) {
     return res.redirect(`/login?next=${encodeURIComponent('/launch/argus')}`);
   }
   renderArgusBootstrap(res, identity);
+});
+
+app.get('/argus/*', (req, res, next) => {
+  if (!getPortalIdentity(req)) {
+    return res.redirect(`/login?next=${encodeURIComponent('/launch/argus')}`);
+  }
+
+  next();
 });
 
 app.use('/api', (req, _res, next) => {

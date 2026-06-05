@@ -11,6 +11,7 @@ import {
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DocumentCard from '../SearchResults/DocumentCard';
+import { apiUrl } from '../../services/api';
 
 import { useCallback } from 'react';
 
@@ -25,7 +26,7 @@ const HomePage = () => {
 
   const fetchSessionDocuments = useCallback(async () => {
     try {
-      const response = await fetch('/api/results/', {
+      const response = await fetch(apiUrl('/results/'), {
         credentials: 'include', // Add this line
       });
       if (!response.ok) throw new Error('Failed to fetch documents');
@@ -60,7 +61,7 @@ const HomePage = () => {
 
     setClearingUploads(true);
     try {
-      const response = await fetch('/api/clear_uploads/', {
+      const response = await fetch(apiUrl('/clear_uploads/'), {
         method: 'POST',
         credentials: 'include',
         headers: {

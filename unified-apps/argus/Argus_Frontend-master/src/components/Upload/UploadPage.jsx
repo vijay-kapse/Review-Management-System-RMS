@@ -12,6 +12,7 @@ import {
 } from '@chakra-ui/react';
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiUrl } from '../../services/api';
 
 const UploadPage = () => {
   const [files, setFiles] = useState([]);
@@ -35,7 +36,7 @@ const UploadPage = () => {
   const handleClearUploadedFiles = async () => {
     setClearingUploads(true);
     try {
-      const response = await fetch('/api/clear_uploads/', {
+      const response = await fetch(apiUrl('/clear_uploads/'), {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -82,7 +83,7 @@ const UploadPage = () => {
       const formData = new FormData();
       files.forEach(file => formData.append('files', file));
       const token = localStorage.getItem('token'); //
-      const response = await fetch('/api/upload/', {
+      const response = await fetch(apiUrl('/upload/'), {
         method: 'POST',
         credentials: 'include',  
         headers: {

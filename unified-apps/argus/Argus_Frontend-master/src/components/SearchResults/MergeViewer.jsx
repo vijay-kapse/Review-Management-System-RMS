@@ -16,6 +16,7 @@ import {
   Flex
 } from '@chakra-ui/react';
 import { ArrowBackIcon, ChevronUpIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
+import { apiUrl } from '../../services/api';
 
 const ColorPanel = ({ matches, onToggle, documents, onDocumentToggle, activeDocuments }) => {
   const colors = [
@@ -200,7 +201,7 @@ const MergeViewer = () => {
 
   const loadDocument = async (docId, activeTerms = searchTerms) => {
     try {
-      let apiUrl = `/api/view/${docId}/`;
+      let requestUrl = apiUrl(`/view/${docId}/`);
       if (activeTerms.length > 0) {
         const colors = [
           'yellow', 'blue', 'green', 'pink', 'purple',
@@ -210,10 +211,10 @@ const MergeViewer = () => {
         const colorStr = encodeURIComponent(
           activeTerms.map((_, i) => colors[i % colors.length]).join(',')
         );
-        apiUrl += `?query=${queryStr}&colors=${colorStr}`;
+        requestUrl += `?query=${queryStr}&colors=${colorStr}`;
       }
 
-      const response = await fetch(apiUrl, {
+      const response = await fetch(requestUrl, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -330,7 +331,7 @@ const MergeViewer = () => {
       >
         <IconButton
           icon={<ArrowBackIcon />}
-          onClick={() => navigate('/api/results')}
+          onClick={() => navigate('/results')}
           colorScheme="green"
           aria-label="Go back"
           size="lg"

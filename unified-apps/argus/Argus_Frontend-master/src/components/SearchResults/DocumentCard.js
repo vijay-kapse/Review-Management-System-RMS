@@ -8,6 +8,7 @@ import {
   HStack,
   useToast,
 } from '@chakra-ui/react';
+import { apiUrl } from '../../services/api';
 
 const DocumentCard = ({ document }) => {
   const navigate = useNavigate();
@@ -42,7 +43,7 @@ const DocumentCard = ({ document }) => {
 
   const handleDownload = async () => {
     try {
-      const response = await fetch(`/api/fetch_document/${document.id}`, {
+      const response = await fetch(apiUrl(`/fetch_document/${document.id}`), {
         credentials: 'include',
       });
 
