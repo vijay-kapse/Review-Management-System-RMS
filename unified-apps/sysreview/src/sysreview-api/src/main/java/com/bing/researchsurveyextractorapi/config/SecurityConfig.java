@@ -112,8 +112,10 @@ public class SecurityConfig {
             @Override
             public void addCorsMappings(@NonNull CorsRegistry corsRegistry) {
                 corsRegistry.addMapping("/**")
-                        .allowedMethods("*")
-                        .allowedOrigins(allowedCorsOrigins);
+                        .allowedOrigins(allowedCorsOrigins)
+                        .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD")
+                        .allowedHeaders("*")
+                        .allowCredentials(true);
             }
         };
     }
