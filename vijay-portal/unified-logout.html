@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Unified Platform Logout</title>
+  <link rel="icon" type="image/svg+xml" href="assets/logos/rms-favicon.svg" />
+  <link rel="shortcut icon" href="assets/logos/rms-favicon.svg" />
   <style>
     body {
       margin: 0;
@@ -24,6 +26,12 @@
       box-shadow: 0 16px 36px rgba(15, 23, 42, 0.1);
       border: 1px solid #e2e8f0;
     }
+    .logo {
+      display: block;
+      width: min(320px, 100%);
+      height: auto;
+      margin: 0 0 22px;
+    }
     h1 { margin-top: 0; }
     p { color: #475569; line-height: 1.6; }
     .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
@@ -39,6 +47,7 @@
 </head>
 <body>
   <div class="card">
+    <img class="logo" src="assets/logos/rms-logo.svg" alt="RMS - Review Management System" />
     <h1>Platform Logout</h1>
     <p>
       This copied integration workspace uses a staged shared-login model. Local application sessions may still need app-specific logout handling,

@@ -220,6 +220,11 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use('/assets', express.static(path.join(__dirname, 'assets'), { maxAge: '1d' }));
+app.get('/favicon.ico', (_req, res) => {
+  res.redirect(publicPath('/assets/logos/rms-favicon.svg'));
+});
+
 function ensureDbDirectory(dbPath) {
   if (!dbPath || dbPath === ':memory:') return;
   const dir = path.dirname(dbPath);
@@ -648,6 +653,7 @@ const RMS_COMPONENTS = [
     key: 'trace',
     name: 'TRACE',
     fullName: 'Tracking, Reporting, Analyzing, Curating, and Extracting data',
+    logo: '/assets/logos/trace-logo.svg',
     route: '/launch/sysreview',
     directRoute: '/sysreview/',
     accent: 'blue',
@@ -657,6 +663,7 @@ const RMS_COMPONENTS = [
     key: 'argus',
     name: 'ARGUS',
     fullName: 'Technology-assisted reading assistant',
+    logo: '/assets/logos/argus-logo.svg',
     route: '/launch/argus',
     directRoute: '/argus/',
     accent: 'graphite',
@@ -666,6 +673,7 @@ const RMS_COMPONENTS = [
     key: 'quest',
     name: 'QUEST',
     fullName: 'Querying Uploads for Educational and Scholarly Texts',
+    logo: '/assets/logos/quest-logo.svg',
     route: '/launch/chatbot',
     directRoute: '/chatbot/',
     accent: 'teal',
@@ -675,6 +683,7 @@ const RMS_COMPONENTS = [
     key: 'spark',
     name: 'SPARK',
     fullName: 'Survey Platform for Academic Research and Knowledge',
+    logo: '/assets/logos/spark-logo.svg',
     route: '/launch/survey',
     directRoute: '/survey/',
     accent: 'amber',
@@ -682,14 +691,17 @@ const RMS_COMPONENTS = [
   },
 ];
 
+const RMS_LOGO_PATH = '/assets/logos/rms-logo.svg';
+const RMS_FAVICON_PATH = '/assets/logos/rms-favicon.svg';
+
 function componentCards({ authenticated = false } = {}) {
   return RMS_COMPONENTS.map((component, index) => `
     <article class="app-card accent-${component.accent}" style="--stagger:${index}">
       <div class="app-card__top">
-        <span class="app-mark">${component.name.slice(0, 1)}</span>
+        <img class="app-logo" src="${publicPath(component.logo)}" alt="${component.name} logo" />
         <span class="app-status">${authenticated ? 'Ready' : 'Unified route'}</span>
       </div>
-      <h2>${component.name}</h2>
+      <h2 class="sr-only">${component.name}</h2>
       <p class="app-full-name">${component.fullName}</p>
       <p>${component.description}</p>
       <div class="actions">
@@ -711,6 +723,8 @@ function page(title, body, session) {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>${escapeHtml(title)}</title>
+  <link rel="icon" type="image/svg+xml" href="${publicPath(RMS_FAVICON_PATH)}" />
+  <link rel="shortcut icon" href="${publicPath('/favicon.ico')}" />
   <style>
     :root {
       --ink: #111114;
@@ -772,15 +786,19 @@ function page(title, body, session) {
       padding-left: 8px;
       font-size: 15px;
       font-weight: 760;
-      letter-spacing: -0.02em;
+      letter-spacing: 0;
     }
-    .brand::before {
-      content: "";
-      width: 28px;
-      height: 28px;
-      border-radius: 10px;
-      background: linear-gradient(145deg, #111114, #555b66);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.34), 0 10px 22px rgba(0,0,0,0.18);
+    .brand-logo {
+      display: block;
+      width: clamp(156px, 22vw, 220px);
+      height: auto;
+    }
+    .hero-logo {
+      position: relative;
+      display: block;
+      width: min(360px, 82vw);
+      height: auto;
+      margin: 0 0 20px;
     }
     .nav-links { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .nav-link, .nav-cta {
@@ -839,9 +857,9 @@ function page(title, body, session) {
       position: relative;
       max-width: 880px;
       margin: 0 0 18px;
-      font-size: clamp(42px, 7.4vw, 86px);
-      line-height: 0.95;
-      letter-spacing: -0.065em;
+      font-size: 74px;
+      line-height: 1;
+      letter-spacing: 0;
       font-weight: 800;
     }
     .hero p {
@@ -850,7 +868,7 @@ function page(title, body, session) {
       margin: 0;
       color: var(--muted);
       line-height: 1.58;
-      font-size: clamp(17px, 2vw, 22px);
+      font-size: 21px;
     }
     .hero .actions { position: relative; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; }
@@ -879,17 +897,19 @@ function page(title, body, session) {
       background: var(--accent-glow, rgba(0,113,227,0.12));
       filter: blur(2px);
     }
-    .app-card__top { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 30px; }
-    .app-mark {
-      display: grid;
-      place-items: center;
-      width: 48px;
-      height: 48px;
-      border-radius: 17px;
-      color: white;
-      background: var(--accent, #0071e3);
-      font-weight: 800;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.32), 0 16px 28px rgba(0,0,0,0.16);
+    .app-card__top {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .app-logo {
+      display: block;
+      width: min(220px, 100%);
+      height: 70px;
+      object-fit: contain;
+      object-position: left center;
     }
     .app-status {
       padding: 7px 10px;
@@ -899,9 +919,20 @@ function page(title, body, session) {
       font-size: 12px;
       font-weight: 760;
     }
-    .app-card h2, .card h2 { margin: 0 0 8px; font-size: 29px; letter-spacing: -0.045em; }
+    .app-card h2, .card h2 { margin: 0 0 8px; font-size: 29px; letter-spacing: 0; }
     .app-card p, .card p { color: var(--muted); line-height: 1.5; margin: 0; }
     .app-full-name { min-height: 48px; color: #24272d !important; font-weight: 700; margin-bottom: 12px !important; }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
     .accent-blue { --accent: #0071e3; --accent-glow: rgba(0,113,227,0.16); }
     .accent-graphite { --accent: #2f3540; --accent-glow: rgba(47,53,64,0.14); }
     .accent-teal { --accent: #00a6a6; --accent-glow: rgba(0,166,166,0.15); }
@@ -919,7 +950,7 @@ function page(title, body, session) {
       text-decoration: none;
       font-size: 15px;
       font-weight: 760;
-      letter-spacing: -0.01em;
+      letter-spacing: 0;
       transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
     }
     .btn:hover { transform: translateY(-1px); }
@@ -963,7 +994,7 @@ function page(title, body, session) {
       border: 1px solid rgba(255,255,255,0.82);
       box-shadow: 0 12px 30px rgba(20,24,34,0.06);
     }
-    .metric strong { display: block; font-size: 28px; letter-spacing: -0.05em; }
+    .metric strong { display: block; font-size: 28px; letter-spacing: 0; }
     .metric span { color: var(--muted); font-size: 13px; font-weight: 700; }
     @keyframes rise {
       from { opacity: 0; transform: translateY(16px) scale(0.99); }
@@ -973,6 +1004,8 @@ function page(title, body, session) {
       .shell { padding: 16px 14px 34px; }
       .topbar { position: static; border-radius: 22px; align-items: flex-start; flex-direction: column; }
       .hero { padding: 32px 24px; border-radius: 28px; }
+      .hero h1 { font-size: 42px; }
+      .hero p { font-size: 17px; }
       .app-card, .card, form.card { min-height: auto; padding: 22px; }
       .session-chip { padding-left: 0; }
     }
@@ -981,7 +1014,7 @@ function page(title, body, session) {
 <body>
   <div class="shell">
     <div class="topbar">
-      <div class="brand">Review Management System</div>
+      <div class="brand"><img class="brand-logo" src="${publicPath(RMS_LOGO_PATH)}" alt="RMS - Review Management System" /></div>
       ${nav}
     </div>
     ${body}
@@ -994,6 +1027,7 @@ app.get(['/', '/index.html'], (req, res) => {
   const session = parseSession(req);
   const body = `
     <section class="hero">
+      <img class="hero-logo" src="${publicPath(RMS_LOGO_PATH)}" alt="RMS - Review Management System" />
       <div class="eyebrow">RMS - Review Management System</div>
       <h1>A focused workspace for systematic review work.</h1>
       <p>RMS brings TRACE, ARGUS, QUEST, and SPARK into one calm, secure entry point for literature discovery, assisted reading, scholarly Q&A, and academic survey workflows.</p>
@@ -1063,6 +1097,7 @@ app.get(['/login', '/unified-login.html'], (req, res) => {
       </div>`;
   const body = `
     <section class="hero">
+      <img class="hero-logo" src="${publicPath(RMS_LOGO_PATH)}" alt="RMS - Review Management System" />
       <div class="eyebrow">Secure RMS access</div>
       <h1>${mode === 'signup' ? 'Create your RMS account.' : 'One login for the full RMS workspace.'}</h1>
       <p>Use one secure account for TRACE, ARGUS, QUEST, and SPARK. Passwords are hashed on the server, and RMS stores opaque session records instead of placing identity data in browser cookies.</p>
@@ -1199,6 +1234,7 @@ app.get(['/logout', '/unified-logout.html'], (req, res) => {
 app.get('/apps', requireLogin, (req, res) => {
   const body = `
     <section class="hero">
+      <img class="hero-logo" src="${publicPath(RMS_LOGO_PATH)}" alt="RMS - Review Management System" />
       <div class="eyebrow">RMS workspace</div>
       <h1>Choose your research workflow.</h1>
       <p>You are signed in once through RMS. Launch TRACE, ARGUS, QUEST, or SPARK below without separate app-level login screens.</p>
@@ -1304,7 +1340,7 @@ app.get(['/argus', '/argus/', '/argus/login', '/argus/login/', '/argus/register'
   renderArgusBootstrap(res, identity);
 });
 
-app.get('/argus/*', (req, res, next) => {
+app.get(/^\/argus\/.+/, (req, res, next) => {
   if (!getPortalIdentity(req)) {
     return res.redirect(`/login?next=${encodeURIComponent('/launch/argus')}`);
   }

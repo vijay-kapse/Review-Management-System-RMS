@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 140" role="img" aria-labelledby="title desc">
+  <title id="title">QUEST logo</title>
+  <desc id="desc">QUEST logo with a scholarly chat bubble and open text pages.</desc>
+  <defs>
+    <linearGradient id="quest-bg" x1="22" y1="18" x2="124" y2="122" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0891b2"/>
+      <stop offset="1" stop-color="#14b8a6"/>
+    </linearGradient>
+    <filter id="quest-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#0e7490" flood-opacity=".18"/>
+    </filter>
+  </defs>
+  <g filter="url(#quest-shadow)">
+    <rect x="22" y="18" width="104" height="104" rx="26" fill="url(#quest-bg)"/>
+    <path d="M48 45h54c7 0 12 5 12 12v26c0 7-5 12-12 12H76l-22 18v-18h-6c-7 0-12-5-12-12V57c0-7 5-12 12-12z" fill="#ecfeff"/>
+    <path d="M53 62c10-6 21-6 32 0 6-4 13-5 21-3v24c-8-2-15-1-21 3-11-6-22-6-32 0z" fill="none" stroke="#0e7490" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M85 62v24" stroke="#0e7490" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="61" cy="73" r="3.5" fill="#14b8a6"/>
+    <circle cx="74" cy="73" r="3.5" fill="#14b8a6"/>
+    <circle cx="98" cy="73" r="3.5" fill="#14b8a6"/>
+  </g>
+  <text x="154" y="72" font-family="Inter, Avenir Next, Arial, sans-serif" font-size="42" font-weight="800" fill="#0f172a">QUEST</text>
+  <text x="156" y="101" font-family="Inter, Avenir Next, Arial, sans-serif" font-size="15" font-weight="700" fill="#475569">Scholarly question answering</text>
+</svg>

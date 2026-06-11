@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RMS Login</title>
+  <link rel="icon" type="image/svg+xml" href="assets/logos/rms-favicon.svg" />
+  <link rel="shortcut icon" href="assets/logos/rms-favicon.svg" />
   <style>
     * { box-sizing: border-box; }
     body {
@@ -24,6 +26,12 @@
       padding: 28px;
       box-shadow: 0 14px 36px rgba(15, 23, 42, 0.08);
     }
+    .logo {
+      display: block;
+      width: min(320px, 100%);
+      height: auto;
+      margin: 0 0 22px;
+    }
     h1 { margin: 0 0 10px; }
     p { margin: 0 0 18px; color: #475569; line-height: 1.6; }
     .actions { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -43,6 +51,7 @@
 </head>
 <body>
   <main class="card">
+    <img class="logo" src="assets/logos/rms-logo.svg" alt="RMS - Review Management System" />
     <h1>RMS Login</h1>
     <p>This fallback page keeps everything on the current RMS domain. Use the server-rendered login route for account sign-in.</p>
     <div class="actions">

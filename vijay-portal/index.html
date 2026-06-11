@@ -4,14 +4,22 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RMS - Review Management System</title>
+  <link rel="icon" type="image/svg+xml" href="assets/logos/rms-favicon.svg" />
+  <link rel="shortcut icon" href="assets/logos/rms-favicon.svg" />
   <style>
     * { box-sizing: border-box; }
+    :root {
+      --ink: #0f172a;
+      --muted: #475569;
+      --line: #dbe3ef;
+      --panel: #ffffff;
+    }
     body {
       margin: 0;
       min-height: 100vh;
       font-family: Inter, Arial, sans-serif;
       background: #f8fafc;
-      color: #0f172a;
+      color: var(--ink);
     }
     main {
       width: min(1040px, calc(100vw - 32px));
@@ -19,12 +27,18 @@
       padding: 48px 0;
     }
     .hero, .card {
-      border: 1px solid #dbe3ef;
+      border: 1px solid var(--line);
       border-radius: 12px;
-      background: white;
+      background: var(--panel);
       box-shadow: 0 14px 36px rgba(15, 23, 42, 0.08);
     }
     .hero { padding: 34px; margin-bottom: 18px; }
+    .hero-logo {
+      display: block;
+      width: min(360px, 100%);
+      height: auto;
+      margin: 0 0 22px;
+    }
     .eyebrow {
       margin: 0 0 10px;
       color: #0f766e;
@@ -32,8 +46,8 @@
       font-weight: 800;
       text-transform: uppercase;
     }
-    h1 { margin: 0 0 12px; font-size: clamp(38px, 7vw, 72px); line-height: 0.98; }
-    p { margin: 0; color: #475569; line-height: 1.65; font-size: 17px; }
+    h1 { margin: 0 0 12px; font-size: 56px; line-height: 1; }
+    p { margin: 0; color: var(--muted); line-height: 1.65; font-size: 17px; }
     .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; }
     .btn {
       display: inline-flex;
@@ -49,12 +63,26 @@
     .secondary { border: 1px solid #cbd5e1; color: #0f172a; background: #f8fafc; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
     .card { padding: 20px; }
+    .app-logo {
+      display: block;
+      width: min(190px, 100%);
+      height: 64px;
+      object-fit: contain;
+      object-position: left center;
+      margin-bottom: 16px;
+    }
     .card h2 { margin: 0 0 8px; font-size: 22px; }
+    @media (max-width: 640px) {
+      main { width: min(100% - 24px, 1040px); padding: 24px 0; }
+      .hero { padding: 24px; }
+      h1 { font-size: 40px; }
+    }
   </style>
 </head>
 <body>
   <main>
     <section class="hero">
+      <img class="hero-logo" src="assets/logos/rms-logo.svg" alt="RMS - Review Management System" />
       <p class="eyebrow">RMS - Review Management System</p>
       <h1>One simple RMS workspace.</h1>
       <p>TRACE, ARGUS, QUEST, and SPARK are served through one RMS portal. All links use the current domain, so this page works the same on an IP, a Binghamton hostname, or a future custom RMS domain.</p>
@@ -64,10 +92,10 @@
       </div>
     </section>
     <div class="grid">
-      <article class="card"><h2>TRACE</h2><p><a href="/launch/sysreview">Launch TRACE</a></p></article>
-      <article class="card"><h2>ARGUS</h2><p><a href="/launch/argus">Launch ARGUS</a></p></article>
-      <article class="card"><h2>QUEST</h2><p><a href="/launch/chatbot">Launch QUEST</a></p></article>
-      <article class="card"><h2>SPARK</h2><p><a href="/launch/survey">Launch SPARK</a></p></article>
+      <article class="card"><img class="app-logo" src="assets/logos/trace-logo.svg" alt="TRACE logo" /><p><a href="/launch/sysreview">Launch TRACE</a></p></article>
+      <article class="card"><img class="app-logo" src="assets/logos/argus-logo.svg" alt="ARGUS logo" /><p><a href="/launch/argus">Launch ARGUS</a></p></article>
+      <article class="card"><img class="app-logo" src="assets/logos/quest-logo.svg" alt="QUEST logo" /><p><a href="/launch/chatbot">Launch QUEST</a></p></article>
+      <article class="card"><img class="app-logo" src="assets/logos/spark-logo.svg" alt="SPARK logo" /><p><a href="/launch/survey">Launch SPARK</a></p></article>
     </div>
   </main>
 </body>
