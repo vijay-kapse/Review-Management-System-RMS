@@ -11,7 +11,6 @@ import { AppContextProvider } from "./contexts/AppContext";
 import MyNavbar from "./components/Navbar";
 import Protected from "./pages/Protected";
 import { APP_NAME, APP_URI_PREFIX } from "./constants";
-import HomePage from "./pages/HomePage";
 import { validateToken } from "./api/utility";
 import Footer from "./components/Footer";
 
@@ -24,7 +23,10 @@ const App = () => {
           <MyNavbar />
           <div className="pages-wrapper">
             <Routes>
-              <Route path={`/${APP_NAME}`} element={<HomePage />} />
+              <Route
+                path={`/${APP_NAME}`}
+                element={<Navigate to={`${APP_URI_PREFIX}/dashboard`} replace />}
+              />
               <Route path={`${APP_URI_PREFIX}/`}>
                 <Route path={""} element={<Navigate to="dashboard" />} />
                 <Route

@@ -23,6 +23,11 @@ export const ANALYSER_API_URI = isProd
 //assets
 export const APP_URI_PREFIX = `/${APP_NAME}/ui`;
 export const IMAGE_URI_PREFIX = `/${APP_NAME}/images`;
+export const UNIFIED_LOGIN_URI = "/rms/login";
+export const UNIFIED_LOGOUT_URI = `${UNIFIED_LOGIN_URI.replace(
+  "/login",
+  "/logout"
+)}?next=${encodeURIComponent(UNIFIED_LOGIN_URI)}`;
 
 export const datasourcesLogos: { [key in datasourceKeyType]: string } = {
   IEEE: `${IMAGE_URI_PREFIX}/ieee_logo.svg`,
