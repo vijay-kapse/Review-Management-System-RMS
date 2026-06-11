@@ -51,6 +51,12 @@
   font-size: 2rem;
   font-weight: 500 !important;
 }
+.app-logo {
+  display: block;
+  height: 58px;
+  max-width: 220px;
+  object-fit: contain;
+}
 .c-navbar .navbar-brand:hover,
 .c-navbar .navbar-brand:active,
 .c-navbar .navbar-brand:focus {

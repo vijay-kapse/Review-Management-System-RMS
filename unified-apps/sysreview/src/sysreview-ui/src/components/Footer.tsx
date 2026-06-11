@@ -15,7 +15,11 @@ const Footer = () => {
         <Row className="d-flex align-items-center">
           <Col sm={2}>
             <Link to={`/${APP_NAME}`} className="logo">
-              <img src={`${IMAGE_URI_PREFIX}/smallLogo.png`} alt="logo" />
+              <img
+                className="app-logo"
+                src={`${IMAGE_URI_PREFIX}/trace-logo.svg`}
+                alt="TRACE logo"
+              />
             </Link>
           </Col>
           <Col>

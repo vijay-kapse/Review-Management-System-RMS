@@ -24,7 +24,11 @@ const MyNavbar = () => {
     <Navbar className="c-navbar" fixed="top">
       <Container>
         <Link to={`${APP_URI_PREFIX}/dashboard`} className="navbar navbar-brand ">
-          <img src={`${IMAGE_URI_PREFIX}/logo.png`} alt="logo" />
+          <img
+            className="app-logo"
+            src={`${IMAGE_URI_PREFIX}/trace-logo.svg`}
+            alt="TRACE logo"
+          />
         </Link>
         <Navbar.Collapse className="justify-content-end">
           <Nav className="gap-2 align-items-center">
