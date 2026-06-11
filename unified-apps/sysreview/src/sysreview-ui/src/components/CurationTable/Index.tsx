@@ -25,6 +25,12 @@ const CurationTable: FC<CurationTableProps> = ({
   updateCategory,
   setSelectedRows,
 }) => {
+  const categoriesByPriority = Object.values(categories).filter(
+    (category, index, allCategories) =>
+      allCategories.findIndex((cat) => cat.priority === category.priority) ===
+      index
+  );
+
   const columns: TableColumn<resultType>[] = [
     {
       id: "title",
@@ -65,7 +71,7 @@ const CurationTable: FC<CurationTableProps> = ({
           </Dropdown.Toggle>
 
           <Dropdown.Menu variant="dark">
-            {Object.values(categories).map((cat, i) => (
+            {categoriesByPriority.map((cat, i) => (
               <Dropdown.Item key={i} eventKey={cat.priority}>
                 <CategorySymbol color={cat.color} /> {cat.label}
               </Dropdown.Item>

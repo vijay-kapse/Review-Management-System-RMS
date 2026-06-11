@@ -56,7 +56,11 @@ public class QueryServiceImpl implements QueryService {
         Map<Integer, Category> categories = query.getProject()
                 .getCategories()
                 .stream()
-                .collect(Collectors.toMap(Category::getPriority, Function.identity()));
+                .collect(Collectors.toMap(
+                        Category::getPriority,
+                        Function.identity(),
+                        (existing, duplicate) -> existing
+                ));
         resultUpdateRequests.forEach(request -> searchResultRepository.updateCategoryByResultId(categories.get(request.getPriority()), request.getResultId()));
     }
 }
