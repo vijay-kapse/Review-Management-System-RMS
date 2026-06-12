@@ -6,7 +6,7 @@ import {
   Spinner,
 } from "react-bootstrap";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   categorySetType,
   datasourceKeyType,
@@ -24,7 +24,8 @@ import Query from "../components/Query";
 import CurationTable from "../components/CurationTable/Index";
 import { GrAction } from "react-icons/gr";
 import { ANALYSER_API_URI } from "../constants";
-import { FiDatabase, FiFileText } from "react-icons/fi";
+import { FiDatabase, FiFileText, FiPieChart } from "react-icons/fi";
+import { CategorySymbol } from "../components/CategoryLabel";
 
 const Curate = () => {
   const [query, setQuery] = useState<queryType>(dummyQuery);
@@ -136,6 +137,50 @@ const Curate = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const visibleResults = selectedSources.length ? filteredResults : results;
+
+  const categoryCounts = useMemo(() => {
+    const categoryList = Object.values(categories)
+      .filter(
+        (category, index, list) =>
+          list.findIndex(({ priority }) => priority === category.priority) ===
+          index,
+      )
+      .sort((a, b) => a.priority - b.priority);
+    const countsByPriority = new Map<number, number>();
+
+    visibleResults.forEach((result) => {
+      countsByPriority.set(
+        result.priority,
+        (countsByPriority.get(result.priority) || 0) + 1,
+      );
+    });
+
+    const knownPriorities = new Set(
+      categoryList.map((category) => category.priority),
+    );
+    const fallbackCounts = Array.from(countsByPriority.entries())
+      .filter(([priority]) => !knownPriorities.has(priority))
+      .map(([priority, count]) => ({
+        key: `priority-${priority}`,
+        label: `Priority ${priority}`,
+        color: "#6c757d",
+        priority,
+        count,
+      }));
+
+    return [
+      ...categoryList.map((category) => ({
+        key: category.categoryId.toString(),
+        label: category.label,
+        color: category.color,
+        priority: category.priority,
+        count: countsByPriority.get(category.priority) || 0,
+      })),
+      ...fallbackCounts,
+    ].sort((a, b) => a.priority - b.priority);
+  }, [categories, visibleResults]);
+
   return (
     <div className="curate-page">
       <Container fluid className="curation-shell">
@@ -198,9 +243,28 @@ const Curate = () => {
               </div>
             </section>
 
+            <section className="curation-category-panel">
+              <div className="curation-category-heading">
+                <h2>
+                  <FiPieChart />
+                  Category counts
+                </h2>
+                <span>{visibleResults.length} visible</span>
+              </div>
+              <div className="curation-category-counts">
+                {categoryCounts.map((category) => (
+                  <div className="curation-category-count" key={category.key}>
+                    <CategorySymbol color={category.color} size="0.58rem" />
+                    <span>{category.label}</span>
+                    <strong>{category.count}</strong>
+                  </div>
+                ))}
+              </div>
+            </section>
+
             <section className="curation-table-panel">
               <CurationTable
-                results={filteredResults.length ? filteredResults : results}
+                results={visibleResults}
                 categories={categories}
                 analyse={handleExtract}
                 updateCategory={updateDocCategory}

@@ -46,9 +46,9 @@ const Category = ({
   };
 
   return (
-    <div className="d-flex align-items-center">
-      <Form className="d-flex align-items-center gap-2">
-        <Form.Group>
+    <div className="workspace-category-row">
+      <Form className="workspace-category-form">
+        <Form.Group className="workspace-category-color">
           <Form.Control
             type="color"
             name="color"
@@ -56,7 +56,7 @@ const Category = ({
             onChange={updateCategory}
           />
         </Form.Group>
-        <Form.Group>
+        <Form.Group className="workspace-category-name">
           <Form.Control
             type="text"
             placeholder="Category Label"
@@ -66,20 +66,30 @@ const Category = ({
           />
         </Form.Group>
         <Button
-          className="c-btn-text-o"
+          type="button"
+          className="workspace-icon-danger"
+          aria-label="Remove category"
           onClick={() => removeCategory(cId, cat)}
         >
-          <MdCancel color="red" />
+          <MdCancel />
         </Button>
       </Form>
       {(!cat.categoryId || editing) && (
-        <Button className="c-btn-text-o" onClick={handleSave}>
-          SAVE
+        <Button
+          type="button"
+          className="workspace-secondary-action workspace-category-action"
+          onClick={handleSave}
+        >
+          Save
         </Button>
       )}
       {!!(cat.categoryId && editing) && (
-        <Button className="c-btn-text-o" onClick={handleReset}>
-          RESET
+        <Button
+          type="button"
+          className="workspace-muted-action workspace-category-action"
+          onClick={handleReset}
+        >
+          Reset
         </Button>
       )}
     </div>

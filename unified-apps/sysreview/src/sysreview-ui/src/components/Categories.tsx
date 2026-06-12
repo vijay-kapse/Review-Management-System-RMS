@@ -79,16 +79,16 @@ const Categories: FC<CategoriesProps> = ({ projectId }) => {
 
   // useEffect(() => setCategories(cCategories), [cCategories]);
   return (
-    <>
+    <div className="workspace-categories">
       <h4>Categories</h4>
       {Object.values(categories).length === 0 && (
-        <Alert className="c-alert-info">
+        <Alert className="workspace-empty-state">
           <BsFillInfoCircleFill />
           First category will be assigned to all results as default
         </Alert>
       )}
 
-      <Container>
+      <Container className="workspace-category-list">
         {Object.entries(categories).map(([cId, cat], i) => (
           <Category
             cat={cat}
@@ -101,11 +101,15 @@ const Categories: FC<CategoriesProps> = ({ projectId }) => {
         ))}
       </Container>
       <div className="d-flex mt-4">
-        <Button className="c-btn-primary m-auto" onClick={addCategory}>
-          ADD
+        <Button
+          type="button"
+          className="workspace-secondary-action m-auto"
+          onClick={addCategory}
+        >
+          Add category
         </Button>
       </div>
-    </>
+    </div>
   );
 };
 

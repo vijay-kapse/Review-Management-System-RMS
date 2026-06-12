@@ -1,14 +1,15 @@
-import { Alert, Button, Col, Modal, Row, Table } from "react-bootstrap";
+import { Alert, Button, Modal, Table } from "react-bootstrap";
 import { datasourceKeyType, querySetType } from "../api/types";
 import { getQueriesStats, getResultStats } from "../api/utility";
 import useTableController from "../hooks/useTableController";
 import TableButtons from "./TableButtons";
 import { IoCloseSharp } from "react-icons/io5";
 import { BsFillInfoCircleFill } from "react-icons/bs";
-import { useContext } from "react";
+import { useContext, useMemo } from "react";
 import AppContext from "../contexts/AppContext";
 import { useRef } from "react";
 import { useDownloadExcel } from "react-export-table-to-excel";
+import { FiBarChart2, FiDatabase, FiDownload, FiList } from "react-icons/fi";
 
 interface projectReportModalProps {
   show: boolean;
@@ -31,48 +32,88 @@ const ProjectReportModal = ({
 
   const { datasources } = useContext(AppContext);
   const datasourceKeys = Object.keys(datasources);
+  const queryList = useMemo(
+    () => Object.values(queries).filter((query) => query.queryId),
+    [queries],
+  );
 
   const queryStats = getQueriesStats(
     queries,
-    datasourceKeys as datasourceKeyType[]
+    datasourceKeys as datasourceKeyType[],
   ); //TODO: User the same function for results stats too since same funbction is nested
   const { l, u, prev, next, updateInterval } = useTableController(
-    Object.values(queries).length,
-    10
+    queryList.length,
+    10,
   );
 
   const handleDownload = () => {
     // onDownload only makes excel of visible table hence need to update the interval temporarily
-    updateInterval(Object.keys(queries).length);
+    updateInterval(queryList.length);
     setTimeout(() => {
       onDownload();
       updateInterval(10);
     }, 1000);
   };
+
   return (
     <Modal
       show={show}
       onHide={handleClose}
       size="xl"
       centered
-      className="c-modal"
+      className="c-modal workspace-modal workspace-report-modal"
     >
-      <Modal.Header>
-        <Modal.Title>Report</Modal.Title>
-        <IoCloseSharp className="cp" size={"1.5rem"} onClick={handleClose} />
+      <Modal.Header className="workspace-modal__header">
+        <div>
+          <div className="workspace-modal__eyebrow">
+            <FiBarChart2 />
+            Project report
+          </div>
+          <Modal.Title>Datasource summary</Modal.Title>
+          <p>Saved query coverage across active datasources.</p>
+        </div>
+        <button
+          type="button"
+          className="workspace-modal__close"
+          aria-label="Close report"
+          onClick={handleClose}
+        >
+          <IoCloseSharp />
+        </button>
       </Modal.Header>
-      <Modal.Body>
-        {!!Object.keys(queries).length && (
-          <TableButtons
-            prev={prev}
-            next={next}
-            range={`${l} - ${u}`}
-            total={Object.values(queries).length}
-          />
+      <Modal.Body className="workspace-modal__body">
+        <div className="workspace-report-summary">
+          <div>
+            <FiList />
+            <span>{queryList.length}</span>
+            <small>Queries</small>
+          </div>
+          <div>
+            <FiBarChart2 />
+            <span>{queryStats.total}</span>
+            <small>Total results</small>
+          </div>
+          <div>
+            <FiDatabase />
+            <span>{datasourceKeys.length}</span>
+            <small>Datasources</small>
+          </div>
+        </div>
+
+        {!!queryList.length && (
+          <div className="workspace-table-controls">
+            <TableButtons
+              prev={prev}
+              next={next}
+              range={`${l + 1} - ${Math.min(u, queryList.length)}`}
+              total={queryList.length}
+            />
+          </div>
         )}
-        <Row>
-          <Col>
-            {!!Object.keys(queries).length ? (
+
+        {!!queryList.length ? (
+          <>
+            <div className="workspace-report-table-shell">
               <Table striped className="c-table" ref={tableRef}>
                 <thead>
                   <tr>
@@ -86,24 +127,20 @@ const ProjectReportModal = ({
                   </tr>
                 </thead>
                 <tbody>
-                  {Object.values(queries)
-                    .slice(l, u)
-                    .map((query, i) => {
-                      const { sources } = getResultStats(query.searchResults);
-                      if (query.queryId)
-                        return (
-                          <tr key={i}>
-                            <td>{i + 1}</td>
-                            <td>{query.query_name}</td>
-                            {datasourceKeys.map((source) => (
-                              <td className="source-col" key={source}>
-                                {sources[source] || 0}
-                              </td>
-                            ))}
-                          </tr>
-                        );
-                      return <tr key={i}></tr>;
-                    })}
+                  {queryList.slice(l, u).map((query, i) => {
+                    const { sources } = getResultStats(query.searchResults);
+                    return (
+                      <tr key={query.queryId}>
+                        <td>{l + i + 1}</td>
+                        <td>{query.query_name}</td>
+                        {datasourceKeys.map((source) => (
+                          <td className="source-col" key={source}>
+                            {sources[source] || 0}
+                          </td>
+                        ))}
+                      </tr>
+                    );
+                  })}
                   <tr className="total">
                     <td colSpan={2}>TOTAL</td>
                     {datasourceKeys.map((source) => (
@@ -118,30 +155,27 @@ const ProjectReportModal = ({
                   </tr>
                 </tbody>
               </Table>
-            ) : (
-              <Alert className="c-alert-info mt-2">
-                <BsFillInfoCircleFill />
-                No Queries yet to show report
-              </Alert>
-            )}
-          </Col>
-        </Row>
-        {!!Object.keys(queries).length && (
-          <Row>
-            <Col className="text-center">
+            </div>
+            <div className="workspace-report-actions">
               <Button
-                className="c-btn-primary-o mx-auto"
+                className="workspace-secondary-action"
                 onClick={handleDownload}
               >
+                <FiDownload />
                 Download
               </Button>
-            </Col>
-          </Row>
+            </div>
+          </>
+        ) : (
+          <Alert className="workspace-empty-state">
+            <BsFillInfoCircleFill />
+            No queries yet to show report
+          </Alert>
         )}
       </Modal.Body>
 
-      <Modal.Footer>
-        <Button className="c-btn-negative" onClick={handleClose}>
+      <Modal.Footer className="workspace-modal__footer">
+        <Button className="workspace-secondary-action" onClick={handleClose}>
           Close
         </Button>
       </Modal.Footer>

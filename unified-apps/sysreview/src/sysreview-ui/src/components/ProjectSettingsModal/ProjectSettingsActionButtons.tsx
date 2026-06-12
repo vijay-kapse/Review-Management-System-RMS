@@ -12,8 +12,12 @@ const ProjectSettingsActionButtons: FC<ProjectSettingsActionButtonsProps> = ({
 }) => {
   return (
     <div className="d-flex gap-2">
-      <Button className="c-btn-primary" onClick={update}>
-        Update
+      <Button
+        type="button"
+        className="workspace-primary-action"
+        onClick={update}
+      >
+        Save changes
       </Button>
     </div>
   );

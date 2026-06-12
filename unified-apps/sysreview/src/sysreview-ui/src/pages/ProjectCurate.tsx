@@ -30,7 +30,8 @@ import { IoMdCheckmarkCircleOutline } from "react-icons/io";
 import { GrAction } from "react-icons/gr";
 import BulkActionModal from "../components/BulkActionModal";
 import CurationTable from "../components/CurationTable/Index";
-import { FiDatabase, FiGitMerge } from "react-icons/fi";
+import { FiDatabase, FiGitMerge, FiPieChart } from "react-icons/fi";
+import { CategorySymbol } from "../components/CategoryLabel";
 
 const emptyProject: projectType = {
   projectId: 0,
@@ -214,6 +215,63 @@ const ProjectCurate = () => {
 
   const visibleResults = selectedSources.length ? filteredResults : results;
 
+  const categoryCounts = useMemo(() => {
+    const categoryList = Object.values(categories)
+      .filter(
+        (category, index, list) =>
+          list.findIndex(({ priority }) => priority === category.priority) ===
+          index,
+      )
+      .sort((a, b) => a.priority - b.priority);
+    const countsByKey = new Map<
+      string,
+      {
+        key: string;
+        label: string;
+        color: string;
+        priority: number;
+        count: number;
+      }
+    >();
+
+    categoryList.forEach((category) => {
+      countsByKey.set(`priority-${category.priority}`, {
+        key: `priority-${category.priority}`,
+        label: category.label,
+        color: category.color,
+        priority: category.priority,
+        count: 0,
+      });
+    });
+
+    visibleResults.forEach((result) => {
+      const isMixed = result.categoryLabel === "Mixed";
+      const key = isMixed ? "mixed" : `priority-${result.priority}`;
+      const existing = countsByKey.get(key) || {
+        key,
+        label: isMixed
+          ? "Mixed"
+          : result.categoryLabel ||
+            getCategoryLabel(categories, result.priority),
+        color: isMixed
+          ? result.categoryColor || "#6c757d"
+          : result.categoryColor ||
+            getCategoryColor(categories, result.priority),
+        priority: isMixed ? Number.MAX_SAFE_INTEGER : result.priority,
+        count: 0,
+      };
+
+      countsByKey.set(key, {
+        ...existing,
+        count: existing.count + 1,
+      });
+    });
+
+    return Array.from(countsByKey.values()).sort(
+      (a, b) => a.priority - b.priority,
+    );
+  }, [categories, visibleResults]);
+
   return (
     <div className="curate-page">
       <Container fluid className="curation-shell">
@@ -259,6 +317,25 @@ const ProjectCurate = () => {
                 <FiDatabase />
                 <span>{queries.length}</span>
                 <small>Queries</small>
+              </div>
+            </section>
+
+            <section className="curation-category-panel">
+              <div className="curation-category-heading">
+                <h2>
+                  <FiPieChart />
+                  Category counts
+                </h2>
+                <span>{visibleResults.length} visible</span>
+              </div>
+              <div className="curation-category-counts">
+                {categoryCounts.map((category) => (
+                  <div className="curation-category-count" key={category.key}>
+                    <CategorySymbol color={category.color} size="0.58rem" />
+                    <span>{category.label}</span>
+                    <strong>{category.count}</strong>
+                  </div>
+                ))}
               </div>
             </section>
 

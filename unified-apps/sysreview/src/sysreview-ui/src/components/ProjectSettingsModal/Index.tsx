@@ -1,4 +1,4 @@
-import { Button, Col, Form, Modal, Row } from "react-bootstrap";
+import { Button, Form, Modal } from "react-bootstrap";
 import { deleteProject, updateProject } from "../../api/project";
 import { useNavigate } from "react-router-dom";
 import { APP_URI_PREFIX } from "../../constants";
@@ -7,6 +7,7 @@ import ProjectSettingsActionButtons from "./ProjectSettingsActionButtons";
 import Categories from "../Categories";
 import { IoCloseSharp } from "react-icons/io5";
 import ProjectContext from "../../contexts/ProjectContext";
+import { FiEdit3, FiSettings, FiTrash2 } from "react-icons/fi";
 
 interface projectSettingsModalProps {
   show: boolean;
@@ -54,17 +55,34 @@ const Index = ({ show, handleClose }: projectSettingsModalProps) => {
       onHide={handleClose}
       size="xl"
       centered
-      className="c-modal"
+      className="c-modal workspace-modal workspace-settings-modal"
     >
-      <Modal.Header>
-        <Modal.Title>Settings</Modal.Title>
-        <IoCloseSharp className="cp" size={"1.5rem"} onClick={handleClose} />
+      <Modal.Header className="workspace-modal__header">
+        <div>
+          <div className="workspace-modal__eyebrow">
+            <FiSettings />
+            Settings
+          </div>
+          <Modal.Title>Project settings</Modal.Title>
+          <p>{project.projectName || "Project"}</p>
+        </div>
+        <button
+          type="button"
+          className="workspace-modal__close"
+          aria-label="Close settings"
+          onClick={handleClose}
+        >
+          <IoCloseSharp />
+        </button>
       </Modal.Header>
-      <Modal.Body>
-        <Row>
-          <Col>
-            <h4>Project Details</h4>
-            <Form>
+      <Modal.Body className="workspace-modal__body">
+        <div className="workspace-settings-grid">
+          <section className="workspace-settings-panel">
+            <div className="workspace-section-heading">
+              <FiEdit3 />
+              <h4>Project details</h4>
+            </div>
+            <Form className="workspace-settings-form">
               <Form.Group className="mb-3">
                 <Form.Label>Name</Form.Label>
                 <Form.Control
@@ -84,7 +102,6 @@ const Index = ({ show, handleClose }: projectSettingsModalProps) => {
                   name="description"
                   value={project.description}
                   onChange={handleProjectChange}
-                  style={{ height: "100px" }}
                 />
               </Form.Group>
               {projectEdited && (
@@ -94,15 +111,20 @@ const Index = ({ show, handleClose }: projectSettingsModalProps) => {
                 />
               )}
             </Form>
-          </Col>
-          <Col>
+          </section>
+          <section className="workspace-settings-panel workspace-settings-panel--categories">
             <Categories projectId={project.projectId} />
-          </Col>
-        </Row>
+          </section>
+        </div>
       </Modal.Body>
-      <Modal.Footer className="justify-content-center">
-        <Button className="c-btn-negative" onClick={removeProject}>
-          DELETE PROJECT
+      <Modal.Footer className="workspace-modal__footer workspace-danger-zone">
+        <div>
+          <strong>Danger zone</strong>
+          <span>Deleting a project removes its saved review workspace.</span>
+        </div>
+        <Button className="workspace-danger-action" onClick={removeProject}>
+          <FiTrash2 />
+          Delete project
         </Button>
       </Modal.Footer>
     </Modal>
