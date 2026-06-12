@@ -1,31 +1,51 @@
-import { Col, Container, Row, Spinner } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import { Button, Container, Spinner } from "react-bootstrap";
 import ProjectCard from "../components/ProjectCard";
 import { getProjects, postProject } from "../api/project";
-import { useEffect, useState } from "react";
+import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import { categorySetType, projectType, querySetType } from "../api/types";
 import NewPorjectModal from "../components/NewPorjectModal";
-import { APP_URI_PREFIX } from "../constants";
-import PageHeader from "../components/PageHeader";
 import { getCategories } from "../api/category";
 import { arrayToObject } from "../api/utility";
 import { getQueries } from "../api/query";
-import PageSubHeader from "../components/PageSubHeader";
-import { IoMdAddCircleOutline } from "react-icons/io";
-import SubHeaderTitle from "../components/Queries/SubHeaderTitle";
-import { GoProject } from "react-icons/go";
-import { MdOutlineManageSearch } from "react-icons/md";
+import {
+  FiCheckCircle,
+  FiCompass,
+  FiFolder,
+  FiGrid,
+  FiLayers,
+  FiPlus,
+  FiSearch,
+} from "react-icons/fi";
+
+type ProjectMetaMap<T> = {
+  [projectId: number]: T;
+};
 
 const Dashbaord = () => {
   const [projects, setProjects] = useState<projectType[]>([]);
-  const [projCategories, setProjCategories] = useState<categorySetType[]>([]);
-  const [projQueries, setProjQueries] = useState<querySetType[]>([]);
+  const [projCategories, setProjCategories] = useState<
+    ProjectMetaMap<categorySetType>
+  >({});
+  const [projQueries, setProjQueries] = useState<ProjectMetaMap<querySetType>>(
+    {},
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
+  const [searchText, setSearchText] = useState("");
 
   const saveProject = (name: string, description: string) => {
     postProject({ name, description })
-      .then((data) => setProjects([...projects, data]))
+      .then((data) => {
+        setProjects((currentProjects) => [...currentProjects, data]);
+        setProjCategories((currentCategories) => ({
+          ...currentCategories,
+          [data.projectId]: {},
+        }));
+        setProjQueries((currentQueries) => ({
+          ...currentQueries,
+          [data.projectId]: {},
+        }));
+      })
       .catch((e) => {
         alert("Something went wrong!");
         console.log(e);
@@ -33,11 +53,11 @@ const Dashbaord = () => {
   };
 
   const fetchProjects = () => {
+    setIsLoading(true);
     getProjects()
       .then((data) => {
         setProjects(data);
-        fetchCategories(data);
-        fetchQueries(data);
+        return Promise.all([fetchCategories(data), fetchQueries(data)]);
       })
       .catch((e) => {
         alert("Failed to fetch projects");
@@ -48,11 +68,17 @@ const Dashbaord = () => {
 
   const fetchCategories = (projects: projectType[]) => {
     const categoryCalls = projects.map((p) => getCategories(p.projectId));
-    Promise.all(categoryCalls)
+    return Promise.all(categoryCalls)
       .then((data) => {
-        // convert categoryType[] to categorySetType
-        const objectData = data.map((projCat) =>
-          arrayToObject(projCat, "categoryId")
+        const objectData = data.reduce<ProjectMetaMap<categorySetType>>(
+          (projectCategories, projCat, index) => ({
+            ...projectCategories,
+            [projects[index].projectId]: arrayToObject(
+              projCat,
+              "categoryId",
+            ) as categorySetType,
+          }),
+          {},
         );
         setProjCategories(objectData);
       })
@@ -64,16 +90,22 @@ const Dashbaord = () => {
 
   const fetchQueries = (projects: projectType[]) => {
     const queriesCalls = projects.map((p) => getQueries(p.projectId));
-    Promise.all(queriesCalls)
+    return Promise.all(queriesCalls)
       .then((data) => {
-        // convert categoryType[] to categorySetType
-        const objectData = data.map((queryCat) =>
-          arrayToObject(queryCat, "queryId")
+        const objectData = data.reduce<ProjectMetaMap<querySetType>>(
+          (projectQueries, queryCat, index) => ({
+            ...projectQueries,
+            [projects[index].projectId]: arrayToObject(
+              queryCat,
+              "queryId",
+            ) as querySetType,
+          }),
+          {},
         );
         setProjQueries(objectData);
       })
       .catch((e) => {
-        alert("Failed to fetch categories");
+        alert("Failed to fetch queries");
         console.log(e);
       });
   };
@@ -83,59 +115,163 @@ const Dashbaord = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const filteredProjects = useMemo(() => {
+    const normalizedSearch = searchText.trim().toLowerCase();
+    if (!normalizedSearch) return projects;
+    return projects.filter(({ projectName, description }) =>
+      `${projectName} ${description}`.toLowerCase().includes(normalizedSearch),
+    );
+  }, [projects, searchText]);
+
+  const totalQueries = useMemo(
+    () =>
+      Object.values(projQueries).reduce(
+        (count, queries) => count + Object.keys(queries).length,
+        0,
+      ),
+    [projQueries],
+  );
+
+  const totalCategories = useMemo(
+    () =>
+      Object.values(projCategories).reduce(
+        (count, categories) => count + Object.keys(categories).length,
+        0,
+      ),
+    [projCategories],
+  );
+
+  const readyProjects = useMemo(
+    () =>
+      projects.filter(
+        (project) =>
+          Object.keys(projCategories[project.projectId] || {}).length > 0,
+      ).length,
+    [projects, projCategories],
+  );
+
+  const dashboardStats = [
+    {
+      label: "Projects",
+      value: projects.length,
+      icon: <FiFolder />,
+    },
+    {
+      label: "Saved queries",
+      value: totalQueries,
+      icon: <FiSearch />,
+    },
+    {
+      label: "Categories",
+      value: totalCategories,
+      icon: <FiLayers />,
+    },
+    {
+      label: "Ready",
+      value: readyProjects,
+      icon: <FiCheckCircle />,
+    },
+  ];
+
+  const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setSearchText(e.target.value);
+  };
+
   return (
     <div className="dashboard-page">
-      <PageHeader title="Dashboard" />
-      <Container className="project-cards-wrapper">
-        <PageSubHeader
-          subTitle={
-            <SubHeaderTitle
-              icon={<GoProject />}
-              count={projects.length}
-              title="Projects"
-            />
-          }
-          sideComponent={
-            <div className="d-flex gap-2 align-items-center">
-              <IoMdAddCircleOutline
-                className="cp"
-                size={"1.5rem"}
-                onClick={() => setShowNewProjectModal(true)}
-              />
+      <Container fluid className="dashboard-shell">
+        <section className="dashboard-hero" aria-labelledby="dashboard-title">
+          <div>
+            <div className="dashboard-eyebrow">
+              <FiCompass />
+              TRACE workspace
             </div>
-          }
-        />
-        {!isLoading ? (
-          <Row xs={1} md={3} className="mt-4">
-            {projects.map((proj, i) => (
-              <Col key={i}>
-                <ProjectCard
-                  key={proj.projectId}
-                  project={proj}
-                  queries={projQueries[i] || {}}
-                  categories={projCategories[i] || []}
-                />
-                <div className="project-card-actions">
-                  <Link
-                    to={`${APP_URI_PREFIX}/project/?id=${proj.projectId}`}
-                    className="btn c-btn-primary"
+            <h1 id="dashboard-title">
+              Research projects, beautifully organized.
+            </h1>
+            <p>Projects, saved queries, curation, and reports at a glance.</p>
+          </div>
+          <div className="dashboard-hero-actions">
+            <Button
+              className="dashboard-primary-action"
+              onClick={() => setShowNewProjectModal(true)}
+            >
+              <FiPlus />
+              New Project
+            </Button>
+            <a className="dashboard-secondary-action" href="/rms/apps">
+              <FiGrid />
+              RMS Apps
+            </a>
+          </div>
+        </section>
+
+        <section className="dashboard-stat-grid" aria-label="Dashboard summary">
+          {dashboardStats.map(({ icon, label, value }) => (
+            <div className="dashboard-stat-tile" key={label}>
+              <span className="dashboard-stat-icon">{icon}</span>
+              <span className="dashboard-stat-value">{value}</span>
+              <span className="dashboard-stat-label">{label}</span>
+            </div>
+          ))}
+        </section>
+
+        <section className="dashboard-projects-section">
+          <div className="dashboard-section-bar">
+            <div>
+              <p className="dashboard-kicker">Library</p>
+              <h2>Projects</h2>
+            </div>
+            <label className="dashboard-search" aria-label="Search projects">
+              <FiSearch />
+              <input
+                type="search"
+                placeholder="Search projects"
+                value={searchText}
+                onChange={handleSearchChange}
+              />
+            </label>
+          </div>
+
+          {!isLoading ? (
+            filteredProjects.length ? (
+              <div className="project-cards-wrapper">
+                {filteredProjects.map((proj, i) => (
+                  <ProjectCard
+                    key={proj.projectId}
+                    project={proj}
+                    queries={projQueries[proj.projectId] || {}}
+                    categories={projCategories[proj.projectId] || {}}
+                    accentIndex={i}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="dashboard-empty-state">
+                <FiFolder />
+                <h3>No projects found</h3>
+                <p>
+                  {searchText
+                    ? "Try a different search."
+                    : "Create a project to get started."}
+                </p>
+                {!searchText && (
+                  <Button
+                    className="dashboard-primary-action"
+                    onClick={() => setShowNewProjectModal(true)}
                   >
-                    Open
-                  </Link>
-                  <Link
-                    to={`${APP_URI_PREFIX}/project/curate/?id=${proj.projectId}`}
-                    className="btn c-btn-secondary"
-                  >
-                    <MdOutlineManageSearch className="me-1" />
-                    Curate
-                  </Link>
-                </div>
-              </Col>
-            ))}
-          </Row>
-        ) : (
-          <Spinner />
-        )}
+                    <FiPlus />
+                    New Project
+                  </Button>
+                )}
+              </div>
+            )
+          ) : (
+            <div className="dashboard-loading">
+              <Spinner />
+            </div>
+          )}
+        </section>
       </Container>
       <NewPorjectModal
         show={showNewProjectModal}
