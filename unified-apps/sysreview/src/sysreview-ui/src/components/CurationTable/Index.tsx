@@ -3,7 +3,7 @@ import { categorySetType, resultType } from "../../api/types";
 import DataTable, { TableColumn } from "react-data-table-component";
 import { FiExternalLink } from "react-icons/fi";
 import ResultDetails from "../ResultsTable/ResultDetails";
-import { Dropdown } from "react-bootstrap";
+import { Badge, Dropdown } from "react-bootstrap";
 import { MdOutlineManageSearch } from "react-icons/md";
 import { CategorySymbol } from "../CategoryLabel";
 import { getCategoryColor, getCategoryLabel } from "../../api/utility";
@@ -14,8 +14,10 @@ interface CurationTableProps {
   results: resultType[];
   categories: categorySetType;
   analyse: (rowData: resultType[]) => void;
-  updateCategory: (r: number[], p: number) => void;
+  updateCategory: (r: number[], p: number, rows?: resultType[]) => void;
   setSelectedRows: (p: resultType[]) => void;
+  showProjectColumns?: boolean;
+  showDeduplication?: boolean;
 }
 
 const CurationTable: FC<CurationTableProps> = ({
@@ -24,6 +26,8 @@ const CurationTable: FC<CurationTableProps> = ({
   analyse,
   updateCategory,
   setSelectedRows,
+  showProjectColumns = false,
+  showDeduplication = false,
 }) => {
   const categoriesByPriority = Object.values(categories).filter(
     (category, index, allCategories) =>
@@ -31,8 +35,9 @@ const CurationTable: FC<CurationTableProps> = ({
       index
   );
 
-  const columns: TableColumn<resultType>[] = [
-    {
+  const columns: TableColumn<resultType>[] = [];
+
+  columns.push({
       id: "title",
       name: "Title",
       sortable: true,
@@ -52,22 +57,46 @@ const CurationTable: FC<CurationTableProps> = ({
           )}
         </div>
       ),
-    },
-    {
+  });
+
+  if (showProjectColumns) {
+    columns.push({
+      id: "query",
+      name: "Queries",
+      sortable: true,
+      selector: (row) =>
+        (row as any).duplicateQuerySummary || (row as any).queryName || "",
+      cell: (res) => (
+        <div
+          className="py-2 small"
+          title={(res as any).duplicateQuerySummary || (res as any).queryName}
+        >
+          {(res as any).duplicateQuerySummary || (res as any).queryName}
+        </div>
+      ),
+      width: "16%",
+    });
+  }
+
+  columns.push({
       id: "category",
       name: "Category",
       selector: (row) => row.priority,
       cell: (res) => (
         <Dropdown
           onSelect={(val) =>
-            updateCategory([res.resultId], parseInt(val as string))
+            updateCategory([res.resultId], parseInt(val as string), [res])
           }
         >
           <Dropdown.Toggle variant="outline-[#414c7b]">
             <CategorySymbol
-              color={getCategoryColor(categories, res.priority)}
+              color={
+                (res as any).categoryColor ||
+                getCategoryColor(categories, res.priority)
+              }
             />{" "}
-            {getCategoryLabel(categories, res.priority)}
+            {(res as any).categoryLabel ||
+              getCategoryLabel(categories, res.priority)}
           </Dropdown.Toggle>
 
           <Dropdown.Menu variant="dark">
@@ -82,14 +111,37 @@ const CurationTable: FC<CurationTableProps> = ({
       width: "15%",
       center: true,
       sortable: true,
-    },
-    {
+    });
+
+  columns.push({
       name: "Source",
-      selector: (row) => row.datasource,
+      selector: (row) => (row as any).duplicateSourceSummary || row.datasource,
+      cell: (res) => (
+        <div title={(res as any).duplicateSourceSummary || res.datasource}>
+          {(res as any).duplicateSourceSummary || res.datasource}
+        </div>
+      ),
+      width: showProjectColumns ? "10%" : "8%",
+      center: true,
+    });
+
+  if (showDeduplication) {
+    columns.push({
+      id: "duplicates",
+      name: "Instances",
+      selector: (row) => (row as any).duplicateCount || 1,
+      cell: (res) => (
+        <Badge bg={(res as any).duplicateCount > 1 ? "warning" : "secondary"}>
+          {(res as any).duplicateCount || 1}
+        </Badge>
+      ),
       width: "8%",
       center: true,
-    },
-    {
+      sortable: true,
+    });
+  }
+
+  columns.push({
       name: "",
       cell: (res) => (
         <div className="py-2 fs-3 cp" onClick={() => analyse([res])}>
@@ -98,8 +150,7 @@ const CurationTable: FC<CurationTableProps> = ({
       ),
       center: true,
       width: "5%",
-    },
-  ];
+    });
 
   const [filterText, setFilterText] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<number>(-1); // only using priority attribute of category

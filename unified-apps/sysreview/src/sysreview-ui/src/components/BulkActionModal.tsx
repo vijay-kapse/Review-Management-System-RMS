@@ -21,7 +21,11 @@ interface BulkActionModalProps {
   analyse: (rowData: resultType[]) => void;
   categories: categorySetType;
   handleClose: () => void;
-  updateCategory: (resIds: number[], priority: number) => void;
+  updateCategory: (
+    resIds: number[],
+    priority: number,
+    rows?: resultType[]
+  ) => void;
 }
 
 const BulkActionModal: FC<BulkActionModalProps> = ({
@@ -35,6 +39,12 @@ const BulkActionModal: FC<BulkActionModalProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<categoryType | null>(
     null
   );
+  const categoriesByPriority = Object.entries(categories).filter(
+    ([, category], index, allCategories) =>
+      allCategories.findIndex(
+        ([, cat]) => cat.priority === category.priority
+      ) === index
+  );
 
   const handleUpdateCategory = (val: string) => {
     console.log(val);
@@ -43,7 +53,8 @@ const BulkActionModal: FC<BulkActionModalProps> = ({
     setSelectedCategory(categories[catId]);
     updateCategory(
       results.map((res) => res.resultId),
-      categories[catId].priority
+      categories[catId].priority,
+      results
     );
   };
 
@@ -72,7 +83,7 @@ const BulkActionModal: FC<BulkActionModalProps> = ({
               </Dropdown.Toggle>
 
               <Dropdown.Menu variant="dark">
-                {Object.entries(categories).map(([catId, cat], i) => (
+                {categoriesByPriority.map(([catId, cat], i) => (
                   <Dropdown.Item key={i} eventKey={catId}>
                     <CategorySymbol color={cat.color} /> {cat.label}
                   </Dropdown.Item>

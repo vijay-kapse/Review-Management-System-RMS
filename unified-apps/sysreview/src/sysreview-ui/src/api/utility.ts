@@ -2,6 +2,8 @@ import {
   categorySetType,
   categoryType,
   datasourceKeyType,
+  projectResultOccurrenceType,
+  projectResultType,
   querySetType,
   queryType,
   resultCollectionType,
@@ -203,6 +205,80 @@ type returnLabel = (cats: categorySetType, p: number) => string;
 export const getCategoryLabel: returnLabel = (cats, p) => {
   const cat = Object.values(cats).find(({ priority }) => priority === p);
   return cat?.label || "";
+};
+
+const normalizeResultTitle = (title?: string) =>
+  (title || "")
+    .trim()
+    .replace(/[.\s]+$/g, "")
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+
+const summarizeValues = (values: string[], maxItems = 3) => {
+  const uniqueValues = Array.from(new Set(values.filter(Boolean)));
+  const visibleValues = uniqueValues.slice(0, maxItems).join(", ");
+  const hiddenCount = uniqueValues.length - maxItems;
+  return hiddenCount > 0
+    ? `${visibleValues} +${hiddenCount}`
+    : visibleValues;
+};
+
+export const getProjectCurationResults = (
+  queries: queryType[],
+  categories: categorySetType
+) => {
+  const groups = new Map<string, projectResultOccurrenceType[]>();
+
+  queries.forEach((query) => {
+    mergeResults(Object.values(query.searchResults)).forEach((result) => {
+      const titleKey = normalizeResultTitle(result.document.title);
+      const urlKey = (result.document.url || "").trim().toLowerCase();
+      const key = titleKey || urlKey || `${result.datasource}:${result.resultId}`;
+      const occurrence: projectResultOccurrenceType = {
+        ...result,
+        queryId: query.queryId,
+        queryName: query.query_name || `Query ${query.queryId}`,
+      };
+      groups.set(key, [...(groups.get(key) || []), occurrence]);
+    });
+  });
+
+  return Array.from(groups.values())
+    .map((occurrences) => {
+      const representative = occurrences[0];
+      const priorities = Array.from(
+        new Set(occurrences.map((occurrence) => occurrence.priority))
+      );
+      const hasMixedCategories = priorities.length > 1;
+      const projectResult: projectResultType = {
+        ...representative,
+        duplicateCount: occurrences.length,
+        duplicateResultIds: occurrences.map(({ resultId }) => resultId),
+        duplicateQueryIds: Array.from(
+          new Set(occurrences.map(({ queryId }) => queryId))
+        ),
+        duplicateSourceSummary: summarizeValues(
+          occurrences.map(({ datasource }) => datasource)
+        ),
+        duplicateQuerySummary: summarizeValues(
+          occurrences.map(({ queryName }) => queryName)
+        ),
+        categoryLabel: hasMixedCategories
+          ? "Mixed"
+          : getCategoryLabel(categories, representative.priority),
+        categoryColor: hasMixedCategories
+          ? "#6c757d"
+          : getCategoryColor(categories, representative.priority),
+        occurrences,
+      };
+      return projectResult;
+    })
+    .sort((a, b) => {
+      if (b.duplicateCount !== a.duplicateCount) {
+        return b.duplicateCount - a.duplicateCount;
+      }
+      return (a.document.title || "").localeCompare(b.document.title || "");
+    });
 };
 
 // flattens the resultData[] into ResultType[]

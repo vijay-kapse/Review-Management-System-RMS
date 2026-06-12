@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from "react";
 import { Alert, Container } from "react-bootstrap";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { getProject } from "../api/project";
 
 import ProjectContext from "../contexts/ProjectContext";
@@ -10,6 +10,8 @@ import Loader from "../components/Loader";
 import PageHeader from "../components/PageHeader";
 import SettingsIconButton from "../components/IconButtons/SettingsIconButton";
 import Queries from "../components/Queries/Index";
+import { APP_URI_PREFIX } from "../constants";
+import { MdOutlineManageSearch } from "react-icons/md";
 
 const Project = () => {
   const { project, setProject, categories, loadCategories } =
@@ -52,7 +54,18 @@ const Project = () => {
     <div className="project-page">
       <PageHeader
         title={project.projectName}
-        sideComponent={<SettingsIconButton size="lg" variant="dark" />}
+        sideComponent={
+          <div className="d-flex gap-2 align-items-center">
+            <Link
+              to={`${APP_URI_PREFIX}/project/curate/?id=${project.projectId}`}
+              className="btn c-btn-secondary"
+            >
+              <MdOutlineManageSearch className="me-1" />
+              Curate Project
+            </Link>
+            <SettingsIconButton size="lg" variant="dark" />
+          </div>
+        }
       />
       {!atLeastOneCategory && (
         <Container>

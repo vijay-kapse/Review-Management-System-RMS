@@ -1,0 +1,276 @@
+import {
+  Badge,
+  Button,
+  ButtonGroup,
+  Col,
+  Container,
+  Row,
+  Spinner,
+} from "react-bootstrap";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import {
+  categorySetType,
+  datasourceKeyType,
+  projectResultOccurrenceType,
+  projectResultType,
+  projectType,
+  queryType,
+  resultType,
+} from "../api/types";
+import { getProject } from "../api/project";
+import { getQueries, updateQuery } from "../api/query";
+import { getCategories } from "../api/category";
+import { arrayToObject, getProjectCurationResults } from "../api/utility";
+import { APP_URI_PREFIX, ANALYSER_API_URI } from "../constants";
+import { IoMdCheckmarkCircleOutline } from "react-icons/io";
+import { GrAction } from "react-icons/gr";
+import BulkActionModal from "../components/BulkActionModal";
+import CurationTable from "../components/CurationTable/Index";
+import PageHeader from "../components/PageHeader";
+import PageSubHeader from "../components/PageSubHeader";
+import SectionTitle from "../components/SectionTitle";
+import SubHeaderTitle from "../components/Queries/SubHeaderTitle";
+
+const emptyProject: projectType = {
+  projectId: 0,
+  projectName: "",
+  description: "",
+  owner: "",
+  collections: [],
+};
+
+const ProjectCurate = () => {
+  const [project, setProject] = useState<projectType>(emptyProject);
+  const [queries, setQueries] = useState<queryType[]>([]);
+  const [results, setResults] = useState<projectResultType[]>([]);
+  const [filteredResults, setFilteredResults] = useState<projectResultType[]>(
+    []
+  );
+  const [selectedResults, setSelectedResults] = useState<resultType[]>([]);
+  const [selectedSources, setSelectedSources] = useState<datasourceKeyType[]>(
+    []
+  );
+  const [categories, setCategories] = useState<categorySetType>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [showBulkActionModal, setShowBulkActionModal] = useState(false);
+
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const projectId = parseInt(searchParams.get("id") || "0");
+
+  const sourceCounts = useMemo(() => {
+    const counts: { [source: string]: number } = {};
+    results.forEach((result) => {
+      result.occurrences.forEach((occurrence) => {
+        counts[occurrence.datasource] = (counts[occurrence.datasource] || 0) + 1;
+      });
+    });
+    return counts;
+  }, [results]);
+
+  const totalInstances = useMemo(
+    () => results.reduce((count, result) => count + result.duplicateCount, 0),
+    [results]
+  );
+
+  const duplicateGroups = useMemo(
+    () => results.filter((result) => result.duplicateCount > 1).length,
+    [results]
+  );
+
+  const loadProjectCuration = (id: number) => {
+    setIsLoading(true);
+    return Promise.all([getProject(id), getCategories(id), getQueries(id)])
+      .then(([projectData, categoryData, queryData]) => {
+        const categorySet = arrayToObject(
+          categoryData,
+          "categoryId"
+        ) as categorySetType;
+        setProject(projectData);
+        setQueries(queryData);
+        setCategories(categorySet);
+        setResults(getProjectCurationResults(queryData, categorySet));
+        setFilteredResults([]);
+        setSelectedSources([]);
+      })
+      .catch((e) => {
+        alert("Failed to fetch project curation data");
+        console.log(e);
+      })
+      .finally(() => setIsLoading(false));
+  };
+
+  const rowHasSource = (result: projectResultType, source: datasourceKeyType) =>
+    result.occurrences.some((occurrence) => occurrence.datasource === source);
+
+  const filterResultsBySources = (sources: datasourceKeyType[]) => {
+    setFilteredResults(
+      sources.length
+        ? results.filter((result) =>
+            sources.some((source) => rowHasSource(result, source))
+          )
+        : []
+    );
+  };
+
+  const handleDatasourceClick = (source: datasourceKeyType) => {
+    const currentSources = selectedSources.includes(source)
+      ? selectedSources.filter((selectedSource) => selectedSource !== source)
+      : [...selectedSources, source];
+    setSelectedSources(currentSources);
+    filterResultsBySources(currentSources);
+  };
+
+  const updateDocCategory = (
+    resultIds: number[],
+    priority: number,
+    rows: resultType[] = []
+  ) => {
+    const rowsToUpdate = (
+      rows.length
+        ? rows
+        : results.filter((result) => resultIds.includes(result.resultId))
+    ) as projectResultType[];
+    const updatesByQuery = new Map<number, Set<number>>();
+
+    rowsToUpdate.forEach((result) => {
+      const occurrences =
+        result.occurrences?.length > 0
+          ? result.occurrences
+          : ([result] as projectResultOccurrenceType[]);
+      occurrences.forEach(({ queryId, resultId }) => {
+        if (!queryId || !resultId) return;
+        const existingIds = updatesByQuery.get(queryId) || new Set<number>();
+        existingIds.add(resultId);
+        updatesByQuery.set(queryId, existingIds);
+      });
+    });
+
+    if (!updatesByQuery.size) {
+      alert("No saved papers were selected for category update");
+      return;
+    }
+
+    setIsLoading(true);
+    Promise.all(
+      Array.from(updatesByQuery.entries()).map(([queryId, ids]) =>
+        updateQuery(queryId, Array.from(ids), priority)
+      )
+    )
+      .then(() => loadProjectCuration(projectId))
+      .catch((e) => {
+        alert("Something went wrong");
+        console.log(e);
+      })
+      .finally(() => setIsLoading(false));
+  };
+
+  const handleExtract = (rowData: resultType[]) => {
+    const jsonString = JSON.stringify(rowData);
+    const queryParams = `json=${encodeURIComponent(jsonString)}`;
+    const finalUrl = `${ANALYSER_API_URI}?${queryParams}`;
+    window.open(finalUrl, "_blank")?.focus();
+  };
+
+  useEffect(() => {
+    if (!projectId) {
+      navigate(`${APP_URI_PREFIX}/dashboard`);
+      return;
+    }
+    loadProjectCuration(projectId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const visibleResults = selectedSources.length ? filteredResults : results;
+
+  return (
+    <div className="curate-page">
+      <PageHeader title="Project Curation" />
+      {!isLoading ? (
+        <Container>
+          <SectionTitle title={project.projectName || "Project"} />
+          <PageSubHeader
+            subTitle={
+              <SubHeaderTitle
+                count={results.length}
+                title="Unique Papers"
+                icon={<IoMdCheckmarkCircleOutline />}
+              />
+            }
+            sideComponent={
+              <Button
+                className="c-btn-text fw-bold"
+                onClick={() => setShowBulkActionModal(true)}
+              >
+                <GrAction className="m-2" />
+                Bulk Action
+              </Button>
+            }
+          />
+
+          <Container className="my-4 d-flex flex-wrap gap-4 align-items-center">
+            <h5 className="c-text-primary mb-0">
+              Saved Results <Badge bg="secondary">{totalInstances}</Badge>
+            </h5>
+            <h5 className="c-text-primary mb-0">
+              Duplicate Groups <Badge bg="warning">{duplicateGroups}</Badge>
+            </h5>
+            <h5 className="c-text-primary mb-0">
+              Queries <Badge bg="secondary">{queries.length}</Badge>
+            </h5>
+          </Container>
+
+          <Container className="my-4 d-flex flex-wrap gap-4 align-items-center">
+            <h5 className="c-text-primary mb-0">Filter by datasource</h5>
+            <ButtonGroup className="sources-list">
+              {Object.entries(sourceCounts).map(([source, count]) => (
+                <Button
+                  key={source}
+                  className={`${
+                    selectedSources.includes(source as datasourceKeyType)
+                      ? "c-btn-primary"
+                      : "c-btn-alternate"
+                  } shadow-none`}
+                  onClick={() =>
+                    handleDatasourceClick(source as datasourceKeyType)
+                  }
+                >
+                  {source} <Badge bg="secondary">{count}</Badge>
+                </Button>
+              ))}
+            </ButtonGroup>
+          </Container>
+
+          <Row>
+            <Col>
+              <CurationTable
+                results={visibleResults}
+                categories={categories}
+                analyse={handleExtract}
+                updateCategory={updateDocCategory}
+                setSelectedRows={setSelectedResults}
+                showProjectColumns
+                showDeduplication
+              />
+            </Col>
+          </Row>
+        </Container>
+      ) : (
+        <Container>
+          <Spinner />
+        </Container>
+      )}
+      <BulkActionModal
+        show={showBulkActionModal}
+        results={selectedResults}
+        categories={categories}
+        analyse={handleExtract}
+        updateCategory={updateDocCategory}
+        handleClose={() => setShowBulkActionModal(false)}
+      />
+    </div>
+  );
+};
+
+export default ProjectCurate;

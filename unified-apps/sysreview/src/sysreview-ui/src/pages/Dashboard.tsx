@@ -14,6 +14,7 @@ import PageSubHeader from "../components/PageSubHeader";
 import { IoMdAddCircleOutline } from "react-icons/io";
 import SubHeaderTitle from "../components/Queries/SubHeaderTitle";
 import { GoProject } from "react-icons/go";
+import { MdOutlineManageSearch } from "react-icons/md";
 
 const Dashbaord = () => {
   const [projects, setProjects] = useState<projectType[]>([]);
@@ -108,18 +109,27 @@ const Dashbaord = () => {
           <Row xs={1} md={3} className="mt-4">
             {projects.map((proj, i) => (
               <Col key={i}>
-                <Link
-                  to={`${APP_URI_PREFIX}/project/?id=${proj.projectId}`}
-                  style={{ textDecoration: "none" }}
-                >
-                  {" "}
-                  <ProjectCard
-                    key={proj.projectId}
-                    project={proj}
-                    queries={projQueries[i] || {}}
-                    categories={projCategories[i] || []}
-                  />
-                </Link>
+                <ProjectCard
+                  key={proj.projectId}
+                  project={proj}
+                  queries={projQueries[i] || {}}
+                  categories={projCategories[i] || []}
+                />
+                <div className="project-card-actions">
+                  <Link
+                    to={`${APP_URI_PREFIX}/project/?id=${proj.projectId}`}
+                    className="btn c-btn-primary"
+                  >
+                    Open
+                  </Link>
+                  <Link
+                    to={`${APP_URI_PREFIX}/project/curate/?id=${proj.projectId}`}
+                    className="btn c-btn-secondary"
+                  >
+                    <MdOutlineManageSearch className="me-1" />
+                    Curate
+                  </Link>
+                </div>
               </Col>
             ))}
           </Row>

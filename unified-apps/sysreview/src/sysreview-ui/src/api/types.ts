@@ -69,6 +69,24 @@ export type resultType = {
   document: resultDocumentType;
 };
 
+export type projectResultOccurrenceType = resultType & {
+  queryId: number;
+  queryName: string;
+};
+
+export type projectResultType = resultType & {
+  queryId: number;
+  queryName: string;
+  duplicateCount: number;
+  duplicateResultIds: number[];
+  duplicateQueryIds: number[];
+  duplicateSourceSummary: string;
+  duplicateQuerySummary: string;
+  categoryLabel?: string;
+  categoryColor?: string;
+  occurrences: projectResultOccurrenceType[];
+};
+
 export type categorySetType = {
   [cId: string]: categoryType;
 };

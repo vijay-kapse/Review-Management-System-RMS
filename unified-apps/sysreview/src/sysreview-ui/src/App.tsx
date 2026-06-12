@@ -6,6 +6,7 @@ import NoPage from "./pages/NoPage";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import Curate from "./pages/Curate";
+import ProjectCurate from "./pages/ProjectCurate";
 import { ProjectContextProvider } from "./contexts/ProjectContext";
 import { AppContextProvider } from "./contexts/AppContext";
 import MyNavbar from "./components/Navbar";
@@ -44,6 +45,14 @@ const App = () => {
                       <ProjectContextProvider>
                         <Project />
                       </ProjectContextProvider>
+                    </Protected>
+                  }
+                />
+                <Route
+                  path="project/curate"
+                  element={
+                    <Protected loggedIn={isAuthenticated}>
+                      <ProjectCurate />
                     </Protected>
                   }
                 />
