@@ -50,7 +50,12 @@ const Curate = () => {
     getQuery(id)
       .then((data) => {
         setQuery(data);
-        setResults(mergeResults(Object.values(data.searchResults)));
+        setResults(
+          mergeResults(Object.values(data.searchResults)).map((result) => ({
+            ...result,
+            curationSortPriority: result.priority,
+          }))
+        );
       })
       .catch((e) => {
         alert("Something went wrong");
@@ -77,17 +82,24 @@ const Curate = () => {
   };
 
   const updateDocCategory = (resultIds: number[], priority: number) => {
-    setIsLoading(true);
     updateQuery(query.queryId, resultIds, priority)
       .then((_) => {
-        // setResults(updatedResults);
-        window.location.reload();
+        const updatedResults = (currentResults: resultType[]) =>
+          currentResults.map((result) =>
+            resultIds.includes(result.resultId)
+              ? { ...result, priority }
+              : result
+          );
+        setResults(updatedResults);
+        setFilteredResults((currentResults) =>
+          currentResults.length ? updatedResults(currentResults) : currentResults
+        );
+        setSelectedResults(updatedResults);
       })
       .catch((e) => {
         alert("Something went wrong");
         console.log(e);
-      })
-      .finally(() => setIsLoading(false));
+      });
   };
   //TODO: refactor
   const handleExtract = (rowData: resultType[]) => {

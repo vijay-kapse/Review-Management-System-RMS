@@ -65,6 +65,7 @@ export type resultDocumentType = {
 export type resultType = {
   datasource: datasourceKeyType;
   priority: number;
+  curationSortPriority?: number;
   resultId: number;
   document: resultDocumentType;
 };

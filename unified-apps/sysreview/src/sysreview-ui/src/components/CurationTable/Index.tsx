@@ -81,7 +81,7 @@ const CurationTable: FC<CurationTableProps> = ({
   columns.push({
       id: "category",
       name: "Category",
-      selector: (row) => row.priority,
+      selector: (row) => row.curationSortPriority ?? row.priority,
       cell: (res) => (
         <Dropdown
           onSelect={(val) =>

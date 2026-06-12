@@ -252,6 +252,7 @@ export const getProjectCurationResults = (
       const hasMixedCategories = priorities.length > 1;
       const projectResult: projectResultType = {
         ...representative,
+        curationSortPriority: representative.priority,
         duplicateCount: occurrences.length,
         duplicateResultIds: occurrences.map(({ resultId }) => resultId),
         duplicateQueryIds: Array.from(

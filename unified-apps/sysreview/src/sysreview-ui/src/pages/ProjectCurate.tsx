@@ -21,7 +21,12 @@ import {
 import { getProject } from "../api/project";
 import { getQueries, updateQuery } from "../api/query";
 import { getCategories } from "../api/category";
-import { arrayToObject, getProjectCurationResults } from "../api/utility";
+import {
+  arrayToObject,
+  getCategoryColor,
+  getCategoryLabel,
+  getProjectCurationResults,
+} from "../api/utility";
 import { APP_URI_PREFIX, ANALYSER_API_URI } from "../constants";
 import { IoMdCheckmarkCircleOutline } from "react-icons/io";
 import { GrAction } from "react-icons/gr";
@@ -152,18 +157,45 @@ const ProjectCurate = () => {
       return;
     }
 
-    setIsLoading(true);
     Promise.all(
       Array.from(updatesByQuery.entries()).map(([queryId, ids]) =>
         updateQuery(queryId, Array.from(ids), priority)
       )
     )
-      .then(() => loadProjectCuration(projectId))
+      .then(() => {
+        const targetResultIds = new Set(
+          rowsToUpdate.map((result) => result.resultId)
+        );
+        const updatedResults = (currentResults: projectResultType[]) =>
+          currentResults.map((result) => {
+            if (!targetResultIds.has(result.resultId)) return result;
+            return {
+              ...result,
+              priority,
+              categoryLabel: getCategoryLabel(categories, priority),
+              categoryColor: getCategoryColor(categories, priority),
+              occurrences: result.occurrences.map((occurrence) => ({
+                ...occurrence,
+                priority,
+              })),
+            };
+          });
+        setResults(updatedResults);
+        setFilteredResults((currentResults) =>
+          currentResults.length ? updatedResults(currentResults) : currentResults
+        );
+        setSelectedResults((currentResults) =>
+          currentResults.map((result) =>
+            targetResultIds.has(result.resultId)
+              ? { ...result, priority }
+              : result
+          )
+        );
+      })
       .catch((e) => {
         alert("Something went wrong");
         console.log(e);
-      })
-      .finally(() => setIsLoading(false));
+      });
   };
 
   const handleExtract = (rowData: resultType[]) => {
