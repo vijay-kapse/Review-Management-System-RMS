@@ -207,7 +207,7 @@ const CurationTable: FC<CurationTableProps> = ({
       fixedHeader
       selectableRows
       defaultSortAsc={false}
-      defaultSortFieldId={"category"}
+      defaultSortFieldId={showDeduplication ? "duplicates" : "category"}
       onSelectedRowsChange={({ selectedRows }) => setSelectedRows(selectedRows)}
       className="c-table"
     />
