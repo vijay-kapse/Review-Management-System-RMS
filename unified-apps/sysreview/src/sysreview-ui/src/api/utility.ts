@@ -207,6 +207,26 @@ export const getCategoryLabel: returnLabel = (cats, p) => {
   return cat?.label || "";
 };
 
+export const getPaperUrl = (result: resultType) => {
+  const url = (result.document.url || "").trim();
+  if (!url) return "";
+
+  if (result.datasource !== "SCOPUS") {
+    return url;
+  }
+
+  const apiUrlMatch = url.match(
+    /^https?:\/\/api\.elsevier\.com\/content\/abstract\/scopus_id\/([^/?#]+)/i
+  );
+  if (!apiUrlMatch) {
+    return url;
+  }
+
+  return `https://www.scopus.com/inward/record.uri?partnerID=HzOxMe3b&scp=${encodeURIComponent(
+    apiUrlMatch[1]
+  )}&origin=inward`;
+};
+
 const normalizeResultTitle = (title?: string) =>
   (title || "")
     .trim()

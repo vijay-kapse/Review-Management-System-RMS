@@ -5,6 +5,7 @@ import { FiExternalLink } from "react-icons/fi";
 import { Button, Form, InputGroup } from "react-bootstrap";
 import { MdCancel } from "react-icons/md";
 import ResultDetails from "./ResultDetails";
+import { getPaperUrl } from "../../api/utility";
 
 const FilterComponent = ({ filterText, onFilter, onClear }) => (
   <div>
@@ -33,21 +34,24 @@ const ResultTable: FC<ResultTableProps> = ({ results }) => {
     {
       name: "Title",
       selector: (row) => row.document.title,
-      cell: ({ document }) => (
-        <div className="py-2">
-          {document.title}{" "}
-          {!!document.url && (
-            <a
-              className="paper-link"
-              href={document.url}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <FiExternalLink />
-            </a>
-          )}
-        </div>
-      ),
+      cell: (row) => {
+        const paperUrl = getPaperUrl(row);
+        return (
+          <div className="py-2">
+            {row.document.title}{" "}
+            {!!paperUrl && (
+              <a
+                className="paper-link"
+                href={paperUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <FiExternalLink />
+              </a>
+            )}
+          </div>
+        );
+      },
     },
     {
       name: "Article Date",

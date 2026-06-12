@@ -6,7 +6,7 @@ import ResultDetails from "../ResultsTable/ResultDetails";
 import { Badge, Dropdown } from "react-bootstrap";
 import { MdOutlineManageSearch } from "react-icons/md";
 import { CategorySymbol } from "../CategoryLabel";
-import { getCategoryColor, getCategoryLabel } from "../../api/utility";
+import { getCategoryColor, getCategoryLabel, getPaperUrl } from "../../api/utility";
 import SearchFilter from "./SearchFilter";
 import CategoryFilter from "./CategoryFilter";
 
@@ -42,21 +42,24 @@ const CurationTable: FC<CurationTableProps> = ({
       name: "Title",
       sortable: true,
       selector: (row) => row.document.title,
-      cell: ({ document }) => (
-        <div className="py-2">
-          {document.title}{" "}
-          {!!document.url && (
-            <a
-              className="paper-link"
-              href={document.url}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <FiExternalLink />
-            </a>
-          )}
-        </div>
-      ),
+      cell: (row) => {
+        const paperUrl = getPaperUrl(row);
+        return (
+          <div className="py-2">
+            {row.document.title}{" "}
+            {!!paperUrl && (
+              <a
+                className="paper-link"
+                href={paperUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <FiExternalLink />
+              </a>
+            )}
+          </div>
+        );
+      },
   });
 
   if (showProjectColumns) {

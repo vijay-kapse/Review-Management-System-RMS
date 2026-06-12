@@ -139,10 +139,9 @@ public class ScopusSearchService extends AbstractSearchService {
                     documentBuilder.affiliationNames(new ArrayList<>(affiliationNames));
                 }
 
-                //url
-                JsonNode prismUrl = entry.get("prism:url");
-                if (entry.has("prism:url") && prismUrl != null) {
-                    documentBuilder.url(prismUrl.asText());
+                String documentUrl = resolveScopusDocumentUrl(entry);
+                if (!documentUrl.isEmpty()) {
+                    documentBuilder.url(documentUrl);
                 }
 
                 documents.add(documentBuilder.build());
@@ -172,6 +171,9 @@ public class ScopusSearchService extends AbstractSearchService {
                         "prism:eIssn",
                         "prism:issn",
                         "prism:url",
+                        "dc:identifier",
+                        "eid",
+                        "link",
                         "subtype",
                         "subtypeDescription",
                         "prism:aggregationType"))
@@ -214,6 +216,58 @@ public class ScopusSearchService extends AbstractSearchService {
     private String lowerText(JsonNode entry, String fieldName) {
         JsonNode node = entry.get(fieldName);
         return node != null && node.isTextual() ? node.asText().trim().toLowerCase(Locale.ROOT) : "";
+    }
+
+    private String resolveScopusDocumentUrl(JsonNode entry) {
+        String scopusLink = getScopusLink(entry);
+        if (!scopusLink.isEmpty()) {
+            return scopusLink;
+        }
+
+        String scopusId = getScopusId(entry);
+        if (!scopusId.isEmpty()) {
+            return String.format(
+                    "https://www.scopus.com/inward/record.uri?partnerID=HzOxMe3b&scp=%s&origin=inward",
+                    scopusId
+            );
+        }
+
+        JsonNode prismUrl = entry.get("prism:url");
+        return prismUrl != null && prismUrl.isTextual() ? prismUrl.asText() : "";
+    }
+
+    private String getScopusLink(JsonNode entry) {
+        JsonNode links = entry.path("link");
+        if (!links.isArray()) {
+            return "";
+        }
+
+        for (JsonNode link : links) {
+            if ("scopus".equalsIgnoreCase(link.path("@ref").asText())
+                    || "scopus".equalsIgnoreCase(link.path("rel").asText())) {
+                return link.path("@href").asText(link.path("href").asText(""));
+            }
+        }
+        return "";
+    }
+
+    private String getScopusId(JsonNode entry) {
+        String identifier = entry.path("dc:identifier").asText("");
+        if (identifier.startsWith("SCOPUS_ID:")) {
+            return identifier.substring("SCOPUS_ID:".length());
+        }
+
+        String prismUrl = entry.path("prism:url").asText("");
+        int markerIndex = prismUrl.indexOf("/scopus_id/");
+        if (markerIndex >= 0) {
+            return prismUrl.substring(markerIndex + "/scopus_id/".length()).replaceAll("[^0-9].*$", "");
+        }
+
+        String eid = entry.path("eid").asText("");
+        if (eid.startsWith("2-s2.0-")) {
+            return eid.substring("2-s2.0-".length());
+        }
+        return "";
     }
 
     private boolean containsBookLikeTerm(String text) {
