@@ -18,6 +18,31 @@ import java.util.*;
 @Service
 public class ScopusSearchService extends AbstractSearchService {
 
+    private static final Set<String> ALLOWED_RESEARCH_SUBTYPES = new HashSet<>(Arrays.asList(
+            "ar", // Article
+            "cp", // Conference Paper
+            "re", // Review
+            "ip"  // Article in Press
+    ));
+
+    private static final Set<String> ALLOWED_RESEARCH_TYPE_DESCRIPTIONS = new HashSet<>(Arrays.asList(
+            "article",
+            "conference paper",
+            "review",
+            "article in press"
+    ));
+
+    private static final List<String> BOOK_LIKE_TERMS = Arrays.asList(
+            "book",
+            "book chapter",
+            "chapter",
+            "handbook",
+            "encyclopedia",
+            "monograph",
+            "volume",
+            "series"
+    );
+
     @Value("${api.scopus.key}")
     private String apiKey;
     @Value("${api.scopus.url}")
@@ -51,6 +76,10 @@ public class ScopusSearchService extends AbstractSearchService {
 
             JsonNode entries = articlesNode.get("entry");
             for (JsonNode entry : entries) {
+                if (!isResearchPaper(entry)) {
+                    continue;
+                }
+
                 Document.DocumentBuilder documentBuilder = Document.builder();
                 //Title
                 JsonNode titleNode = entry.get("dc:title");
@@ -130,9 +159,22 @@ public class ScopusSearchService extends AbstractSearchService {
 
     @Override
     public String fetchFromApi(String queryText, int startRecord, YearMonth from, YearMonth to) {
+        String researchPaperQuery = String.format("(%s) AND (DOCTYPE(ar) OR DOCTYPE(cp) OR DOCTYPE(re) OR DOCTYPE(ip))", queryText);
         UriComponentsBuilder uriComponentsBuilder = UriComponentsBuilder.fromUri(URI.create(apiScopusUrl))
-                .queryParam("query", queryText)
+                .queryParam("query", researchPaperQuery)
                 .queryParam("start", startRecord)
+                .queryParam("field", String.join(",",
+                        "dc:title",
+                        "prism:coverDate",
+                        "dc:creator",
+                        "affiliation",
+                        "prism:publicationName",
+                        "prism:eIssn",
+                        "prism:issn",
+                        "prism:url",
+                        "subtype",
+                        "subtypeDescription",
+                        "prism:aggregationType"))
                 .queryParam("apikey", apiKey);
         if (from != null && to != null) {
             uriComponentsBuilder.queryParam("date", String.format("%1$s-%2$s", from.getYear(), to.getYear()));
@@ -141,5 +183,45 @@ public class ScopusSearchService extends AbstractSearchService {
         URI apiUrl = uriComponentsBuilder.build().toUri();
         RestTemplate restTemplate = new RestTemplate();
         return restTemplate.getForObject(apiUrl, String.class);
+    }
+
+    private boolean isResearchPaper(JsonNode entry) {
+        String subtype = lowerText(entry, "subtype");
+        if (!subtype.isEmpty()) {
+            return ALLOWED_RESEARCH_SUBTYPES.contains(subtype);
+        }
+
+        String subtypeDescription = lowerText(entry, "subtypeDescription");
+        if (!subtypeDescription.isEmpty()) {
+            return ALLOWED_RESEARCH_TYPE_DESCRIPTIONS.contains(subtypeDescription);
+        }
+
+        String aggregationType = lowerText(entry, "prism:aggregationType");
+        String title = lowerText(entry, "dc:title");
+        String publicationName = lowerText(entry, "prism:publicationName");
+        String combined = String.join(" ", aggregationType, title, publicationName);
+
+        if (containsBookLikeTerm(combined)) {
+            return false;
+        }
+
+        return aggregationType.isEmpty()
+                || "journal".equals(aggregationType)
+                || "conference proceeding".equals(aggregationType)
+                || "conference proceedings".equals(aggregationType);
+    }
+
+    private String lowerText(JsonNode entry, String fieldName) {
+        JsonNode node = entry.get(fieldName);
+        return node != null && node.isTextual() ? node.asText().trim().toLowerCase(Locale.ROOT) : "";
+    }
+
+    private boolean containsBookLikeTerm(String text) {
+        for (String term : BOOK_LIKE_TERMS) {
+            if (text.contains(term)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
