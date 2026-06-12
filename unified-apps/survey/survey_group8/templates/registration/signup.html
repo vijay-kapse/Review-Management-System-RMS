@@ -3,7 +3,7 @@
 {% block title %}Sign Up{% endblock %}
 
 {% block content %}
-<main class="register-container">
+<section class="register-container">
   <h2 class="register-title">Sign Up</h2>
   <form method="post" class="register-form">
     {% csrf_token %}
@@ -48,5 +48,5 @@
       <a class="button-link" href="{% url 'home' %}">HOME</a>
     </div>
   </form>
-</main>
+</section>
 {% endblock %}

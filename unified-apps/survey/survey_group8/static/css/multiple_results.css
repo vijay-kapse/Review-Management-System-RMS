@@ -1,115 +1,49 @@
-/* Full-width container aligned with the navigation bar */
 .results-container {
-    width: 100%; /* uses the Full width of the page */
-    padding: 20px 0; /* Removes the horizontal padding to match the nav */
-    background-color: #f9f9f9;
-    border-radius: 0; /* Remove rounded corners */
-    box-shadow: none; /* Remove shadows */
-    box-sizing: border-box; /* Ensures the  padding is included in the total width */
+    width: min(100%, 1180px);
+    margin: 0 auto;
+    padding: clamp(22px, 4vw, 34px);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: var(--shadow);
 }
 
-/* Content inside the container is centered and constrained. */
 .results-container .inner-container {
-    max-width: 1200px; /* restricts the content's width */
-    margin: 0 auto; /* Center the content */
-    padding: 0 20px; /* For inner space, add padding.  */
+    max-width: 100%;
+    margin: 0 auto;
 }
 
-/* Styling the Title and description  */
 .results-title {
-    font-size: 2em;
-    color: #004080;
-    margin-bottom: 10px;
+    margin: 0 0 12px;
+    color: var(--ink);
+    font-size: clamp(30px, 5vw, 48px);
+    line-height: 1.05;
 }
 
 .results-description {
-    font-size: 1.2em;
-    margin-bottom: 20px;
-    color: #666;
+    margin-bottom: 24px;
+    color: var(--muted);
+    line-height: 1.6;
 }
 
-/* Table styling */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 20px;
-    background-color: #ffffff;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-}
-
-th,
-td {
-    border: 1px solid #ddd;
-    padding: 10px;
-    text-align: left;
-    font-size: 1em;
-}
-
-th {
-    background-color: #f0f8ff;
-    color: #004080;
-    font-weight: bold;
-}
-
-td {
-    color: #333;
-}
-
-/* Chart styling */
 canvas {
-    max-width: 80%; /* Allow the chart to take up to 80% of the container */
-    height: 400px; /* For larger charts, set a fixed height. */
+    width: 100%;
+    max-width: 820px;
+    height: 400px;
     display: block;
-    margin: 20px auto; /* Center the chart */
+    margin: 22px auto;
 }
 
-/* Button styling */
-.button-container {
-    margin-top: 30px;
-    text-align: center;
-}
-
-.button-link,
 .print-button {
-    background-color: #1a75ff;
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 5px;
-    font-size: 1em;
-    text-decoration: none;
-    margin-right: 10px;
-    cursor: pointer;
+    background: var(--cyan);
 }
 
-.button-link:hover,
 .print-button:hover {
-    background-color: #0056b3;
+    background: #0e7490;
 }
 
-/* Design that is responsive */
-@media (max-width: 600px) {
-    .results-title {
-        font-size: 1.5em;
-    }
-
-    .results-description {
-        font-size: 1em;
-    }
-
-    th,
-    td {
-        font-size: 0.9em;
-    }
-
-    .button-link,
-    .print-button {
-        font-size: 0.9em;
-        padding: 8px 12px;
-    }
-
+@media (max-width: 820px) {
     canvas {
-        max-width: 100%;
+        height: auto;
     }
 }

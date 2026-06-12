@@ -3,31 +3,59 @@
 
 <head>
     <meta charset="utf-8">
-    <title>{% block title %}Survey Management{% endblock %}</title>
     {% load static %}
-    <!-- Link to the CSS file -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Survey Management{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     {% block header %}
     {% endblock %}
 </head>
 
 <body>
-  <main>
-    <nav>
+  <div class="app-shell">
+    <header class="app-topbar">
+      <a class="brand" href="{% url 'home' %}" aria-label="Survey home">
+        <svg class="brand-mark" viewBox="0 0 64 64" role="img" aria-label="Survey logo">
+          <defs>
+            <linearGradient id="surveyLogo" x1="10" y1="8" x2="54" y2="58" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="#1d4ed8" />
+              <stop offset="0.58" stop-color="#0891b2" />
+              <stop offset="1" stop-color="#15803d" />
+            </linearGradient>
+          </defs>
+          <rect x="6" y="6" width="52" height="52" rx="14" fill="url(#surveyLogo)" />
+          <path d="M20 20h24a4 4 0 0 1 4 4v20a4 4 0 0 1-4 4H20a4 4 0 0 1-4-4V24a4 4 0 0 1 4-4Z" fill="#ffffff" opacity="0.96" />
+          <path d="M24 29h16M24 36h12M24 43h18" stroke="#1e40af" stroke-width="3" stroke-linecap="round" />
+          <circle cx="43" cy="29" r="3" fill="#15803d" />
+        </svg>
+        <span class="brand-name">
+          <span class="brand-title">Survey</span>
+          <span class="brand-subtitle">RMS workspace</span>
+        </span>
+      </a>
+
+      <nav class="app-nav" aria-label="Survey navigation">
         {% if user.is_authenticated %}
-            <span class="greeting">Hi {{ user.username }}!</span>
-            <form action="{% url 'logout' %}" method="post">
-                {% csrf_token %}
-                <button type="submit">Log Out</button>
-            </form>
+          <span class="greeting">Hi {{ user.username }}!</span>
+          <a class="nav-link" href="{% url 'home' %}">Dashboard</a>
+          <form action="{% url 'logout' %}" method="post" class="logout-form">
+            {% csrf_token %}
+            <button type="submit" class="nav-button">Log Out</button>
+          </form>
+        {% else %}
+          <a class="nav-link" href="{% url 'login' %}">Log In</a>
+          <a class="nav-button" href="{% url 'signup' %}">Sign Up</a>
         {% endif %}
-    </nav>
-    {% block content %}
-    {% endblock %}
-  
-  </main>
-  {% block script %}
-  {% endblock %}
+      </nav>
+    </header>
+
+    <main class="app-content">
+      {% block content %}
+      {% endblock %}
+    </main>
+  </div>
+
+  {% block script %}{% endblock %}
 
 </body>
 

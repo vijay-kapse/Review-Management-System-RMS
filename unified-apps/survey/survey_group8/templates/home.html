@@ -3,8 +3,10 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
-<main class="home-container">
-  <h1 class="home-title">Welcome to the Survey Management System</h1>
+<section class="home-container hero-panel">
+  <div class="eyebrow"><span class="status-dot"></span> Survey workspace</div>
+  <h1 class="home-title">Create, publish, and review surveys</h1>
+  <p class="home-copy">Manage survey workflows through the shared RMS platform.</p>
   {% if user.is_authenticated %}
   <section class="auth-section">
       <p>Hi {{ user.username }}!</p>
@@ -21,5 +23,5 @@
       <a class="button-link" href="{% url 'signup' %}">Sign Up</a>
   </section>
   {% endif %}
-</main>
+</section>
 {% endblock %}

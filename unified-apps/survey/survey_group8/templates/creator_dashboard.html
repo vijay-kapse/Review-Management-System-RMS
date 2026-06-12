@@ -4,10 +4,13 @@
 
 {% block content %}
 <div class="container">
-    <h2>Survey Overview</h2>
-    <hr/>
+    <div class="section-heading">
+        <div>
+            <div class="eyebrow"><span class="status-dot"></span> Creator dashboard</div>
+            <h2>Survey Overview</h2>
+        </div>
+    </div>
     <a class="button-link" href="{% url 'survey_create' %}">Create a new Survey</a>
-    <br>
     <table class="survey-table">
         <tr>
             <th>DRAFT</th>

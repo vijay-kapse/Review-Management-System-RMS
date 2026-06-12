@@ -1,124 +1,87 @@
-
 .survey-container {
-    max-width: 800px;
+    width: min(100%, 980px);
     margin: 0 auto;
-    padding: 20px;
-    background-color: #f9f9f9;
+    padding: clamp(22px, 4vw, 34px);
+    border: 1px solid var(--line);
     border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: var(--shadow);
 }
 
 .survey-header {
-    margin-bottom: 20px;
-    text-align: center;
+    margin-bottom: 26px;
+    text-align: left;
 }
 
 .survey-title {
-    font-size: 1.8em;
-    color: #004080;
-    margin-bottom: 10px;
+    margin: 0 0 10px;
+    color: var(--ink);
+    font-size: clamp(30px, 5vw, 48px);
+    line-height: 1.05;
 }
 
-.survey-description {
-    font-size: 1.2em;
-    color: #666;
-    margin-bottom: 10px;
-}
-
+.survey-description,
 .survey-version {
-    font-size: 1em;
-    color: #888;
+    margin: 0 0 8px;
+    color: var(--muted);
+    line-height: 1.6;
 }
-
 
 .questions-section {
+    display: grid;
+    gap: 16px;
     margin-top: 20px;
 }
 
 .question-fieldset {
-    margin-bottom: 20px;
-    border: 1px solid #ddd;
-    padding: 15px;
-    border-radius: 5px;
+    margin: 0;
+    padding: 18px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #ffffff;
 }
 
 .question-legend {
-    font-size: 1.2em;
-    font-weight: bold;
-    color: #003366;
-    margin-bottom: 10px;
+    padding: 0 8px;
+    color: var(--ink);
+    font-size: 18px;
+    font-weight: 900;
 }
 
-
 .answers-table {
-    width: 100%;
-    table-layout: fixed; 
-    border-spacing: 5px;
+    margin: 12px 0 0;
 }
 
 .answers-table td {
-    vertical-align: middle; 
-    padding: 5px;
+    vertical-align: middle;
 }
 
-.answers-table input {
-    margin-right: 8px;
-}
-
-
-.button-container {
+.answers-table td:first-child {
+    width: 56px;
     text-align: center;
-    margin-top: 30px;
 }
 
-.submit-button {
-    background-color: #1a75ff;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    font-size: 1em;
-    cursor: pointer;
+.answers-table label {
+    font-weight: 700;
 }
 
-.submit-button:hover {
-    background-color: #0056b3;
-}
-
-
-.submit-button {
-    background-color: #1a75ff;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    font-size: 1em;
-    cursor: pointer;
-    margin-right: 10px;
-    text-align: center;
-    display: inline-block;
-    width: auto;
-}
-
-.submit-button:hover {
-    background-color: #0056b3;
-}
-
-
+.submit-button,
 .button-link.button-link-match {
-    display: inline-block; 
-    background-color: #1a75ff;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    font-size: 1em;
-    text-decoration: none;
-    cursor: pointer;
     width: auto;
-    text-align: center;
 }
 
-.button-link.button-link-match:hover {
-    background-color: #0056b3;
+@media (max-width: 820px) {
+    .answers-table,
+    .answers-table tbody,
+    .answers-table tr,
+    .answers-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .answers-table td:first-child {
+        width: 100%;
+        text-align: left;
+        padding-bottom: 0;
+    }
 }

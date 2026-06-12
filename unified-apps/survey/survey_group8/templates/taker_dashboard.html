@@ -6,8 +6,14 @@
 {% endblock %}
 
 {% block content %}
-<h1>Published Surveys</h1>
-<table border = "1">
+<div class="container">
+<div class="section-heading">
+    <div>
+        <div class="eyebrow"><span class="status-dot"></span> Taker dashboard</div>
+        <h1>Published Surveys</h1>
+    </div>
+</div>
+<table class="survey-table">
     <tr>
         <th>Survey ID</th>
         <th>Survey Items</th>
@@ -32,4 +38,5 @@
         </tr>
     {% endfor %}
 </table>
+</div>
 {% endblock %}
