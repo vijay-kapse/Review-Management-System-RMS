@@ -2,9 +2,7 @@ import {
   Badge,
   Button,
   ButtonGroup,
-  Col,
   Container,
-  Row,
   Spinner,
 } from "react-bootstrap";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -23,13 +21,10 @@ import { APP_URI_PREFIX } from "../constants";
 import { IoMdCheckmarkCircleOutline } from "react-icons/io";
 import BulkActionModal from "../components/BulkActionModal";
 import Query from "../components/Query";
-import PageHeader from "../components/PageHeader";
-import SectionTitle from "../components/SectionTitle";
-import PageSubHeader from "../components/PageSubHeader";
 import CurationTable from "../components/CurationTable/Index";
 import { GrAction } from "react-icons/gr";
-import SubHeaderTitle from "../components/Queries/SubHeaderTitle";
 import { ANALYSER_API_URI } from "../constants";
+import { FiDatabase, FiFileText } from "react-icons/fi";
 
 const Curate = () => {
   const [query, setQuery] = useState<queryType>(dummyQuery);
@@ -37,7 +32,7 @@ const Curate = () => {
   const [filteredResults, setFilteredResults] = useState<resultType[]>([]);
   const [selectedResults, setSelectedResults] = useState<resultType[]>([]);
   const [selectedSources, setSelectedSources] = useState<datasourceKeyType[]>(
-    []
+    [],
   );
   const [isLoading, setIsLoading] = useState(false);
   const [showBulkActionModal, setShowBulkActionModal] = useState(false);
@@ -54,7 +49,7 @@ const Curate = () => {
           mergeResults(Object.values(data.searchResults)).map((result) => ({
             ...result,
             curationSortPriority: result.priority,
-          }))
+          })),
         );
       })
       .catch((e) => {
@@ -88,11 +83,13 @@ const Curate = () => {
           currentResults.map((result) =>
             resultIds.includes(result.resultId)
               ? { ...result, priority }
-              : result
+              : result,
           );
         setResults(updatedResults);
         setFilteredResults((currentResults) =>
-          currentResults.length ? updatedResults(currentResults) : currentResults
+          currentResults.length
+            ? updatedResults(currentResults)
+            : currentResults,
         );
         setSelectedResults(updatedResults);
       })
@@ -141,56 +138,67 @@ const Curate = () => {
 
   return (
     <div className="curate-page">
-      <PageHeader title="Curation" />
-      {!isLoading ? (
-        <Container>
-          <SectionTitle title={query.query_name || "New Query"} />
-          <Container className="mb-4">
-            <Query queryText={query.searchText} />
-          </Container>
-          <PageSubHeader
-            subTitle={
-              <SubHeaderTitle
-                count={results.length}
-                title="Unique Results"
-                icon={<IoMdCheckmarkCircleOutline />}
-              />
-            }
-            sideComponent={
+      <Container fluid className="curation-shell">
+        {!isLoading ? (
+          <>
+            <section className="curation-hero">
+              <div>
+                <div className="dashboard-eyebrow">
+                  <FiFileText />
+                  Query curation
+                </div>
+                <h1>{query.query_name || "New Query"}</h1>
+                <p>
+                  Review, categorize, and analyze papers from this saved query.
+                </p>
+              </div>
               <Button
-                className="c-btn-text fw-bold"
+                className="dashboard-primary-action"
                 onClick={() => setShowBulkActionModal(true)}
               >
-                <GrAction className="m-2" />
+                <GrAction />
                 Bulk Action
               </Button>
-            }
-          />
+            </section>
+            <section className="curation-query-panel">
+              <Query queryText={query.searchText} />
+            </section>
 
-          <Container className="my-4 d-flex gap-4 align-items-center">
-            <h5 className="c-text-primary">
-              Select Datasource to filter results
-            </h5>
-            <ButtonGroup className="sources-list">
-              {Object.entries(query.searchResults).map(([source, res], i) => (
-                <Button
-                  key={i}
-                  className={`${
-                    selectedSources.includes(source as datasourceKeyType)
-                      ? "c-btn-primary"
-                      : "c-btn-alternate"
-                  } shadow-none`}
-                  onClick={() =>
-                    handleDatasourceClick(source as datasourceKeyType)
-                  }
-                >
-                  {source} <Badge bg="secondary">{res.documents?.length}</Badge>
-                </Button>
-              ))}
-            </ButtonGroup>
-          </Container>
-          <Row>
-            <Col>
+            <section className="curation-toolbar">
+              <div className="curation-stat">
+                <IoMdCheckmarkCircleOutline />
+                <span>{results.length}</span>
+                <small>Unique Results</small>
+              </div>
+              <div className="curation-filter-group">
+                <h2>
+                  <FiDatabase />
+                  Datasources
+                </h2>
+                <ButtonGroup className="sources-list">
+                  {Object.entries(query.searchResults).map(
+                    ([source, res], i) => (
+                      <Button
+                        key={i}
+                        className={`${
+                          selectedSources.includes(source as datasourceKeyType)
+                            ? "c-btn-primary"
+                            : "c-btn-alternate"
+                        } shadow-none`}
+                        onClick={() =>
+                          handleDatasourceClick(source as datasourceKeyType)
+                        }
+                      >
+                        {source}{" "}
+                        <Badge bg="secondary">{res.documents?.length}</Badge>
+                      </Button>
+                    ),
+                  )}
+                </ButtonGroup>
+              </div>
+            </section>
+
+            <section className="curation-table-panel">
               <CurationTable
                 results={filteredResults.length ? filteredResults : results}
                 categories={categories}
@@ -198,14 +206,14 @@ const Curate = () => {
                 updateCategory={updateDocCategory}
                 setSelectedRows={setSelectedResults}
               />
-            </Col>
-          </Row>
-        </Container>
-      ) : (
-        <Container>
-          <Spinner />
-        </Container>
-      )}
+            </section>
+          </>
+        ) : (
+          <div className="dashboard-loading">
+            <Spinner />
+          </div>
+        )}
+      </Container>
       <BulkActionModal
         show={showBulkActionModal}
         results={selectedResults}

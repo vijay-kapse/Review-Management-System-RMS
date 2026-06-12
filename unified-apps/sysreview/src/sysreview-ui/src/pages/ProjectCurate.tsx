@@ -2,9 +2,7 @@ import {
   Badge,
   Button,
   ButtonGroup,
-  Col,
   Container,
-  Row,
   Spinner,
 } from "react-bootstrap";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -32,10 +30,7 @@ import { IoMdCheckmarkCircleOutline } from "react-icons/io";
 import { GrAction } from "react-icons/gr";
 import BulkActionModal from "../components/BulkActionModal";
 import CurationTable from "../components/CurationTable/Index";
-import PageHeader from "../components/PageHeader";
-import PageSubHeader from "../components/PageSubHeader";
-import SectionTitle from "../components/SectionTitle";
-import SubHeaderTitle from "../components/Queries/SubHeaderTitle";
+import { FiDatabase, FiGitMerge } from "react-icons/fi";
 
 const emptyProject: projectType = {
   projectId: 0,
@@ -50,11 +45,11 @@ const ProjectCurate = () => {
   const [queries, setQueries] = useState<queryType[]>([]);
   const [results, setResults] = useState<projectResultType[]>([]);
   const [filteredResults, setFilteredResults] = useState<projectResultType[]>(
-    []
+    [],
   );
   const [selectedResults, setSelectedResults] = useState<resultType[]>([]);
   const [selectedSources, setSelectedSources] = useState<datasourceKeyType[]>(
-    []
+    [],
   );
   const [categories, setCategories] = useState<categorySetType>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -68,7 +63,8 @@ const ProjectCurate = () => {
     const counts: { [source: string]: number } = {};
     results.forEach((result) => {
       result.occurrences.forEach((occurrence) => {
-        counts[occurrence.datasource] = (counts[occurrence.datasource] || 0) + 1;
+        counts[occurrence.datasource] =
+          (counts[occurrence.datasource] || 0) + 1;
       });
     });
     return counts;
@@ -76,12 +72,12 @@ const ProjectCurate = () => {
 
   const totalInstances = useMemo(
     () => results.reduce((count, result) => count + result.duplicateCount, 0),
-    [results]
+    [results],
   );
 
   const duplicateGroups = useMemo(
     () => results.filter((result) => result.duplicateCount > 1).length,
-    [results]
+    [results],
   );
 
   const loadProjectCuration = (id: number) => {
@@ -90,7 +86,7 @@ const ProjectCurate = () => {
       .then(([projectData, categoryData, queryData]) => {
         const categorySet = arrayToObject(
           categoryData,
-          "categoryId"
+          "categoryId",
         ) as categorySetType;
         setProject(projectData);
         setQueries(queryData);
@@ -113,9 +109,9 @@ const ProjectCurate = () => {
     setFilteredResults(
       sources.length
         ? results.filter((result) =>
-            sources.some((source) => rowHasSource(result, source))
+            sources.some((source) => rowHasSource(result, source)),
           )
-        : []
+        : [],
     );
   };
 
@@ -130,7 +126,7 @@ const ProjectCurate = () => {
   const updateDocCategory = (
     resultIds: number[],
     priority: number,
-    rows: resultType[] = []
+    rows: resultType[] = [],
   ) => {
     const rowsToUpdate = (
       rows.length
@@ -159,12 +155,12 @@ const ProjectCurate = () => {
 
     Promise.all(
       Array.from(updatesByQuery.entries()).map(([queryId, ids]) =>
-        updateQuery(queryId, Array.from(ids), priority)
-      )
+        updateQuery(queryId, Array.from(ids), priority),
+      ),
     )
       .then(() => {
         const targetResultIds = new Set(
-          rowsToUpdate.map((result) => result.resultId)
+          rowsToUpdate.map((result) => result.resultId),
         );
         const updatedResults = (currentResults: projectResultType[]) =>
           currentResults.map((result) => {
@@ -182,14 +178,16 @@ const ProjectCurate = () => {
           });
         setResults(updatedResults);
         setFilteredResults((currentResults) =>
-          currentResults.length ? updatedResults(currentResults) : currentResults
+          currentResults.length
+            ? updatedResults(currentResults)
+            : currentResults,
         );
         setSelectedResults((currentResults) =>
           currentResults.map((result) =>
             targetResultIds.has(result.resultId)
               ? { ...result, priority }
-              : result
-          )
+              : result,
+          ),
         );
       })
       .catch((e) => {
@@ -218,64 +216,79 @@ const ProjectCurate = () => {
 
   return (
     <div className="curate-page">
-      <PageHeader title="Project Curation" />
-      {!isLoading ? (
-        <Container>
-          <SectionTitle title={project.projectName || "Project"} />
-          <PageSubHeader
-            subTitle={
-              <SubHeaderTitle
-                count={results.length}
-                title="Unique Papers"
-                icon={<IoMdCheckmarkCircleOutline />}
-              />
-            }
-            sideComponent={
+      <Container fluid className="curation-shell">
+        {!isLoading ? (
+          <>
+            <section className="curation-hero">
+              <div>
+                <div className="dashboard-eyebrow">
+                  <FiGitMerge />
+                  Project curation
+                </div>
+                <h1>{project.projectName || "Project"}</h1>
+                <p>
+                  Deduplicated project-level review across every saved query.
+                </p>
+              </div>
               <Button
-                className="c-btn-text fw-bold"
+                className="dashboard-primary-action"
                 onClick={() => setShowBulkActionModal(true)}
               >
-                <GrAction className="m-2" />
+                <GrAction />
                 Bulk Action
               </Button>
-            }
-          />
+            </section>
 
-          <Container className="my-4 d-flex flex-wrap gap-4 align-items-center">
-            <h5 className="c-text-primary mb-0">
-              Saved Results <Badge bg="secondary">{totalInstances}</Badge>
-            </h5>
-            <h5 className="c-text-primary mb-0">
-              Duplicate Groups <Badge bg="warning">{duplicateGroups}</Badge>
-            </h5>
-            <h5 className="c-text-primary mb-0">
-              Queries <Badge bg="secondary">{queries.length}</Badge>
-            </h5>
-          </Container>
+            <section className="curation-stat-grid">
+              <div className="curation-stat">
+                <IoMdCheckmarkCircleOutline />
+                <span>{results.length}</span>
+                <small>Unique Papers</small>
+              </div>
+              <div className="curation-stat">
+                <FiDatabase />
+                <span>{totalInstances}</span>
+                <small>Saved Results</small>
+              </div>
+              <div className="curation-stat">
+                <FiGitMerge />
+                <span>{duplicateGroups}</span>
+                <small>Duplicate Groups</small>
+              </div>
+              <div className="curation-stat">
+                <FiDatabase />
+                <span>{queries.length}</span>
+                <small>Queries</small>
+              </div>
+            </section>
 
-          <Container className="my-4 d-flex flex-wrap gap-4 align-items-center">
-            <h5 className="c-text-primary mb-0">Filter by datasource</h5>
-            <ButtonGroup className="sources-list">
-              {Object.entries(sourceCounts).map(([source, count]) => (
-                <Button
-                  key={source}
-                  className={`${
-                    selectedSources.includes(source as datasourceKeyType)
-                      ? "c-btn-primary"
-                      : "c-btn-alternate"
-                  } shadow-none`}
-                  onClick={() =>
-                    handleDatasourceClick(source as datasourceKeyType)
-                  }
-                >
-                  {source} <Badge bg="secondary">{count}</Badge>
-                </Button>
-              ))}
-            </ButtonGroup>
-          </Container>
+            <section className="curation-toolbar">
+              <div className="curation-filter-group">
+                <h2>
+                  <FiDatabase />
+                  Datasources
+                </h2>
+                <ButtonGroup className="sources-list">
+                  {Object.entries(sourceCounts).map(([source, count]) => (
+                    <Button
+                      key={source}
+                      className={`${
+                        selectedSources.includes(source as datasourceKeyType)
+                          ? "c-btn-primary"
+                          : "c-btn-alternate"
+                      } shadow-none`}
+                      onClick={() =>
+                        handleDatasourceClick(source as datasourceKeyType)
+                      }
+                    >
+                      {source} <Badge bg="secondary">{count}</Badge>
+                    </Button>
+                  ))}
+                </ButtonGroup>
+              </div>
+            </section>
 
-          <Row>
-            <Col>
+            <section className="curation-table-panel">
               <CurationTable
                 results={visibleResults}
                 categories={categories}
@@ -285,14 +298,14 @@ const ProjectCurate = () => {
                 showProjectColumns
                 showDeduplication
               />
-            </Col>
-          </Row>
-        </Container>
-      ) : (
-        <Container>
-          <Spinner />
-        </Container>
-      )}
+            </section>
+          </>
+        ) : (
+          <div className="dashboard-loading">
+            <Spinner />
+          </div>
+        )}
+      </Container>
       <BulkActionModal
         show={showBulkActionModal}
         results={selectedResults}
