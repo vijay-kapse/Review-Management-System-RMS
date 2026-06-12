@@ -1288,7 +1288,7 @@ app.get('/launch/survey', requireLogin, (_req, res) => {
 });
 
 app.get('/launch/chatbot', requireLogin, (req, res) => {
-  const q = new URLSearchParams({ sharedEmail: req.portalSession.email, next: '/chatbot/static/index.html?portalReady=1' });
+  const q = new URLSearchParams({ sharedEmail: req.portalSession.email, next: '/chatbot/static/index.html' });
   res.redirect(`/chatbot/shared-entry?${q.toString()}`);
 });
 
@@ -1341,13 +1341,13 @@ app.get(['/argus', '/argus/', '/argus/login', '/argus/login/', '/argus/register'
 });
 
 app.get(['/chatbot', '/chatbot/', '/chatbot/static/index.html'], requireLogin, (req, res, next) => {
-  if (req.query.portalReady === '1') {
+  if (req.cookies?.session_token) {
     return next();
   }
 
   const q = new URLSearchParams({
     sharedEmail: req.portalSession.email,
-    next: '/chatbot/static/index.html?portalReady=1',
+    next: '/chatbot/static/index.html',
   });
   res.redirect(`/chatbot/shared-entry?${q.toString()}`);
 });

@@ -317,6 +317,122 @@
       line-height: 1.6;
     }
 
+    .workspace-grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 0.88fr) minmax(0, 1.12fr);
+      gap: 18px;
+      align-items: stretch;
+      margin-top: 26px;
+    }
+
+    .panel {
+      display: grid;
+      gap: 16px;
+      align-content: start;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+    }
+
+    .panel h2,
+    .panel h3 {
+      margin: 0;
+    }
+
+    .panel h2 {
+      font-size: 22px;
+    }
+
+    .panel h3 {
+      font-size: 15px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .status {
+      margin-top: 22px;
+      padding: 14px 16px;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      color: #1e3a8a;
+      background: #eff6ff;
+      font-weight: 800;
+    }
+
+    .status.error {
+      border-color: #fecaca;
+      color: #991b1b;
+      background: #fef2f2;
+    }
+
+    .control-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    input[type="file"],
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      color: var(--ink);
+      font: inherit;
+    }
+
+    input[type="file"] {
+      padding: 12px;
+    }
+
+    textarea {
+      min-height: 154px;
+      padding: 14px 16px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+
+    input[type="file"]:focus,
+    textarea:focus {
+      outline: none;
+      border-color: rgba(29, 78, 216, 0.72);
+      box-shadow: 0 0 0 4px rgba(29, 78, 216, 0.13);
+    }
+
+    .file-list,
+    .source-list {
+      display: grid;
+      gap: 8px;
+      min-height: 44px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .file-list li,
+    .source-list li {
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fafc;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .answer-box {
+      min-height: 190px;
+      padding: 16px;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      background: #f0fdf4;
+      color: #14532d;
+      line-height: 1.65;
+      white-space: pre-wrap;
+    }
+
     .meta-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -359,6 +475,10 @@
 
     @media (max-width: 860px) {
       .hero {
+        grid-template-columns: 1fr;
+      }
+
+      .workspace-grid {
         grid-template-columns: 1fr;
       }
 
@@ -421,7 +541,7 @@
 
       <nav class="nav-actions" aria-label="Quest actions">
         <a class="btn btn-secondary" href="admin.html">Admin Entry</a>
-        <a class="btn btn-primary" href="../../launch/chatbot">Open Quest Session</a>
+        <a class="btn btn-primary" href="../../apps">RMS Apps</a>
       </nav>
     </header>
 
@@ -433,13 +553,9 @@
           <p class="lead">
             Upload research documents, keep your workspace organized, and ask focused questions against the files already indexed for your session.
           </p>
-          <div class="actions">
-            <a class="btn btn-primary" href="../../launch/chatbot">Open Quest Session</a>
-            <a class="btn btn-secondary" href="admin.html">Open Admin Entry</a>
-          </div>
         </div>
 
-        <aside class="workspace" aria-label="Quest interface preview">
+        <aside class="workspace" aria-label="Quest session summary">
           <div class="workspace-header">
             <div class="window-dots" aria-hidden="true"><span></span><span></span><span></span></div>
             <div class="workspace-title">Quest workspace</div>
@@ -449,39 +565,52 @@
               <div class="file-icon">PDF</div>
               <div>
                 <div class="small-label">Indexed documents</div>
-                <strong>3 files ready for Q&A</strong>
+                <strong id="fileCountLabel">Checking files...</strong>
               </div>
-              <div class="small-label">Live session</div>
+              <div class="small-label" id="sessionLabel">Session</div>
             </div>
 
             <div class="question-box">
               <div class="small-label">Question</div>
-              <div class="question">What are the main findings across the uploaded papers?</div>
+              <div class="question">Ask a focused question after uploading PDF, TXT, or CSV documents.</div>
             </div>
 
             <div class="answer">
-              <h2>Answer draft</h2>
+              <h2>Ready for Q&A</h2>
               <p>
-                Quest searches the active document set and returns a concise response grounded in the files available to the current session.
+                This page is the live Quest workspace. Your RMS login is used to create the Quest session automatically.
               </p>
             </div>
           </div>
         </aside>
       </section>
 
-      <section class="meta-grid" aria-label="Quest capabilities">
-        <div class="meta-card">
-          <strong>Unified access</strong>
-          <span>Entry remains connected to the shared platform login flow used by the rest of the workspace.</span>
-        </div>
-        <div class="meta-card">
-          <strong>Document sessions</strong>
-          <span>Uploaded files stay grouped for the active session so questions can target the current document set.</span>
-        </div>
-        <div class="meta-card">
-          <strong>Admin path</strong>
-          <span>The existing admin entry remains available at <code>/chatbot/static/admin.html</code>.</span>
-        </div>
+      <div id="statusBox" class="status">Checking Quest session...</div>
+
+      <section class="workspace-grid" aria-label="Quest document Q&A workspace">
+        <section class="panel" aria-labelledby="upload-title">
+          <h2 id="upload-title">Document Upload</h2>
+          <input id="fileInput" type="file" multiple accept=".pdf,.txt,.csv" />
+          <div class="control-row">
+            <button id="uploadBtn" class="btn btn-primary" type="button">Upload Documents</button>
+            <button id="clearBtn" class="btn btn-secondary" type="button">Clear Uploaded Files</button>
+          </div>
+          <h3>Uploaded Files</h3>
+          <ul id="filesList" class="file-list"><li>No files uploaded yet.</li></ul>
+        </section>
+
+        <section class="panel" aria-labelledby="ask-title">
+          <h2 id="ask-title">Ask Quest</h2>
+          <textarea id="queryInput" placeholder="Ask a question about the uploaded documents..."></textarea>
+          <div class="control-row">
+            <button id="askBtn" class="btn btn-primary" type="button">Ask Question</button>
+            <a class="btn btn-secondary" href="../../apps">Back to RMS</a>
+          </div>
+          <h3>Response</h3>
+          <div id="answerBox" class="answer-box">Your Quest response will appear here.</div>
+          <h3>Sources</h3>
+          <ul id="sourcesList" class="source-list"><li>No sources yet.</li></ul>
+        </section>
       </section>
     </main>
 
@@ -489,5 +618,143 @@
       Quest is part of the unified RMS workspace.
     </footer>
   </div>
+  <script>
+    const basePath = new URL('../', window.location.href).pathname;
+    const endpoint = (path) => `${basePath}${path}`;
+    const statusBox = document.getElementById('statusBox');
+    const filesList = document.getElementById('filesList');
+    const answerBox = document.getElementById('answerBox');
+    const sourcesList = document.getElementById('sourcesList');
+    const fileInput = document.getElementById('fileInput');
+    const queryInput = document.getElementById('queryInput');
+    const fileCountLabel = document.getElementById('fileCountLabel');
+    const sessionLabel = document.getElementById('sessionLabel');
+
+    function setStatus(message, isError = false) {
+      statusBox.textContent = message;
+      statusBox.className = isError ? 'status error' : 'status';
+    }
+
+    function escapeHTML(value) {
+      return String(value).replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[char]));
+    }
+
+    async function readJson(response) {
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.message || data.detail || data.error || 'Request failed.');
+      }
+      return data;
+    }
+
+    async function ensureSession() {
+      const response = await fetch(endpoint('admin/check'), { credentials: 'include' });
+      const data = await readJson(response);
+      if (!data.logged_in) {
+        setStatus('Quest session is missing. Reopening from RMS...', true);
+        window.location.replace(new URL('../../launch/chatbot', window.location.href).pathname);
+        return false;
+      }
+      sessionLabel.textContent = data.username || 'Live session';
+      setStatus(`Signed in to Quest as ${data.username || 'RMS user'}.`);
+      return true;
+    }
+
+    async function refreshFiles() {
+      const response = await fetch(endpoint('uploaded_files'), { credentials: 'include' });
+      const data = await readJson(response);
+      const files = data.files || [];
+      fileCountLabel.textContent = files.length ? `${files.length} file${files.length === 1 ? '' : 's'} ready for Q&A` : 'No files uploaded yet';
+      filesList.innerHTML = files.length
+        ? files.map((name) => `<li>${escapeHTML(name)}</li>`).join('')
+        : '<li>No files uploaded yet.</li>';
+    }
+
+    async function uploadFiles() {
+      if (!fileInput.files.length) {
+        setStatus('Select one or more PDF, TXT, or CSV files first.', true);
+        return;
+      }
+      const formData = new FormData();
+      Array.from(fileInput.files).forEach((file) => formData.append('files', file));
+      setStatus('Uploading and processing documents...');
+      try {
+        const response = await fetch(endpoint('upload'), {
+          method: 'POST',
+          body: formData,
+          credentials: 'include'
+        });
+        const data = await readJson(response);
+        setStatus(data.message || 'Upload completed.');
+        fileInput.value = '';
+        await refreshFiles();
+      } catch (error) {
+        setStatus(error.message || 'Upload failed.', true);
+      }
+    }
+
+    async function clearFiles() {
+      setStatus('Clearing uploaded files...');
+      try {
+        const response = await fetch(endpoint('uploaded_files'), {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+        const data = await readJson(response);
+        answerBox.textContent = 'Your Quest response will appear here.';
+        sourcesList.innerHTML = '<li>No sources yet.</li>';
+        setStatus(data.message || 'Uploaded files cleared.');
+        await refreshFiles();
+      } catch (error) {
+        setStatus(error.message || 'Failed to clear files.', true);
+      }
+    }
+
+    async function askQuestion() {
+      const query = queryInput.value.trim();
+      if (!query) {
+        setStatus('Enter a question first.', true);
+        return;
+      }
+      const formData = new FormData();
+      formData.append('query', query);
+      setStatus('Generating Quest response...');
+      try {
+        const response = await fetch(endpoint('query'), {
+          method: 'POST',
+          body: formData,
+          credentials: 'include'
+        });
+        const data = await readJson(response);
+        answerBox.textContent = data.response || 'No response returned.';
+        const sources = data.sources || [];
+        sourcesList.innerHTML = sources.length
+          ? sources.map((source) => `<li>${escapeHTML(source)}</li>`).join('')
+          : '<li>No sources returned.</li>';
+        setStatus('Response ready.');
+      } catch (error) {
+        setStatus(error.message || 'Quest request failed.', true);
+      }
+    }
+
+    document.getElementById('uploadBtn').addEventListener('click', uploadFiles);
+    document.getElementById('clearBtn').addEventListener('click', clearFiles);
+    document.getElementById('askBtn').addEventListener('click', askQuestion);
+
+    ensureSession()
+      .then((ok) => {
+        if (ok) return refreshFiles();
+        return null;
+      })
+      .catch((error) => {
+        setStatus(error.message || 'Could not verify the Quest session.', true);
+      });
+  </script>
 </body>
 </html>
