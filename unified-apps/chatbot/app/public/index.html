@@ -3,95 +3,93 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>QUEST Chatbot Workspace</title>
+  <title>Quest - Q&A for Your Docs</title>
   <style>
     :root {
-      --bg: #eef6fb;
-      --panel: #ffffff;
-      --panel-soft: #f8fafc;
-      --text: #0f172a;
+      --ink: #0f172a;
       --muted: #475569;
-      --border: #cbd5e1;
-      --border-strong: #94a3b8;
-      --primary: #0369a1;
-      --primary-hover: #075985;
-      --secondary: #e2e8f0;
-      --success-bg: #ecfeff;
-      --success-text: #155e75;
-      --error-bg: #fff1f2;
-      --error-text: #be123c;
-      --accent: #0f766e;
-      --warning: #a16207;
-      --shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+      --line: #d8e3f0;
+      --panel: #ffffff;
+      --soft: #f5f8fc;
+      --blue: #1d4ed8;
+      --cyan: #0891b2;
+      --green: #15803d;
+      --amber: #b45309;
+      --shadow: 0 18px 44px rgba(15, 23, 42, 0.12);
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
       min-height: 100vh;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family:
+        Inter,
+        "Segoe UI",
+        Arial,
+        sans-serif;
+      color: var(--ink);
       background:
-        linear-gradient(180deg, rgba(224, 242, 254, 0.92) 0%, rgba(248, 250, 252, 0.96) 46%, #f8fafc 100%);
-      color: var(--text);
-      line-height: 1.5;
-    }
-
-    button, input, textarea {
-      font: inherit;
+        linear-gradient(180deg, rgba(219, 234, 254, 0.82), rgba(255, 255, 255, 0.94) 45%),
+        #f8fafc;
     }
 
     .shell {
-      width: min(1360px, calc(100vw - 32px));
-      margin: 0 auto;
-      padding: 18px 0 28px;
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
     }
 
     .topbar {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 16px;
+      display: flex;
       align-items: center;
-      margin-bottom: 12px;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 22px clamp(20px, 5vw, 72px);
+      border-bottom: 1px solid rgba(216, 227, 240, 0.82);
+      background: rgba(255, 255, 255, 0.78);
+      backdrop-filter: blur(14px);
     }
 
     .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
       min-width: 0;
+      text-decoration: none;
+      color: inherit;
     }
 
-    .eyebrow {
-      margin: 0 0 3px;
-      color: var(--accent);
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: 0;
-      text-transform: uppercase;
+    .brand-mark {
+      width: 44px;
+      height: 44px;
+      flex: 0 0 auto;
+      border-radius: 12px;
+      box-shadow: 0 12px 24px rgba(29, 78, 216, 0.18);
     }
 
-    h1, h2, h3, p {
-      margin-top: 0;
+    .brand-name {
+      display: grid;
+      gap: 1px;
     }
 
-    h1 {
-      margin-bottom: 0;
-      font-size: clamp(28px, 3vw, 40px);
-      line-height: 1.05;
-      letter-spacing: 0;
-    }
-
-    h2 {
-      margin-bottom: 0;
+    .brand-title {
       font-size: 20px;
-      line-height: 1.2;
+      font-weight: 800;
+      line-height: 1;
     }
 
-    h3 {
-      margin-bottom: 0;
-      font-size: 15px;
-      line-height: 1.25;
+    .brand-subtitle {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
     }
 
-    .header-actions {
+    .nav-actions {
       display: flex;
       align-items: center;
       gap: 10px;
@@ -99,731 +97,397 @@
       justify-content: flex-end;
     }
 
-    .status {
-      min-height: 38px;
-      display: flex;
+    .main {
+      width: min(1180px, calc(100vw - 40px));
+      margin: 0 auto;
+      padding: clamp(34px, 6vw, 70px) 0;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+      gap: clamp(26px, 4vw, 54px);
       align-items: center;
-      gap: 8px;
-      max-width: 520px;
-      padding: 9px 12px;
-      border: 1px solid #a5f3fc;
-      border-radius: 8px;
-      background: var(--success-bg);
-      color: var(--success-text);
-      font-size: 14px;
-      font-weight: 650;
     }
 
-    .status.is-error {
-      border-color: #fecdd3;
-      background: var(--error-bg);
-      color: var(--error-text);
-    }
-
-    .portal-link {
+    .eyebrow {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-      min-height: 38px;
-      padding: 9px 12px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: var(--panel);
-      color: var(--text);
-      font-size: 14px;
-      font-weight: 750;
-      text-decoration: none;
-      white-space: nowrap;
-    }
-
-    .workspace {
-      display: grid;
-      grid-template-columns: minmax(280px, 330px) minmax(0, 1fr);
-      gap: 16px;
-      align-items: start;
-    }
-
-    .panel {
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.96);
-      box-shadow: var(--shadow);
-    }
-
-    .document-panel {
-      position: sticky;
-      top: 16px;
-      padding: 16px;
-    }
-
-    .chat-panel {
-      min-width: 0;
-      padding: 16px;
-    }
-
-    .section-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-
-    .count-pill {
-      flex: none;
-      border: 1px solid #bae6fd;
-      border-radius: 999px;
-      background: #f0f9ff;
-      color: #075985;
-      padding: 4px 9px;
-      font-size: 12px;
-      font-weight: 800;
-      white-space: nowrap;
-    }
-
-    .upload-stack {
-      display: grid;
-      gap: 10px;
-    }
-
-    .file-input {
-      width: 100%;
-      min-height: 42px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: var(--panel-soft);
-      color: var(--text);
-      padding: 8px;
-      font-size: 14px;
-    }
-
-    .selected-files {
-      min-height: 28px;
-      color: var(--muted);
-      font-size: 13px;
-      overflow-wrap: anywhere;
-    }
-
-    .button-row {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
       gap: 8px;
+      width: fit-content;
+      padding: 8px 12px;
+      margin-bottom: 18px;
+      border: 1px solid #bfdbfe;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #1e3a8a;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 780px;
+      font-size: clamp(42px, 7vw, 72px);
+      line-height: 0.98;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      max-width: 680px;
+      margin: 22px 0 0;
+      color: var(--muted);
+      font-size: clamp(17px, 2vw, 21px);
+      line-height: 1.65;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 30px;
     }
 
     .btn {
-      min-height: 42px;
-      border: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      padding: 12px 18px;
+      border: 1px solid transparent;
       border-radius: 8px;
-      padding: 10px 14px;
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 800;
-      cursor: pointer;
-      transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+      text-decoration: none;
+      transition:
+        transform 160ms ease,
+        box-shadow 160ms ease,
+        background-color 160ms ease;
     }
 
-    .btn:disabled {
-      cursor: wait;
-      opacity: 0.68;
+    .btn:hover {
+      transform: translateY(-1px);
     }
 
     .btn-primary {
-      background: var(--primary);
       color: #ffffff;
+      background: var(--blue);
+      box-shadow: 0 14px 24px rgba(29, 78, 216, 0.22);
     }
 
-    .btn-primary:hover:not(:disabled) {
-      background: var(--primary-hover);
+    .btn-primary:hover {
+      background: #1e40af;
     }
 
     .btn-secondary {
-      border: 1px solid var(--border);
-      background: var(--secondary);
-      color: var(--text);
-    }
-
-    .btn-secondary:hover:not(:disabled), .portal-link:hover {
-      border-color: var(--border-strong);
-      background: #f1f5f9;
-    }
-
-    .library {
-      margin-top: 16px;
-      padding-top: 14px;
-      border-top: 1px solid var(--border);
-    }
-
-    .file-list {
-      display: grid;
-      gap: 8px;
-      max-height: calc(100vh - 330px);
-      min-height: 46px;
-      margin: 10px 0 0;
-      padding: 0;
-      overflow: auto;
-      list-style: none;
-    }
-
-    .file-item {
-      display: grid;
-      gap: 2px;
-      padding: 9px 10px;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      background: var(--panel-soft);
-    }
-
-    .file-name {
-      color: var(--text);
-      font-size: 14px;
-      font-weight: 700;
-      overflow-wrap: anywhere;
-    }
-
-    .file-meta {
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 650;
-    }
-
-    .empty-state {
-      display: flex;
-      align-items: center;
-      min-height: 74px;
-      color: var(--muted);
-      font-size: 14px;
-      font-weight: 650;
-    }
-
-    .question-area {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 150px;
-      gap: 10px;
-      align-items: stretch;
-      margin-bottom: 14px;
-    }
-
-    textarea {
-      width: 100%;
-      min-height: 104px;
-      max-height: 220px;
-      resize: vertical;
-      border: 1px solid var(--border);
-      border-radius: 8px;
+      color: var(--ink);
+      border-color: var(--line);
       background: #ffffff;
-      color: var(--text);
-      padding: 12px 13px;
-      font-size: 16px;
-      line-height: 1.45;
     }
 
-    textarea:focus, .file-input:focus {
-      outline: 3px solid rgba(14, 165, 233, 0.18);
-      border-color: #0284c7;
+    .btn-secondary:hover {
+      background: #f8fafc;
     }
 
-    .question-actions {
-      display: grid;
-      gap: 8px;
-      align-content: start;
+    .workspace {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: var(--shadow);
+      overflow: hidden;
     }
 
-    .result-head {
+    .workspace-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 10px;
+      gap: 16px;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+      background: #f8fafc;
     }
 
-    .result-meta {
+    .window-dots {
+      display: flex;
+      gap: 7px;
+    }
+
+    .window-dots span {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: #94a3b8;
+    }
+
+    .window-dots span:nth-child(1) {
+      background: #ef4444;
+    }
+
+    .window-dots span:nth-child(2) {
+      background: #f59e0b;
+    }
+
+    .window-dots span:nth-child(3) {
+      background: #22c55e;
+    }
+
+    .workspace-title {
       color: var(--muted);
       font-size: 13px;
+      font-weight: 800;
+    }
+
+    .workspace-body {
+      display: grid;
+      gap: 14px;
+      padding: 20px;
+    }
+
+    .upload-strip {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 14px;
+      align-items: center;
+      padding: 15px;
+      border: 1px dashed #93c5fd;
+      border-radius: 8px;
+      background: #eff6ff;
+    }
+
+    .file-icon {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 8px;
+      color: #ffffff;
+      background: var(--cyan);
+      font-weight: 900;
+    }
+
+    .small-label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .question-box {
+      display: grid;
+      gap: 12px;
+      padding: 18px;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      background: #f0fdf4;
+    }
+
+    .question {
+      min-height: 52px;
+      padding: 14px 16px;
+      border: 1px solid #86efac;
+      border-radius: 8px;
+      color: #166534;
+      background: #ffffff;
       font-weight: 700;
-      white-space: nowrap;
     }
 
     .answer {
-      min-height: 300px;
       padding: 18px;
-      border: 1px solid var(--border);
+      border: 1px solid var(--line);
       border-radius: 8px;
       background: #ffffff;
-      color: var(--text);
-      overflow-wrap: anywhere;
     }
 
-    .answer-prose {
-      max-width: 82ch;
-      font-size: 16px;
-      line-height: 1.68;
+    .answer h2 {
+      margin: 0 0 10px;
+      font-size: 18px;
     }
 
-    .answer-prose p {
-      margin: 0 0 12px;
+    .answer p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
     }
 
-    .answer-prose p:last-child {
-      margin-bottom: 0;
-    }
-
-    .evidence-stack {
+    .meta-grid {
       display: grid;
-      gap: 10px;
-      margin-top: 14px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 30px;
     }
 
-    .evidence-card {
-      border-left: 4px solid var(--primary);
+    .meta-card {
+      padding: 18px;
+      border: 1px solid var(--line);
       border-radius: 8px;
-      background: var(--panel-soft);
-      padding: 12px 13px;
+      background: rgba(255, 255, 255, 0.82);
     }
 
-    .evidence-citation {
+    .meta-card strong {
       display: block;
-      margin-bottom: 5px;
-      color: #075985;
-      font-size: 13px;
-      font-weight: 850;
-      overflow-wrap: anywhere;
+      margin-bottom: 6px;
+      font-size: 16px;
     }
 
-    .evidence-text {
+    .meta-card span {
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .footer {
+      padding: 22px clamp(20px, 5vw, 72px);
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.82);
+      font-size: 14px;
+    }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 6px;
+      background: #e2e8f0;
       color: #1e293b;
-      font-size: 15px;
-      line-height: 1.58;
     }
 
-    .sources-panel {
-      margin-top: 14px;
-      border: 1px solid #dbeafe;
-      border-radius: 8px;
-      background: #f8fbff;
-      padding: 12px;
-    }
-
-    .sources-panel summary {
-      cursor: pointer;
-      color: var(--text);
-      font-size: 15px;
-      font-weight: 850;
-    }
-
-    .sources-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-      gap: 8px;
-      margin: 10px 0 0;
-      padding: 0;
-      list-style: none;
-    }
-
-    .source-item {
-      display: grid;
-      gap: 4px;
-      min-width: 0;
-      padding: 9px 10px;
-      border: 1px solid #dbeafe;
-      border-radius: 8px;
-      background: #ffffff;
-    }
-
-    .source-name {
-      color: #1e293b;
-      font-size: 13px;
-      font-weight: 800;
-      overflow-wrap: anywhere;
-    }
-
-    .source-meta {
-      color: var(--warning);
-      font-size: 12px;
-      font-weight: 800;
-    }
-
-    @media (max-width: 980px) {
-      .workspace {
+    @media (max-width: 860px) {
+      .hero {
         grid-template-columns: 1fr;
       }
 
-      .document-panel {
-        position: static;
-      }
-
-      .file-list {
-        max-height: 220px;
-      }
-    }
-
-    @media (max-width: 720px) {
-      .shell {
-        width: min(100vw - 20px, 680px);
-        padding-top: 10px;
+      .meta-grid {
+        grid-template-columns: 1fr;
       }
 
       .topbar {
-        grid-template-columns: 1fr;
+        align-items: flex-start;
+        flex-direction: column;
       }
 
-      .header-actions {
-        justify-content: stretch;
-      }
-
-      .status, .portal-link {
+      .nav-actions,
+      .nav-actions .btn {
         width: 100%;
       }
+    }
 
-      .question-area, .button-row {
-        grid-template-columns: 1fr;
+    @media (max-width: 560px) {
+      .main {
+        width: min(100vw - 28px, 1180px);
       }
 
       h1 {
-        font-size: 28px;
+        font-size: 40px;
       }
 
-      .answer {
-        min-height: 220px;
-        padding: 14px;
+      .actions,
+      .actions .btn {
+        width: 100%;
+      }
+
+      .upload-strip {
+        grid-template-columns: 1fr;
       }
     }
   </style>
 </head>
 <body>
-  <main class="shell">
+  <div class="shell">
     <header class="topbar">
-      <div class="brand">
-        <p class="eyebrow">QUEST Document Assistant</p>
-        <h1>QUEST Chatbot Workspace</h1>
-      </div>
-      <div class="header-actions">
-        <div id="statusBox" class="status">Checking shared chatbot session...</div>
-        <a id="portalLink" class="portal-link" href="/">Back to Portal</a>
-      </div>
+      <a class="brand" href="/chatbot/static/index.html" aria-label="Quest home">
+        <svg class="brand-mark" viewBox="0 0 64 64" role="img" aria-label="Quest logo">
+          <defs>
+            <linearGradient id="questLogo" x1="10" y1="8" x2="54" y2="58" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="#1d4ed8" />
+              <stop offset="0.58" stop-color="#0891b2" />
+              <stop offset="1" stop-color="#15803d" />
+            </linearGradient>
+          </defs>
+          <rect x="6" y="6" width="52" height="52" rx="14" fill="url(#questLogo)" />
+          <path d="M21 27c0-7 5-12 12-12s12 5 12 12-5 12-12 12h-2l-7 7 2-9c-3-2-5-6-5-10Z" fill="#ffffff" opacity="0.96" />
+          <path d="M28 27h10M28 33h7" stroke="#1e40af" stroke-width="3" stroke-linecap="round" />
+        </svg>
+        <span class="brand-name">
+          <span class="brand-title">Quest</span>
+          <span class="brand-subtitle">Document Q&A</span>
+        </span>
+      </a>
+
+      <nav class="nav-actions" aria-label="Quest actions">
+        <a class="btn btn-secondary" href="/chatbot/static/admin.html">Admin Entry</a>
+        <a class="btn btn-primary" href="/unified-login.html?app=chatbot">Unified Login</a>
+      </nav>
     </header>
 
-    <div class="workspace">
-      <aside class="panel document-panel">
-        <div class="section-head">
-          <h2>Documents</h2>
-          <span id="fileCount" class="count-pill">0 files</span>
-        </div>
-
-        <div class="upload-stack">
-          <input id="fileInput" class="file-input" type="file" multiple accept=".pdf,.txt,.csv" />
-          <div id="selectedFiles" class="selected-files">No files selected.</div>
-          <div class="button-row">
-            <button id="uploadBtn" class="btn btn-primary">Upload</button>
-            <button id="clearBtn" class="btn btn-secondary">Clear</button>
+    <main class="main">
+      <section class="hero" aria-labelledby="quest-title">
+        <div>
+          <div class="eyebrow"><span class="dot"></span> Shared platform workspace</div>
+          <h1 id="quest-title">Quest q&a for your docs</h1>
+          <p class="lead">
+            Upload research documents, keep your workspace organized, and ask focused questions against the files already indexed for your session.
+          </p>
+          <div class="actions">
+            <a class="btn btn-primary" href="/unified-login.html?app=chatbot">Continue to Unified Login</a>
+            <a class="btn btn-secondary" href="/chatbot/static/admin.html">Open Admin Entry</a>
           </div>
         </div>
 
-        <section class="library" aria-labelledby="libraryTitle">
-          <div class="section-head">
-            <h3 id="libraryTitle">Uploaded Files</h3>
+        <aside class="workspace" aria-label="Quest interface preview">
+          <div class="workspace-header">
+            <div class="window-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+            <div class="workspace-title">Quest workspace</div>
           </div>
-          <ul id="filesList" class="file-list">
-            <li class="empty-state">No files uploaded yet.</li>
-          </ul>
-        </section>
-      </aside>
+          <div class="workspace-body">
+            <div class="upload-strip">
+              <div class="file-icon">PDF</div>
+              <div>
+                <div class="small-label">Indexed documents</div>
+                <strong>3 files ready for Q&A</strong>
+              </div>
+              <div class="small-label">Live session</div>
+            </div>
 
-      <section class="panel chat-panel">
-        <div class="section-head">
-          <h2>Ask the Chatbot</h2>
-        </div>
+            <div class="question-box">
+              <div class="small-label">Question</div>
+              <div class="question">What are the main findings across the uploaded papers?</div>
+            </div>
 
-        <div class="question-area">
-          <textarea id="queryInput" placeholder="Ask a question about the uploaded documents..."></textarea>
-          <div class="question-actions">
-            <button id="askBtn" class="btn btn-primary">Ask Question</button>
+            <div class="answer">
+              <h2>Answer draft</h2>
+              <p>
+                Quest searches the active document set and returns a concise response grounded in the files available to the current session.
+              </p>
+            </div>
           </div>
-        </div>
-
-        <div class="result-head">
-          <h2>Response</h2>
-          <span id="resultMeta" class="result-meta">Ready</span>
-        </div>
-
-        <div id="answerBox" class="answer">
-          <div class="empty-state">Your chatbot response will appear here.</div>
-        </div>
-
-        <details class="sources-panel" open>
-          <summary>Sources</summary>
-          <ul id="sourcesList" class="sources-list">
-            <li class="empty-state">No sources yet.</li>
-          </ul>
-        </details>
+        </aside>
       </section>
-    </div>
-  </main>
 
-  <script>
-    const statusBox = document.getElementById('statusBox');
-    const filesList = document.getElementById('filesList');
-    const fileCount = document.getElementById('fileCount');
-    const answerBox = document.getElementById('answerBox');
-    const sourcesList = document.getElementById('sourcesList');
-    const resultMeta = document.getElementById('resultMeta');
-    const selectedFiles = document.getElementById('selectedFiles');
-    const fileInput = document.getElementById('fileInput');
-    const queryInput = document.getElementById('queryInput');
-    const uploadBtn = document.getElementById('uploadBtn');
-    const clearBtn = document.getElementById('clearBtn');
-    const askBtn = document.getElementById('askBtn');
-    const portalLink = document.getElementById('portalLink');
-    const publicPrefix = window.location.pathname.startsWith('/rms/') || window.location.pathname === '/rms' ? '/rms' : '';
+      <section class="meta-grid" aria-label="Quest capabilities">
+        <div class="meta-card">
+          <strong>Unified access</strong>
+          <span>Entry remains connected to the shared platform login flow used by the rest of the workspace.</span>
+        </div>
+        <div class="meta-card">
+          <strong>Document sessions</strong>
+          <span>Uploaded files stay grouped for the active session so questions can target the current document set.</span>
+        </div>
+        <div class="meta-card">
+          <strong>Admin path</strong>
+          <span>The existing admin entry remains available at <code>/chatbot/static/admin.html</code>.</span>
+        </div>
+      </section>
+    </main>
 
-    function appPath(path) {
-      return `${publicPrefix}${path}`;
-    }
-
-    portalLink.href = appPath('/');
-
-    function setStatus(message, isError = false) {
-      statusBox.textContent = message;
-      statusBox.className = isError ? 'status is-error' : 'status';
-    }
-
-    function setBusy(isBusy) {
-      uploadBtn.disabled = isBusy;
-      clearBtn.disabled = isBusy;
-      askBtn.disabled = isBusy;
-    }
-
-    function escapeHTML(value) {
-      return String(value).replace(/[&<>"']/g, (char) => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;'
-      }[char]));
-    }
-
-    function renderEmpty(container, message) {
-      const tag = container.tagName === 'UL' ? 'li' : 'div';
-      container.innerHTML = `<${tag} class="empty-state">${escapeHTML(message)}</${tag}>`;
-    }
-
-    function responseMessage(data, fallback) {
-      if (!data) return fallback;
-      if (typeof data.message === 'string') return data.message;
-      if (typeof data.detail === 'string') return data.detail;
-      if (Array.isArray(data.detail) && data.detail.length) {
-        return data.detail.map((item) => item.msg || item.message || String(item)).join(' ');
-      }
-      return fallback;
-    }
-
-    function renderSelectedFiles() {
-      const files = Array.from(fileInput.files || []);
-      if (!files.length) {
-        selectedFiles.textContent = 'No files selected.';
-        return;
-      }
-      const names = files.map((file) => file.name).join(', ');
-      selectedFiles.textContent = `${files.length} selected: ${names}`;
-    }
-
-    function renderFiles(files) {
-      fileCount.textContent = `${files.length} ${files.length === 1 ? 'file' : 'files'}`;
-      if (!files.length) {
-        renderEmpty(filesList, 'No files uploaded yet.');
-        return;
-      }
-      filesList.innerHTML = files.map((name) => `
-        <li class="file-item">
-          <span class="file-name">${escapeHTML(name)}</span>
-          <span class="file-meta">Indexed for this session</span>
-        </li>
-      `).join('');
-    }
-
-    function splitEvidenceLine(line) {
-      const separatorIndex = line.indexOf(':');
-      if (separatorIndex === -1) {
-        return { citation: 'Supporting evidence', text: line };
-      }
-      return {
-        citation: line.slice(0, separatorIndex).trim(),
-        text: line.slice(separatorIndex + 1).trim()
-      };
-    }
-
-    function renderAnswer(text) {
-      const value = (text || '').trim();
-      if (!value) {
-        renderEmpty(answerBox, 'No response returned.');
-        return;
-      }
-
-      const lines = value.split(/\n+/).map((line) => line.trim()).filter(Boolean);
-      const evidence = [];
-      const prose = [];
-
-      lines.forEach((line) => {
-        if (line.startsWith('- ')) {
-          evidence.push(line.slice(2).trim());
-        } else {
-          prose.push(line);
-        }
-      });
-
-      const proseMarkup = prose.length
-        ? `<div class="answer-prose">${prose.map((line) => `<p>${escapeHTML(line)}</p>`).join('')}</div>`
-        : '';
-
-      const evidenceMarkup = evidence.length
-        ? `<div class="evidence-stack">${evidence.map((line) => {
-            const evidenceLine = splitEvidenceLine(line);
-            return `
-              <article class="evidence-card">
-                <span class="evidence-citation">${escapeHTML(evidenceLine.citation)}</span>
-                <div class="evidence-text">${escapeHTML(evidenceLine.text)}</div>
-              </article>
-            `;
-          }).join('')}</div>`
-        : '';
-
-      answerBox.innerHTML = proseMarkup + evidenceMarkup;
-    }
-
-    function renderSources(sources) {
-      resultMeta.textContent = sources.length ? `${sources.length} sources` : 'No sources';
-      if (!sources.length) {
-        renderEmpty(sourcesList, 'No sources returned.');
-        return;
-      }
-
-      sourcesList.innerHTML = sources.map((source) => {
-        const parts = String(source).split(' - ');
-        const name = parts.shift() || source;
-        const meta = parts.join(' - ') || 'Source';
-        return `
-          <li class="source-item">
-            <span class="source-name">${escapeHTML(name)}</span>
-            <span class="source-meta">${escapeHTML(meta)}</span>
-          </li>
-        `;
-      }).join('');
-    }
-
-    async function ensureSession() {
-      const response = await fetch(appPath('/chatbot/admin/check'), { credentials: 'include' });
-      const data = await response.json();
-      if (!data.logged_in) {
-        setStatus('Shared chatbot session is missing. Returning to login...', true);
-        setTimeout(() => { window.location.href = appPath('/unified-login/chatbot'); }, 800);
-        return false;
-      }
-      setStatus(`Signed in as ${data.username}.`);
-      return true;
-    }
-
-    async function refreshFiles() {
-      const response = await fetch(appPath('/chatbot/uploaded_files'), { credentials: 'include' });
-      const data = await response.json();
-      renderFiles(data.files || []);
-    }
-
-    async function uploadFiles() {
-      if (!fileInput.files.length) {
-        setStatus('Select one or more PDF, TXT, or CSV files first.', true);
-        return;
-      }
-
-      const formData = new FormData();
-      Array.from(fileInput.files).forEach((file) => formData.append('files', file));
-
-      setBusy(true);
-      setStatus('Uploading and indexing documents...');
-      try {
-        const response = await fetch(appPath('/chatbot/upload'), {
-          method: 'POST',
-          body: formData,
-          credentials: 'include'
-        });
-        const data = await response.json();
-        if (!response.ok) {
-          setStatus(responseMessage(data, 'Upload failed.'), true);
-          return;
-        }
-        setStatus(data.message || 'Upload completed.');
-        fileInput.value = '';
-        renderSelectedFiles();
-        await refreshFiles();
-      } finally {
-        setBusy(false);
-      }
-    }
-
-    async function clearFiles() {
-      setBusy(true);
-      setStatus('Clearing uploaded files...');
-      try {
-        const response = await fetch(appPath('/chatbot/uploaded_files'), {
-          method: 'DELETE',
-          credentials: 'include'
-        });
-        const data = await response.json();
-        if (!response.ok) {
-          setStatus(responseMessage(data, 'Failed to clear files.'), true);
-          return;
-        }
-        setStatus(data.message || 'Uploaded files cleared.');
-        renderEmpty(answerBox, 'Your chatbot response will appear here.');
-        renderSources([]);
-        await refreshFiles();
-      } finally {
-        setBusy(false);
-      }
-    }
-
-    async function askQuestion() {
-      const query = queryInput.value.trim();
-      if (!query) {
-        setStatus('Enter a question first.', true);
-        return;
-      }
-
-      setBusy(true);
-      setStatus('Generating chatbot response...');
-      renderEmpty(answerBox, 'Generating response...');
-      resultMeta.textContent = 'Working';
-
-      try {
-        const formData = new FormData();
-        formData.append('query', query);
-        const response = await fetch(appPath('/chatbot/query'), {
-          method: 'POST',
-          body: formData,
-          credentials: 'include'
-        });
-        const data = await response.json();
-        if (!response.ok) {
-          setStatus(responseMessage(data, 'Chatbot request failed.'), true);
-          resultMeta.textContent = 'Error';
-          return;
-        }
-        renderAnswer(data.response);
-        renderSources(data.sources || []);
-        setStatus('Response ready.');
-      } finally {
-        setBusy(false);
-      }
-    }
-
-    fileInput.addEventListener('change', renderSelectedFiles);
-    uploadBtn.addEventListener('click', uploadFiles);
-    clearBtn.addEventListener('click', clearFiles);
-    askBtn.addEventListener('click', askQuestion);
-
-    ensureSession().then((ok) => {
-      if (ok) refreshFiles();
-    }).catch(() => {
-      setStatus('Could not verify the chatbot session.', true);
-    });
-  </script>
+    <footer class="footer">
+      Quest is part of the unified RMS workspace.
+    </footer>
+  </div>
 </body>
 </html>
