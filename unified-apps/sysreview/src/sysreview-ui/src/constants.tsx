@@ -17,7 +17,7 @@ export const API_URI = isProd
   : `http://localhost:8080/${APP_NAME}/api/v1`;
 
 export const ANALYSER_API_URI = isProd
-  ? `/${ANALYSER_APP_NAME}/openapp`
+  ? `/rms/${ANALYSER_APP_NAME}/openapp`
   : "http://sysrev2.cs.binghamton.edu:3002/openapp";
 
 //assets
@@ -26,7 +26,7 @@ export const IMAGE_URI_PREFIX = `/${APP_NAME}/images`;
 export const UNIFIED_LOGIN_URI = "/rms/login";
 export const UNIFIED_LOGOUT_URI = `${UNIFIED_LOGIN_URI.replace(
   "/login",
-  "/logout"
+  "/logout",
 )}?next=${encodeURIComponent(UNIFIED_LOGIN_URI)}`;
 
 export const datasourcesLogos: { [key in datasourceKeyType]: string } = {

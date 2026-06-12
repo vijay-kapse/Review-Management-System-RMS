@@ -23,9 +23,9 @@ import BulkActionModal from "../components/BulkActionModal";
 import Query from "../components/Query";
 import CurationTable from "../components/CurationTable/Index";
 import { GrAction } from "react-icons/gr";
-import { ANALYSER_API_URI } from "../constants";
 import { FiDatabase, FiFileText, FiPieChart } from "react-icons/fi";
 import { CategorySymbol } from "../components/CategoryLabel";
+import { openAnalyser } from "../api/analyser";
 
 const Curate = () => {
   const [query, setQuery] = useState<queryType>(dummyQuery);
@@ -99,15 +99,7 @@ const Curate = () => {
         console.log(e);
       });
   };
-  //TODO: refactor
-  const handleExtract = (rowData: resultType[]) => {
-    console.log(rowData);
-    const jsonString = JSON.stringify(rowData);
-    const queryParams = `json=${encodeURIComponent(jsonString)}`;
-    const finalUrl = `${ANALYSER_API_URI}?${queryParams}`;
-    console.log(finalUrl);
-    window.open(finalUrl, "_blank")?.focus();
-  };
+  const handleExtract = (rowData: resultType[]) => openAnalyser(rowData);
 
   const filterResultsBySources = (sources: datasourceKeyType[]) => {
     const fResults = results.filter((res) => sources.includes(res.datasource));

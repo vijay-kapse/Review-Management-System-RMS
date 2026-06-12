@@ -24,7 +24,7 @@ interface BulkActionModalProps {
   updateCategory: (
     resIds: number[],
     priority: number,
-    rows?: resultType[]
+    rows?: resultType[],
   ) => void;
 }
 
@@ -37,13 +37,13 @@ const BulkActionModal: FC<BulkActionModalProps> = ({
   updateCategory,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<categoryType | null>(
-    null
+    null,
   );
   const categoriesByPriority = Object.entries(categories).filter(
     ([, category], index, allCategories) =>
       allCategories.findIndex(
-        ([, cat]) => cat.priority === category.priority
-      ) === index
+        ([, cat]) => cat.priority === category.priority,
+      ) === index,
   );
 
   const handleUpdateCategory = (val: string) => {
@@ -54,7 +54,7 @@ const BulkActionModal: FC<BulkActionModalProps> = ({
     updateCategory(
       results.map((res) => res.resultId),
       categories[catId].priority,
-      results
+      results,
     );
   };
 
@@ -76,7 +76,7 @@ const BulkActionModal: FC<BulkActionModalProps> = ({
                 <CategorySymbol
                   color={getCategoryColor(
                     categories,
-                    selectedCategory?.priority || 0
+                    selectedCategory?.priority || 0,
                   )}
                 />{" "}
                 <span>{selectedCategory?.label || "Select a category"}</span>
@@ -95,7 +95,11 @@ const BulkActionModal: FC<BulkActionModalProps> = ({
         <Row className="mb-3">
           <Col>
             <h5>Go to Analyser</h5>
-            <Button className="c-btn-primary" onClick={() => analyse(results)}>
+            <Button
+              type="button"
+              className="c-btn-primary"
+              onClick={() => analyse(results)}
+            >
               Analyse{" "}
               <span>
                 <FiExternalLink />

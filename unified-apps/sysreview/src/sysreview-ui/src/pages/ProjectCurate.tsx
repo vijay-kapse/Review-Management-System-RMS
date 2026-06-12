@@ -25,13 +25,14 @@ import {
   getCategoryLabel,
   getProjectCurationResults,
 } from "../api/utility";
-import { APP_URI_PREFIX, ANALYSER_API_URI } from "../constants";
+import { APP_URI_PREFIX } from "../constants";
 import { IoMdCheckmarkCircleOutline } from "react-icons/io";
 import { GrAction } from "react-icons/gr";
 import BulkActionModal from "../components/BulkActionModal";
 import CurationTable from "../components/CurationTable/Index";
 import { FiDatabase, FiGitMerge, FiPieChart } from "react-icons/fi";
 import { CategorySymbol } from "../components/CategoryLabel";
+import { openAnalyser } from "../api/analyser";
 
 const emptyProject: projectType = {
   projectId: 0,
@@ -197,12 +198,7 @@ const ProjectCurate = () => {
       });
   };
 
-  const handleExtract = (rowData: resultType[]) => {
-    const jsonString = JSON.stringify(rowData);
-    const queryParams = `json=${encodeURIComponent(jsonString)}`;
-    const finalUrl = `${ANALYSER_API_URI}?${queryParams}`;
-    window.open(finalUrl, "_blank")?.focus();
-  };
+  const handleExtract = (rowData: resultType[]) => openAnalyser(rowData);
 
   useEffect(() => {
     if (!projectId) {
