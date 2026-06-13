@@ -22,10 +22,10 @@
 
         <div class="button-container">
             <a class="button-link" href="{% url 'home' %}">HOME</a>
+            <a class="button-link" href="?export=csv">Download CSV</a>
             <button class="print-button" onclick="window.print()">Print Results</button>
         </div>
     </div>
 </div>
 <script src="{% static 'js/survey_multiple_results.js' %}"></script>
 {% endblock %}
-

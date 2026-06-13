@@ -4,6 +4,7 @@ from core.models import Surveys, Questions, Answers, Results
 from django.db.models import Count, Max
 from django.http import Http404, JsonResponse
 from django.contrib.auth.decorators import login_required
+import csv
 
 TEXT_QUESTION_TYPES = ('Text', 'Textarea')
 
@@ -16,6 +17,58 @@ def _text_response_rows(results, question):
         .annotate(count=Count('id'))
     )
 
+
+def _csv_filename(survey, scope):
+    clean_name = ''.join(char if char.isalnum() else '-' for char in survey.name.lower()).strip('-')
+    return f"{clean_name or 'survey'}-{scope}-results.csv"
+
+
+def _results_csv_response(survey, results, scope):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="{_csv_filename(survey, scope)}"'
+
+    writer = csv.writer(response)
+    writer.writerow([
+        'survey_id',
+        'survey_name',
+        'survey_status',
+        'republished_version',
+        'respondent_id',
+        'respondent_username',
+        'respondent_email',
+        'question_id',
+        'question_text',
+        'question_type',
+        'answer_type',
+        'answer_id',
+        'answer_text',
+    ])
+
+    for result in results.select_related('survey_id', 'question_id', 'answer_id', 'user_id').order_by(
+        'republished_version',
+        'user_id_id',
+        'question_id_id',
+        'id',
+    ):
+        answer_text = result.answer_id.answer if result.answer_id_id else result.text_answer
+        writer.writerow([
+            survey.id,
+            survey.name,
+            survey.status,
+            result.republished_version,
+            result.user_id_id,
+            result.user_id.username,
+            result.user_id.email,
+            result.question_id_id,
+            result.question_id.question,
+            result.question_id.type,
+            'choice' if result.answer_id_id else 'text',
+            result.answer_id_id or '',
+            answer_text,
+        ])
+
+    return response
+
 @login_required
 def survey_results_closed(request, id):
     survey = get_object_or_404(Surveys, pk=id)
@@ -25,6 +78,10 @@ def survey_results_closed(request, id):
 
     if survey.user_id != request.user:
         raise Http404("You do not have permission to view these results.")
+
+    all_results = Results.objects.filter(survey_id=survey)
+    if request.GET.get('export') == 'csv':
+        return _results_csv_response(survey, all_results, 'closed')
 
     republished_versions = list(Results.objects.filter(survey_id=survey).values_list('republished_version', flat=True).distinct())
     
@@ -116,13 +173,17 @@ def survey_results_published(request, id):
         raise Http404("You do not have permission to view these results.")
 
     max_republished = Surveys.objects.filter(pk=id).aggregate(Max('republished'))['republished__max']
-    total_respondents = Results.objects.filter(survey_id=survey, republished_version=max_republished).values('user_id').distinct().count()
+    current_results = Results.objects.filter(survey_id=survey, republished_version=max_republished)
+    if request.GET.get('export') == 'csv':
+        return _results_csv_response(survey, current_results, 'published')
+
+    total_respondents = current_results.values('user_id').distinct().count()
 
     question_data = []
     questions = survey.questions.all()
 
     if total_respondents > 0:
-        results = Results.objects.filter(survey_id=survey, republished_version=max_republished)
+        results = current_results
 
         for question in questions:
             answers = question.answers.all()
