@@ -139,9 +139,10 @@ document.getElementById('surveyCreateForm').addEventListener('submit', function(
         },
         body: JSON.stringify(jsonData)
     })
-    .then(response => {
-        if (response.ok) return response.json();
-        throw new Error('Network response was not ok.');
+    .then(async response => {
+        const data = await response.json().catch(() => ({}));
+        if (response.ok) return data;
+        throw new Error(data.message || 'Survey could not be created.');
     })
     .then(data => {
         console.log('Success:', data);
@@ -149,5 +150,6 @@ document.getElementById('surveyCreateForm').addEventListener('submit', function(
     })
     .catch(error => {
         console.error('Error:', error);
+        alert(error.message);
     });
 });

@@ -141,9 +141,10 @@ document.getElementById('surveyEditForm').addEventListener('submit', function(ev
         },
         body: JSON.stringify(jsonData)
     })
-        .then(response => {
-            if (response.ok) return response.json();
-            throw new Error('Network response was not ok.');
+        .then(async response => {
+            const data = await response.json().catch(() => ({}));
+            if (response.ok) return data;
+            throw new Error(data.message || 'Survey could not be updated.');
         })
         .then(data => {
             console.log('Success:', data);
@@ -151,5 +152,6 @@ document.getElementById('surveyEditForm').addEventListener('submit', function(ev
         })
         .catch(error => {
             console.error('Error:', error);
+            alert(error.message);
         });
 });

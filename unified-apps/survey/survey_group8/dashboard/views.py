@@ -83,8 +83,8 @@ def _validate_survey_payload(data):
         return None, 'Survey name is required'
 
     questions = data.get('questions') or {}
-    if not isinstance(questions, dict) or not questions:
-        return None, 'At least one question is required'
+    if not isinstance(questions, dict):
+        return None, 'Invalid question format'
 
     cleaned_questions = []
     for q_data in questions.values():
@@ -92,20 +92,19 @@ def _validate_survey_payload(data):
             return None, 'Invalid question format'
 
         question_text = (q_data.get('question') or '').strip()
-        if not question_text:
-            return None, 'Question text is required'
-
-        question_type = q_data.get('type') or 'Radio'
-        if question_type not in ('Radio', 'Checkboxes'):
-            return None, 'Invalid question type'
-
         answers = q_data.get('answers') or {}
         if not isinstance(answers, dict):
             return None, 'Invalid answer format'
 
         cleaned_answers = [answer.strip() for answer in answers.values() if answer and answer.strip()]
-        if not cleaned_answers:
-            return None, 'Each question needs at least one answer'
+        if not question_text and not cleaned_answers:
+            continue
+        if not question_text:
+            return None, 'Question text is required when answers are provided'
+
+        question_type = q_data.get('type') or 'Radio'
+        if question_type not in ('Radio', 'Checkboxes'):
+            return None, 'Invalid question type'
 
         cleaned_questions.append({
             'question': question_text,
@@ -125,6 +124,20 @@ def _create_questions(survey, questions):
         )
         for answer_text in q_data['answers']:
             Answers.objects.create(question_id=question, answer=answer_text)
+
+
+def _survey_publish_error(survey):
+    questions = Questions.objects.filter(survey_id=survey).prefetch_related('answers')
+    if not questions.exists():
+        return 'Add at least one question before publishing this survey.'
+
+    for question in questions:
+        if not question.question.strip():
+            return 'Every question needs text before publishing this survey.'
+        if not question.answers.exists():
+            return 'Every question needs at least one answer before publishing this survey.'
+
+    return None
 
 def home(request):
     if request.user.groups.filter(name='Creator').exists():
@@ -182,6 +195,9 @@ def survey_publish(request, id):
 
     if publish_survey.user_id != request.user:
         return HttpResponseForbidden("You do not have permission to publish this survey.")
+    publish_error = _survey_publish_error(publish_survey)
+    if publish_error:
+        return HttpResponse(publish_error, status=400)
     publish_survey.status = 'p' 
     publish_survey.save()  
     return redirect('home')  
@@ -214,6 +230,9 @@ def survey_republish(request, id):
 
     if repubish_survey.user_id != request.user:
         return HttpResponseForbidden("You do not have permission to republish this survey.")
+    publish_error = _survey_publish_error(repubish_survey)
+    if publish_error:
+        return HttpResponse(publish_error, status=400)
     
     repubish_survey.status = 'p' 
     repubish_survey.republished += 1
