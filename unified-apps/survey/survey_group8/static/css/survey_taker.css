@@ -65,6 +65,24 @@
     font-weight: 700;
 }
 
+.survey-select,
+.survey-text-input,
+.survey-textarea {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #ffffff;
+    color: var(--ink);
+    font: inherit;
+    padding: 12px 14px;
+}
+
+.survey-textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
 .submit-button,
 .button-link.button-link-match {
     width: auto;

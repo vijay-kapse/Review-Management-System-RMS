@@ -1,9 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from core.models import Surveys, Questions, Answers, Results
-from django.db.models import Max
+from django.db.models import Count, Max
 from django.http import Http404, JsonResponse
 from django.contrib.auth.decorators import login_required
+
+TEXT_QUESTION_TYPES = ('Text', 'Textarea')
 
 @login_required
 def survey_results_closed(request, id):
@@ -37,19 +39,37 @@ def survey_results_closed(request, id):
                     'total_respondents': {}
                 }
 
-            for answer in answers:
-                response_count = results.filter(question_id=question, answer_id=answer).count()
-                percentage = (response_count / total_respondents_question * 100) if total_respondents_question > 0 else 0
-
-                if answer.answer not in organized_question_data[question.question]['answers']:
-                    organized_question_data[question.question]['answers'][answer.answer] = {
-                        'versions': {}
+            if question.type in TEXT_QUESTION_TYPES:
+                text_responses = (
+                    results.filter(question_id=question)
+                    .exclude(text_answer='')
+                    .values('text_answer')
+                    .annotate(count=Count('id'))
+                )
+                for response in text_responses:
+                    answer_text = response['text_answer']
+                    response_count = response['count']
+                    percentage = (response_count / total_respondents_question * 100) if total_respondents_question > 0 else 0
+                    if answer_text not in organized_question_data[question.question]['answers']:
+                        organized_question_data[question.question]['answers'][answer_text] = {'versions': {}}
+                    organized_question_data[question.question]['answers'][answer_text]['versions'][version] = {
+                        'count': response_count,
+                        'percentage': percentage
                     }
-                
-                organized_question_data[question.question]['answers'][answer.answer]['versions'][version] = {
-                    'count': response_count,
-                    'percentage': percentage
-                }
+            else:
+                for answer in answers:
+                    response_count = results.filter(question_id=question, answer_id=answer).count()
+                    percentage = (response_count / total_respondents_question * 100) if total_respondents_question > 0 else 0
+
+                    if answer.answer not in organized_question_data[question.question]['answers']:
+                        organized_question_data[question.question]['answers'][answer.answer] = {
+                            'versions': {}
+                        }
+
+                    organized_question_data[question.question]['answers'][answer.answer]['versions'][version] = {
+                        'count': response_count,
+                        'percentage': percentage
+                    }
 
             organized_question_data[question.question]['total_respondents'][version] = total_respondents
 
@@ -94,15 +114,31 @@ def survey_results_published(request, id):
             total_respondents_question = results.filter(question_id=question).values('user_id').distinct().count()
 
             answer_data = []
-            for answer in answers:
-                response_count = results.filter(question_id=question, answer_id=answer).count()
-                percentage = (response_count / total_respondents_question * 100) if total_respondents_question > 0 else 0
+            if question.type in TEXT_QUESTION_TYPES:
+                text_responses = (
+                    results.filter(question_id=question)
+                    .exclude(text_answer='')
+                    .values('text_answer')
+                    .annotate(count=Count('id'))
+                )
+                for response in text_responses:
+                    response_count = response['count']
+                    percentage = (response_count / total_respondents_question * 100) if total_respondents_question > 0 else 0
+                    answer_data.append({
+                        'answer_text': response['text_answer'],
+                        'count': response_count,
+                        'percentage': percentage,
+                    })
+            else:
+                for answer in answers:
+                    response_count = results.filter(question_id=question, answer_id=answer).count()
+                    percentage = (response_count / total_respondents_question * 100) if total_respondents_question > 0 else 0
 
-                answer_data.append({
-                    'answer_text': answer.answer,
-                    'count': response_count,
-                    'percentage': percentage,
-                })
+                    answer_data.append({
+                        'answer_text': answer.answer,
+                        'count': response_count,
+                        'percentage': percentage,
+                    })
 
             question_data.append({
                 'question_text': question.question,

@@ -56,6 +56,18 @@
                                     <input type="radio" name="type_{{ item.question.id }}" value="Checkboxes" {% if item.question.type == 'Checkboxes' %}checked{% endif %}>
                                     Checkboxes
                                 </label>
+                                <label style="margin-left: 20px;">
+                                    <input type="radio" name="type_{{ item.question.id }}" value="Dropdown" {% if item.question.type == 'Dropdown' %}checked{% endif %}>
+                                    Dropdown
+                                </label>
+                                <label style="margin-left: 20px;">
+                                    <input type="radio" name="type_{{ item.question.id }}" value="Text" {% if item.question.type == 'Text' %}checked{% endif %}>
+                                    Short Text
+                                </label>
+                                <label style="margin-left: 20px;">
+                                    <input type="radio" name="type_{{ item.question.id }}" value="Textarea" {% if item.question.type == 'Textarea' %}checked{% endif %}>
+                                    Long Text
+                                </label>
                             </td>
                         </tr>
                         <tbody id="aContainer_{{ item.question.id }}">
@@ -73,7 +85,7 @@
                             {% endfor %}
                         </tbody>
                     </table>
-                    <div class="question-buttons">
+                    <div class="question-buttons" id="answerButtons_{{ item.question.id }}">
                         <button type="button" class="new-survey-btn" onclick="addAnswerField({{ item.question.id }})">Add Another Answer</button>
                         <button type="button" class="new-survey-btn" onclick="removeQuestion({{ item.question.id }})" id="removeQBtn{{ item.question.id }}">Remove Question</button>
                     </div>

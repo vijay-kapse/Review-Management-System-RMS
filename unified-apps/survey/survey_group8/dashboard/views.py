@@ -10,6 +10,10 @@ from .forms  import AnswerForm
 from django.db.models import Count
 from django.db import transaction
 
+CHOICE_QUESTION_TYPES = ('Radio', 'Checkboxes', 'Dropdown')
+TEXT_QUESTION_TYPES = ('Text', 'Textarea')
+QUESTION_TYPES = CHOICE_QUESTION_TYPES + TEXT_QUESTION_TYPES
+
 def in_survey_taker_group(user):
     return user.groups.filter(name='Taker').exists()
 
@@ -103,13 +107,13 @@ def _validate_survey_payload(data):
             return None, 'Question text is required when answers are provided'
 
         question_type = q_data.get('type') or 'Radio'
-        if question_type not in ('Radio', 'Checkboxes'):
+        if question_type not in QUESTION_TYPES:
             return None, 'Invalid question type'
 
         cleaned_questions.append({
             'question': question_text,
             'type': question_type,
-            'answers': cleaned_answers,
+            'answers': cleaned_answers if question_type in CHOICE_QUESTION_TYPES else [],
         })
 
     return {'name': name, 'description': description, 'questions': cleaned_questions}, None
@@ -134,12 +138,16 @@ def _survey_publish_error(survey):
     for question in questions:
         if not question.question.strip():
             return 'Every question needs text before publishing this survey.'
-        if not question.answers.exists():
+        if question.type in CHOICE_QUESTION_TYPES and not question.answers.exists():
             return 'Every question needs at least one answer before publishing this survey.'
 
     return None
 
 def home(request):
+    if request.GET.get('role') == 'taker' and request.user.groups.filter(name='Taker').exists():
+        surveytake=survey_take(request)
+        return render(request, 'taker_dashboard.html', surveytake)
+
     if request.user.groups.filter(name='Creator').exists():
         survey_all = Surveys.objects.filter(user_id=request.user.id).order_by('id')
         draft_surveys, published_surveys, closed_surveys = categorize_surveys(survey_all)
@@ -154,7 +162,7 @@ def home(request):
     elif request.user.groups.filter(name='Taker').exists():
         #---MZ---
         surveytake=survey_take(request)
-        return render(request, 'taker_dashboard.html',surveytake)  
+        return render(request, 'taker_dashboard.html',surveytake)
     
     return render(request, 'home.html')
 
@@ -329,15 +337,33 @@ def qa_submit(request):
 
             # Obtain the questions and responses, then store them in the Result table.
             for question in survey.questions.all():
+                if question.type in TEXT_QUESTION_TYPES:
+                    text_answer = (request.POST.get(f'text_question_{question.id}') or '').strip()
+                    if text_answer:
+                        Results.objects.create(
+                            survey_id=survey,
+                            question_id=question,
+                            answer_id=None,
+                            text_answer=text_answer,
+                            user_id=user,
+                            republished_version=republished_ver
+                        )
+                    continue
+
                 selected_answers = request.POST.getlist(f'question_{question.id}')
+                if question.type in ('Radio', 'Dropdown'):
+                    selected_answers = selected_answers[:1]
 
                 for answer_id in selected_answers:
+                    if not answer_id:
+                        continue
                     answer = get_object_or_404(Answers, id=answer_id, question_id=question)
 
                     Results.objects.create(
                         survey_id=survey,
                         question_id=question,
                         answer_id=answer,
+                        text_answer='',
                         user_id=user,
                         republished_version=republished_ver
                     )
@@ -352,7 +378,7 @@ def thankyou(request,id):
     results = Results.objects.filter(survey_id=survey, republished_version=survey.republished)
     # print(results)
     stats = (
-        results.values('question_id', 'answer_id')
+        results.exclude(answer_id__isnull=True).values('question_id', 'answer_id')
         .annotate(count=Count('id')) # The number of answers for each response
     )
     # print(stats)

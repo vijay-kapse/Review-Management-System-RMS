@@ -14,7 +14,7 @@ class Surveys(models.Model):
 class Questions(models.Model):
     question = models.CharField(max_length=2000)
     survey_id = models.ForeignKey(Surveys, on_delete=models.CASCADE, related_name='questions')
-    type = models.CharField(max_length=10)
+    type = models.CharField(max_length=20)
     def __str__(self):
         return self.question
 
@@ -27,7 +27,8 @@ class Answers(models.Model):
 class Results(models.Model):
     survey_id = models.ForeignKey(Surveys, on_delete=models.CASCADE, related_name='results')
     question_id = models.ForeignKey(Questions, on_delete=models.CASCADE, related_name='question_results')
-    answer_id = models.ForeignKey(Answers, on_delete=models.CASCADE, related_name='answer_results')  
+    answer_id = models.ForeignKey(Answers, on_delete=models.CASCADE, related_name='answer_results', blank=True, null=True)
+    text_answer = models.TextField(blank=True)
     user_id = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_results')
     republished_version = models.IntegerField()
     def as_int(self):

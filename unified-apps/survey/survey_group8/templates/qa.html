@@ -86,6 +86,29 @@
                                     </td>
                                 </tr>
                             {% endfor %}
+                        {% elif question.type == "Dropdown" %}
+                            <tr>
+                                <td colspan="2">
+                                    <select name="question_{{ question.id }}" class="survey-select">
+                                        <option value="">Select an answer</option>
+                                        {% for answer in question.answers.all %}
+                                            <option value="{{ answer.id }}">{{ answer.answer }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                            </tr>
+                        {% elif question.type == "Text" %}
+                            <tr>
+                                <td colspan="2">
+                                    <input type="text" name="text_question_{{ question.id }}" class="survey-text-input" placeholder="Enter your answer">
+                                </td>
+                            </tr>
+                        {% elif question.type == "Textarea" %}
+                            <tr>
+                                <td colspan="2">
+                                    <textarea name="text_question_{{ question.id }}" class="survey-textarea" rows="4" placeholder="Enter your answer"></textarea>
+                                </td>
+                            </tr>
                         {% endif %}
                     </table>
                 </fieldset>

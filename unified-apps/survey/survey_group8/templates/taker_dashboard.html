@@ -13,6 +13,9 @@
         <h1>Published Surveys</h1>
     </div>
 </div>
+{% if user.groups.all %}
+<a class="button-link" href="{% url 'home' %}">Open creator view</a>
+{% endif %}
 <table class="survey-table">
     <tr>
         <th>Survey ID</th>
