@@ -5,6 +5,7 @@ from core.models import Surveys, Questions, Answers, Results
 from django.contrib.auth.decorators import user_passes_test
 from django.http import HttpResponseForbidden,JsonResponse,HttpResponse
 import json
+import uuid
 from django import forms
 from .forms  import AnswerForm
 from django.db.models import Count
@@ -292,15 +293,13 @@ def survey_take(request):
     for survey in Surveys.objects.filter(status='p').order_by('id'):
         user_results = Results.objects.filter(survey_id=survey, user_id=request.user)
         has_current_response = user_results.filter(republished_version=survey.republished).exists()
-        if has_current_response:
-            continue
 
         surveys.append({
             'id': survey.id,
             'name': survey.name,
             'description': survey.description,
             'republished': survey.republished,
-            'action_label': 'Change Mind' if user_results.exists() else 'Click to Start',
+            'action_label': 'Submit Another Response' if has_current_response else 'Click to Start',
         })
 
     return {'surveys': surveys}
@@ -328,14 +327,9 @@ def qa_submit(request):
         user = request.user
         survey = get_object_or_404(Surveys, id=survey_id, status='p')
         republished_ver=survey.republished
+        submission_id = str(uuid.uuid4())
 
         with transaction.atomic():
-            Results.objects.filter(
-                survey_id=survey,
-                user_id=user,
-                republished_version=republished_ver,
-            ).delete()
-
             # Obtain the questions and responses, then store them in the Result table.
             for question in survey.questions.all():
                 if question.type in TEXT_QUESTION_TYPES:
@@ -347,7 +341,8 @@ def qa_submit(request):
                             answer_id=None,
                             text_answer=text_answer,
                             user_id=user,
-                            republished_version=republished_ver
+                            republished_version=republished_ver,
+                            submission_id=submission_id
                         )
                     continue
 
@@ -367,7 +362,8 @@ def qa_submit(request):
                                 answer_id=None,
                                 text_answer=f'Other: {other_answer}',
                                 user_id=user,
-                                republished_version=republished_ver
+                                republished_version=republished_ver,
+                                submission_id=submission_id
                             )
                         continue
                     answer = get_object_or_404(Answers, id=answer_id, question_id=question)
@@ -378,7 +374,8 @@ def qa_submit(request):
                         answer_id=answer,
                         text_answer='',
                         user_id=user,
-                        republished_version=republished_ver
+                        republished_version=republished_ver,
+                        submission_id=submission_id
                     )
         return render(request,'complete.html')
         # return redirect('complete')

@@ -18,6 +18,12 @@ def _text_response_rows(results, question):
     )
 
 
+def _submission_count(results):
+    submission_count = results.exclude(submission_id='').values('submission_id').distinct().count()
+    legacy_count = results.filter(submission_id='').values('user_id').distinct().count()
+    return submission_count + legacy_count
+
+
 def _csv_filename(survey, scope):
     clean_name = ''.join(char if char.isalnum() else '-' for char in survey.name.lower()).strip('-')
     return f"{clean_name or 'survey'}-{scope}-results.csv"
@@ -33,6 +39,7 @@ def _results_csv_response(survey, results, scope):
         'survey_name',
         'survey_status',
         'republished_version',
+        'submission_id',
         'respondent_id',
         'respondent_username',
         'respondent_email',
@@ -47,6 +54,7 @@ def _results_csv_response(survey, results, scope):
     for result in results.select_related('survey_id', 'question_id', 'answer_id', 'user_id').order_by(
         'republished_version',
         'user_id_id',
+        'submission_id',
         'question_id_id',
         'id',
     ):
@@ -56,6 +64,7 @@ def _results_csv_response(survey, results, scope):
             survey.name,
             survey.status,
             result.republished_version,
+            result.submission_id,
             result.user_id_id,
             result.user_id.username,
             result.user_id.email,
@@ -89,15 +98,16 @@ def survey_results_closed(request, id):
     organized_question_data = {}
 
     for version in republished_versions:
-        total_respondents = Results.objects.filter(survey_id=survey, republished_version=version).values('user_id').distinct().count()
+        version_results = Results.objects.filter(survey_id=survey, republished_version=version)
+        total_respondents = _submission_count(version_results)
         total_respondents_data.append((version, total_respondents))
         
-        results = Results.objects.filter(survey_id=survey, republished_version=version)
+        results = version_results
         questions = survey.questions.all()
 
         for question in questions:
             answers = question.answers.all()
-            total_respondents_question = results.filter(question_id=question).values('user_id').distinct().count()
+            total_respondents_question = _submission_count(results.filter(question_id=question))
             
             if question.question not in organized_question_data:
                 organized_question_data[question.question] = {
@@ -177,7 +187,7 @@ def survey_results_published(request, id):
     if request.GET.get('export') == 'csv':
         return _results_csv_response(survey, current_results, 'published')
 
-    total_respondents = current_results.values('user_id').distinct().count()
+    total_respondents = _submission_count(current_results)
 
     question_data = []
     questions = survey.questions.all()
@@ -187,7 +197,7 @@ def survey_results_published(request, id):
 
         for question in questions:
             answers = question.answers.all()
-            total_respondents_question = results.filter(question_id=question).values('user_id').distinct().count()
+            total_respondents_question = _submission_count(results.filter(question_id=question))
 
             answer_data = []
             if question.type in TEXT_QUESTION_TYPES:

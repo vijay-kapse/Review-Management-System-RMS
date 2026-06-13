@@ -31,5 +31,6 @@ class Results(models.Model):
     text_answer = models.TextField(blank=True)
     user_id = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_results')
     republished_version = models.IntegerField()
+    submission_id = models.CharField(max_length=36, blank=True, db_index=True)
     def as_int(self):
         return self.survey_id
