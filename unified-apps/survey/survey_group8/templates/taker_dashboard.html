@@ -25,16 +25,11 @@
             <td>{{ survey.id }}</td>
             <td>{{ survey.name }}</td>
             <td>{{ survey.description }}</td>
-            {% if survey.republished > 1 %}
-            <td><a href="{% url 'qa_view' survey.id %}">Change Mind</a></td>
-            {% elif not_exist == 'not_exist' %}
-            <td><a href="{% url 'qa_view' survey.id %}">Click to Start</a></td> <!--match with survey_take()中的dict-->
-
-            {% endif %}
+            <td><a href="{% url 'qa_view' survey.id %}">{{ survey.action_label }}</a></td>
         </tr>
     {% empty %}
         <tr>
-            <td>No Published Surveys</td>
+            <td colspan="4">No Published Surveys</td>
         </tr>
     {% endfor %}
 </table>

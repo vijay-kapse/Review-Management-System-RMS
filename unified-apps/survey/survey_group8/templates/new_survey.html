@@ -12,7 +12,7 @@
 <div class="new-survey-container">
     <h2 class="new-survey-title">Create New Survey!</h2>
     <hr/>
-    <form id="surveyCreateForm">
+    <form id="surveyCreateForm" method="post" action="{% url 'survey_create' %}">
         {% csrf_token %}
         <table class="new-survey-table">
             <tr>
@@ -44,6 +44,5 @@
     </form>
 </div>
 
-{% load static %}
-<script src="{% static 'js/survey.js' %}"></script>
+<script src="../static/js/sparks_create.js"></script>
 {% endblock %}

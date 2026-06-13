@@ -23,9 +23,9 @@
                 <div class="survey-entry">
                     <div class="survey-name" title="{{ survey.name }}">{{ survey.name }}</div>
                     <div class="survey-options">
-                        <a href="edit/{{ survey.id }}" onclick="return confirm('Are you sure you want to edit the survey?')">EDIT</a> |
-                        <a href="publishsurvey/{{ survey.id }}" onclick="return confirm('Are you sure you want to publish the survey?')">PUBLISH</a> |
-                        <a href="deletesurvey/{{ survey.id }}" onclick="return confirm('Are you sure you want to delete the survey?')">DELETE</a>
+                        <a href="{% url 'survey_edit' survey.id %}" onclick="return confirm('Are you sure you want to edit the survey?')">EDIT</a> |
+                        <a href="{% url 'survey_publish' survey.id %}" onclick="return confirm('Are you sure you want to publish the survey?')">PUBLISH</a> |
+                        <a href="{% url 'survey_delete' survey.id %}" onclick="return confirm('Are you sure you want to delete the survey?')">DELETE</a>
                     </div>
                 </div>
                 {% empty %}
@@ -37,9 +37,9 @@
                 <div class="survey-entry">
                     <div class="survey-name" title="{{ survey.name }}">{{ survey.name }}</div>
                     <div class="survey-options">
-                        <a href="closesurvey/{{ survey.id }}" onclick="return confirm('Are you sure you want to close the survey?')">CLOSE</a> |
-                        <a href="draftsurvey/{{ survey.id }}" onclick="return confirm('Are you sure you want to draft the survey?')">DRAFT</a> |
-                        <a href="results/published/{{ survey.id }}">RESULTS</a>
+                        <a href="{% url 'survey_close' survey.id %}" onclick="return confirm('Are you sure you want to close the survey?')">CLOSE</a> |
+                        <a href="{% url 'survey_draft' survey.id %}" onclick="return confirm('Are you sure you want to draft the survey?')">DRAFT</a> |
+                        <a href="{% url 'survey_results_published' survey.id %}">RESULTS</a>
                     </div>
                 </div>
                 {% empty %}
@@ -51,8 +51,8 @@
                 <div class="survey-entry">
                     <div class="survey-name" title="{{ survey.name }}">{{ survey.name }}</div>
                     <div class="survey-options">
-                        <a href="results/closed/{{ survey.id }}">RESULTS</a> |
-                        <a href="republishsurvey/{{ survey.id }}" onclick="return confirm('Are you sure you want to republish the survey?')">REPUBLISH</a>
+                        <a href="{% url 'survey_results_closed' survey.id %}">RESULTS</a> |
+                        <a href="{% url 'survey_republish' survey.id %}" onclick="return confirm('Are you sure you want to republish the survey?')">REPUBLISH</a>
                     </div>
                 </div>
                 {% empty %}

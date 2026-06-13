@@ -8,7 +8,7 @@ import json
 from django import forms
 from .forms  import AnswerForm
 from django.db.models import Count
-from django.db.models import F
+from django.db import transaction
 
 def in_survey_taker_group(user):
     return user.groups.filter(name='Taker').exists()
@@ -33,6 +33,99 @@ def categorize_surveys(surveys):
 
     return draft_surveys, published_surveys, closed_surveys
 
+
+def _error_response(message, status=400):
+    return JsonResponse({'status': 'error', 'message': message}, status=status)
+
+
+def _survey_payload_from_request(request):
+    if request.content_type == 'application/json':
+        try:
+            return json.loads(request.body.decode('utf-8') or '{}')
+        except json.JSONDecodeError:
+            return None
+
+    if request.POST:
+        data = {
+            'name': request.POST.get('name', ''),
+            'description': request.POST.get('description', ''),
+            'questions': {},
+        }
+        for key, value in request.POST.items():
+            if key.startswith(('question_', 'type_', 'answer_')):
+                parts = key.split('_')
+                if len(parts) < 2:
+                    continue
+                field = parts[0]
+                question_id = parts[1]
+                data['questions'].setdefault(question_id, {'answers': {}})
+                if field == 'question':
+                    data['questions'][question_id]['question'] = value
+                elif field == 'type':
+                    data['questions'][question_id]['type'] = value
+                elif field == 'answer' and len(parts) >= 3:
+                    data['questions'][question_id]['answers'][parts[2]] = value
+        return data
+
+    try:
+        return json.loads(request.body.decode('utf-8') or '{}')
+    except json.JSONDecodeError:
+        return None
+
+
+def _validate_survey_payload(data):
+    if not isinstance(data, dict):
+        return None, 'Invalid JSON data'
+
+    name = (data.get('name') or '').strip()
+    description = (data.get('description') or '').strip()
+    if not name:
+        return None, 'Survey name is required'
+
+    questions = data.get('questions') or {}
+    if not isinstance(questions, dict) or not questions:
+        return None, 'At least one question is required'
+
+    cleaned_questions = []
+    for q_data in questions.values():
+        if not isinstance(q_data, dict):
+            return None, 'Invalid question format'
+
+        question_text = (q_data.get('question') or '').strip()
+        if not question_text:
+            return None, 'Question text is required'
+
+        question_type = q_data.get('type') or 'Radio'
+        if question_type not in ('Radio', 'Checkboxes'):
+            return None, 'Invalid question type'
+
+        answers = q_data.get('answers') or {}
+        if not isinstance(answers, dict):
+            return None, 'Invalid answer format'
+
+        cleaned_answers = [answer.strip() for answer in answers.values() if answer and answer.strip()]
+        if not cleaned_answers:
+            return None, 'Each question needs at least one answer'
+
+        cleaned_questions.append({
+            'question': question_text,
+            'type': question_type,
+            'answers': cleaned_answers,
+        })
+
+    return {'name': name, 'description': description, 'questions': cleaned_questions}, None
+
+
+def _create_questions(survey, questions):
+    for q_data in questions:
+        question = Questions.objects.create(
+            survey_id=survey,
+            question=q_data['question'],
+            type=q_data['type'],
+        )
+        for answer_text in q_data['answers']:
+            Answers.objects.create(question_id=question, answer=answer_text)
+
 def home(request):
     if request.user.groups.filter(name='Creator').exists():
         survey_all = Surveys.objects.filter(user_id=request.user.id).order_by('id')
@@ -56,49 +149,30 @@ def home(request):
 @user_passes_test(in_survey_creator_group)
 def survey_create(request):
     if request.method == 'POST':
-        print(request.body)
-        try:
-            data = json.loads(request.body) 
-            name = data.get('name')
-            description = data.get('description')
-            user = request.user
+        data = _survey_payload_from_request(request)
+        payload, error = _validate_survey_payload(data)
+        if error:
+            return _error_response(error)
+
+        with transaction.atomic():
             new_survey = Surveys.objects.create(
-                name=name,
-                description=description,
-                user_id=user,
+                name=payload['name'],
+                description=payload['description'],
+                user_id=request.user,
                 republished=1,
                 status='d'
             )
+            _create_questions(new_survey, payload['questions'])
 
-            questions = data.get('questions', {})
-            for q_number, q_data in questions.items():
-                question_text = q_data.get('question')
-                question_type = q_data.get('type', 'Radio')
-
-                question = Questions.objects.create(
-                    survey_id=new_survey,
-                    question=question_text,
-                    type=question_type
-                )
-
-                answers = q_data.get('answers', {})
-                for a_text in answers.values():
-                    if a_text:
-                        Answers.objects.create(
-                            question_id=question,
-                            answer=a_text
-                        )
-
-            return JsonResponse({'status': 'success', 'message': 'Survey created successfully'})
-        
-        except json.JSONDecodeError:
-            return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'}, status=400)
+        return JsonResponse({'status': 'success', 'message': 'Survey created successfully', 'id': new_survey.id})
 
     return render(request, 'new_survey.html')
 
 @login_required
 def survey_delete(request, id):
-    delete_survey = Surveys.objects.get(id=id)
+    delete_survey = get_object_or_404(Surveys, id=id)
+    if delete_survey.user_id != request.user:
+        return HttpResponseForbidden("You do not have permission to delete this survey.")
     delete_survey.delete()
     return redirect('home')
 
@@ -147,53 +221,25 @@ def survey_republish(request, id):
     return redirect('home')
 
 @login_required
-@login_required
 def survey_edit(request, id):
     old_survey = get_object_or_404(Surveys, id=id)
+    if old_survey.user_id != request.user:
+        return HttpResponseForbidden("You do not have permission to edit this survey.")
 
     if request.method == 'POST':
+        data = _survey_payload_from_request(request)
+        payload, error = _validate_survey_payload(data)
+        if error:
+            return _error_response(error)
 
-        try:
-            data = json.loads(request.body)
-            name = data.get('name')
-            description = data.get('description')
-
-        
-            old_survey.name = name
-            old_survey.description = description
-            old_survey.save()  
-
-
+        with transaction.atomic():
+            old_survey.name = payload['name']
+            old_survey.description = payload['description']
+            old_survey.save()
             Questions.objects.filter(survey_id=old_survey).delete()
-            Answers.objects.filter(question_id__survey_id=old_survey).delete()
+            _create_questions(old_survey, payload['questions'])
 
-            questions = data.get('questions', {})
-            for q_number, q_data in questions.items():
-                if isinstance(q_data, dict): 
-                    question_text = q_data.get('question')
-                    question_type = q_data.get('type', 'Radio')
-
-                    question = Questions.objects.create(
-                        survey_id=old_survey,
-                        question=question_text,
-                        type=question_type
-                    )
-
-                    answers = q_data.get('answers', {})
-                    for a_text in answers.values():
-                        if a_text:
-                            Answers.objects.create(
-                                question_id=question,
-                                answer=a_text
-                            )
-                else:
-                    print(f"Unexpected format for question: {q_data}")
-                    return JsonResponse({'status': 'error', 'message': 'Invalid question format'}, status=400)
-
-            return JsonResponse({'status': 'success', 'message': 'Survey updated successfully'})
-        
-        except json.JSONDecodeError:
-            return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'}, status=400)
+        return JsonResponse({'status': 'success', 'message': 'Survey updated successfully'})
 
     questions = Questions.objects.filter(survey_id=old_survey)
 
@@ -214,23 +260,22 @@ def survey_edit(request, id):
 
 #--- MZ ---
 def survey_take(request):
-    # surveys = Surveys.objects.filter(status='p')
-    ids_with_status_p = Surveys.objects.filter(status="p").values_list('id', flat=True)
-    # print(list(ids_with_status_p))
-    mydict = {'surveys': [],'not_exist':None}
-    for j in list(ids_with_status_p):
-        if not Results.objects.filter(survey_id=j,user_id=request.user).exists(): #If it is determined that the survey does not contain a survey_id of p in the result, the survey will be initiated.
-            surveys = Surveys.objects.filter(id=j).values('id', 'name', 'description','republished')
-            mydict['surveys'].extend(surveys)
-            mydict['not_exist'] = 'not_exist'
-        elif Results.objects.filter(survey_id=j).exists() and Surveys.objects.filter(republished__gt=1): #If it exists in result and republish>1, then change mind,
-            surveys = Surveys.objects.filter(id=j,republished__gt=1).exclude(id__in=Results.objects.filter(republished_version=F('survey_id__republished')).values('survey_id'))
-            # surveys = Surveys.objects.filter(id=j,republished__gt=1).values('id', 'name', 'description','republished')
-            mydict['surveys'].extend(surveys)
-        # elif Results.objects.filter(survey_id=j,republished__gt=1).exists():
-    
-    # print(mydict)
-    return mydict
+    surveys = []
+    for survey in Surveys.objects.filter(status='p').order_by('id'):
+        user_results = Results.objects.filter(survey_id=survey, user_id=request.user)
+        has_current_response = user_results.filter(republished_version=survey.republished).exists()
+        if has_current_response:
+            continue
+
+        surveys.append({
+            'id': survey.id,
+            'name': survey.name,
+            'description': survey.description,
+            'republished': survey.republished,
+            'action_label': 'Change Mind' if user_results.exists() else 'Click to Start',
+        })
+
+    return {'surveys': surveys}
 
 # def survey_take(request):
 #     surveys = Surveys.objects.filter(status='p')
@@ -240,8 +285,9 @@ def survey_take(request):
 #     print (surveys)
 #     return surveys
 
+@login_required
 def qa_view(request, id):
-    survey = Surveys.objects.prefetch_related('questions__answers').get(id=id, status='p')
+    survey = get_object_or_404(Surveys.objects.prefetch_related('questions__answers'), id=id, status='p')
     # republished_ver=survey.republished #Directly referenced on the front end
     user=request.user
     questions = survey.questions.all()
@@ -252,22 +298,30 @@ def qa_submit(request):
     if request.method == 'POST':
         survey_id = request.POST.get('survey_id')
         user = request.user
-        survey = get_object_or_404(Surveys, id=survey_id)
+        survey = get_object_or_404(Surveys, id=survey_id, status='p')
         republished_ver=survey.republished
-        # Obtain the questions and responses, then store them in the Result table.
-        for question in survey.questions.all():
-            selected_answers = request.POST.getlist(f'question_{question.id}')  # Retrieve selected answer
-            
-            for answer_id in selected_answers:
-                answer = get_object_or_404(Answers, id=answer_id)
-                
-                Results.objects.create(
-                    survey_id=survey,
-                    question_id=question,
-                    answer_id=answer,
-                    user_id=user,
-                    republished_version=republished_ver
-                )
+
+        with transaction.atomic():
+            Results.objects.filter(
+                survey_id=survey,
+                user_id=user,
+                republished_version=republished_ver,
+            ).delete()
+
+            # Obtain the questions and responses, then store them in the Result table.
+            for question in survey.questions.all():
+                selected_answers = request.POST.getlist(f'question_{question.id}')
+
+                for answer_id in selected_answers:
+                    answer = get_object_or_404(Answers, id=answer_id, question_id=question)
+
+                    Results.objects.create(
+                        survey_id=survey,
+                        question_id=question,
+                        answer_id=answer,
+                        user_id=user,
+                        republished_version=republished_ver
+                    )
         return render(request,'complete.html')
         # return redirect('complete')
         # return redirect('thankyou',id=survey_id) #Pass the ID as survey_id to the thank you function
@@ -275,8 +329,8 @@ def qa_submit(request):
 
 # render thankyou to qa.html iframe as the wisdom crowed
 def thankyou(request,id):
-    # print(id)
-    results = Results.objects.filter(survey_id=id)
+    survey = get_object_or_404(Surveys, id=id)
+    results = Results.objects.filter(survey_id=survey, republished_version=survey.republished)
     # print(results)
     stats = (
         results.values('question_id', 'answer_id')
@@ -299,7 +353,7 @@ def thankyou(request,id):
     grouped_stats = defaultdict(list)
     for stat in stats:
         question=Questions.objects.filter(id=stat['question_id']).values_list('question', flat=True).first() #find question corresponding to id
-        answer=Answers.objects.filter(question_id=stat['question_id']).values_list('answer', flat=True).first() #find the answer corresponding to question_id
+        answer=Answers.objects.filter(id=stat['answer_id']).values_list('answer', flat=True).first() #find the selected answer
         grouped_stats[question].append({
             'answer_id': answer,
             # 'answer_id': stat['answer_id'],

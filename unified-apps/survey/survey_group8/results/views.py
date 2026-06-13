@@ -3,7 +3,9 @@ from django.http import HttpResponse
 from core.models import Surveys, Questions, Answers, Results
 from django.db.models import Max
 from django.http import Http404, JsonResponse
+from django.contrib.auth.decorators import login_required
 
+@login_required
 def survey_results_closed(request, id):
     survey = get_object_or_404(Surveys, pk=id)
 
@@ -68,7 +70,7 @@ def survey_results_closed(request, id):
     return render(request, 'multiple_results.html', context)
 
 
-
+@login_required
 def survey_results_published(request, id):
     survey = get_object_or_404(Surveys, pk=id)
 

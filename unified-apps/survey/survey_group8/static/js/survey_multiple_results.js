@@ -8,8 +8,17 @@ function getSurveyIdFromURL() {
     return segments[segments.length - 2]; // Assuming the ID is the second last segment.
 }
 
+function getSurveyBasePath() {
+    const path = window.location.pathname.replace(/\/+$/, '');
+    const surveyIndex = path.indexOf('/survey');
+    if (surveyIndex !== -1) {
+        return path.slice(0, surveyIndex + '/survey'.length);
+    }
+    return '';
+}
+
 function fetchSurveyResults(surveyId) {
-    fetch(`/results/closed/${surveyId}/`, {
+    fetch(`${getSurveyBasePath()}/results/closed/${surveyId}/`, {
         method: 'GET',
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
