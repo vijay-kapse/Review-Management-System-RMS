@@ -36,7 +36,36 @@
                 console.error("无法访问 iframe 内容，可能是跨域问题");
             }
         };
+
+        document.querySelectorAll("[data-other-toggle]").forEach(function (field) {
+            field.addEventListener("change", function () {
+                updateOtherResponse(field.dataset.otherToggle);
+            });
+        });
+
+        document.querySelectorAll("[data-other-question]").forEach(function (field) {
+            updateOtherResponse(field.dataset.otherQuestion);
+        });
     });
+
+    function updateOtherResponse(questionId) {
+        var otherField = document.getElementById("otherText_" + questionId);
+        var otherWrap = document.getElementById("otherWrap_" + questionId);
+        if (!otherField || !otherWrap) return;
+
+        var otherSelected = false;
+        document.querySelectorAll('[name="question_' + questionId + '"]').forEach(function (field) {
+            if (field.value === "__other__" && field.checked) {
+                otherSelected = true;
+            }
+        });
+
+        otherWrap.hidden = !otherSelected;
+        otherField.required = otherSelected;
+        if (!otherSelected) {
+            otherField.value = "";
+        }
+    }
 </script>
 
 
@@ -68,13 +97,24 @@
                             {% for answer in question.answers.all %}
                                 <tr>
                                     <td>
-                                        <input type="radio" name="question_{{ question.id }}" value="{{ answer.id }}">
+                                        <input type="radio" name="question_{{ question.id }}" value="{{ answer.id }}" data-other-toggle="{{ question.id }}">
                                     </td>
                                     <td>
                                         <label>{{ answer.answer }}</label>
                                     </td>
                                 </tr>
                             {% endfor %}
+                            <tr>
+                                <td>
+                                    <input type="radio" name="question_{{ question.id }}" value="__other__" data-other-toggle="{{ question.id }}" data-other-question="{{ question.id }}">
+                                </td>
+                                <td>
+                                    <label>Other</label>
+                                    <div class="other-response" id="otherWrap_{{ question.id }}" hidden>
+                                        <input type="text" id="otherText_{{ question.id }}" name="other_question_{{ question.id }}" class="survey-text-input" placeholder="Enter other response">
+                                    </div>
+                                </td>
+                            </tr>
                         {% elif question.type == "Checkboxes" %}
                             {% for answer in question.answers.all %}
                                 <tr>
@@ -86,6 +126,17 @@
                                     </td>
                                 </tr>
                             {% endfor %}
+                            <tr>
+                                <td>
+                                    <input type="checkbox" name="question_{{ question.id }}" value="__other__" data-other-toggle="{{ question.id }}" data-other-question="{{ question.id }}">
+                                </td>
+                                <td>
+                                    <label>Other</label>
+                                    <div class="other-response" id="otherWrap_{{ question.id }}" hidden>
+                                        <input type="text" id="otherText_{{ question.id }}" name="other_question_{{ question.id }}" class="survey-text-input" placeholder="Enter other response">
+                                    </div>
+                                </td>
+                            </tr>
                         {% elif question.type == "Dropdown" %}
                             <tr>
                                 <td colspan="2">

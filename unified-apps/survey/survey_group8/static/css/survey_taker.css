@@ -83,6 +83,10 @@
     resize: vertical;
 }
 
+.other-response {
+    margin-top: 10px;
+}
+
 .submit-button,
 .button-link.button-link-match {
     width: auto;

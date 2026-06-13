@@ -7,6 +7,15 @@ from django.contrib.auth.decorators import login_required
 
 TEXT_QUESTION_TYPES = ('Text', 'Textarea')
 
+
+def _text_response_rows(results, question):
+    return (
+        results.filter(question_id=question)
+        .exclude(text_answer='')
+        .values('text_answer')
+        .annotate(count=Count('id'))
+    )
+
 @login_required
 def survey_results_closed(request, id):
     survey = get_object_or_404(Surveys, pk=id)
@@ -40,12 +49,7 @@ def survey_results_closed(request, id):
                 }
 
             if question.type in TEXT_QUESTION_TYPES:
-                text_responses = (
-                    results.filter(question_id=question)
-                    .exclude(text_answer='')
-                    .values('text_answer')
-                    .annotate(count=Count('id'))
-                )
+                text_responses = _text_response_rows(results, question)
                 for response in text_responses:
                     answer_text = response['text_answer']
                     response_count = response['count']
@@ -67,6 +71,17 @@ def survey_results_closed(request, id):
                         }
 
                     organized_question_data[question.question]['answers'][answer.answer]['versions'][version] = {
+                        'count': response_count,
+                        'percentage': percentage
+                    }
+
+                for response in _text_response_rows(results, question):
+                    answer_text = response['text_answer']
+                    response_count = response['count']
+                    percentage = (response_count / total_respondents_question * 100) if total_respondents_question > 0 else 0
+                    if answer_text not in organized_question_data[question.question]['answers']:
+                        organized_question_data[question.question]['answers'][answer_text] = {'versions': {}}
+                    organized_question_data[question.question]['answers'][answer_text]['versions'][version] = {
                         'count': response_count,
                         'percentage': percentage
                     }
@@ -115,12 +130,7 @@ def survey_results_published(request, id):
 
             answer_data = []
             if question.type in TEXT_QUESTION_TYPES:
-                text_responses = (
-                    results.filter(question_id=question)
-                    .exclude(text_answer='')
-                    .values('text_answer')
-                    .annotate(count=Count('id'))
-                )
+                text_responses = _text_response_rows(results, question)
                 for response in text_responses:
                     response_count = response['count']
                     percentage = (response_count / total_respondents_question * 100) if total_respondents_question > 0 else 0
@@ -136,6 +146,15 @@ def survey_results_published(request, id):
 
                     answer_data.append({
                         'answer_text': answer.answer,
+                        'count': response_count,
+                        'percentage': percentage,
+                    })
+
+                for response in _text_response_rows(results, question):
+                    response_count = response['count']
+                    percentage = (response_count / total_respondents_question * 100) if total_respondents_question > 0 else 0
+                    answer_data.append({
+                        'answer_text': response['text_answer'],
                         'count': response_count,
                         'percentage': percentage,
                     })

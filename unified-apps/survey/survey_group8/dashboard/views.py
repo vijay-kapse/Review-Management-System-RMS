@@ -13,6 +13,7 @@ from django.db import transaction
 CHOICE_QUESTION_TYPES = ('Radio', 'Checkboxes', 'Dropdown')
 TEXT_QUESTION_TYPES = ('Text', 'Textarea')
 QUESTION_TYPES = CHOICE_QUESTION_TYPES + TEXT_QUESTION_TYPES
+OTHER_ANSWER_VALUE = '__other__'
 
 def in_survey_taker_group(user):
     return user.groups.filter(name='Taker').exists()
@@ -356,6 +357,18 @@ def qa_submit(request):
 
                 for answer_id in selected_answers:
                     if not answer_id:
+                        continue
+                    if answer_id == OTHER_ANSWER_VALUE and question.type in ('Radio', 'Checkboxes'):
+                        other_answer = (request.POST.get(f'other_question_{question.id}') or '').strip()
+                        if other_answer:
+                            Results.objects.create(
+                                survey_id=survey,
+                                question_id=question,
+                                answer_id=None,
+                                text_answer=f'Other: {other_answer}',
+                                user_id=user,
+                                republished_version=republished_ver
+                            )
                         continue
                     answer = get_object_or_404(Answers, id=answer_id, question_id=question)
 
