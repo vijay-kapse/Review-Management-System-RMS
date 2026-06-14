@@ -37,6 +37,7 @@ urlpatterns = [
     path("results/", include("results.urls")),
     path('survey_take/', views.survey_take, name='survey_take'),
     path('qa/<int:id>/', views.qa_view, name='qa_view'),
+    path('qa/<int:id>/response/<str:submission_id>/edit/', views.qa_edit_response, name='qa_edit_response'),
     path('qa_submit/', views.qa_submit, name='qa_submit'),
     path('thankyou/<int:id>/', views.thankyou, name='thankyou'),
     path('complete/',views.complete,name='complete'),

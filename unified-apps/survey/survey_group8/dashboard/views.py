@@ -8,7 +8,7 @@ import json
 import uuid
 from django import forms
 from .forms  import AnswerForm
-from django.db.models import Count
+from django.db.models import Count, Min
 from django.db import transaction
 
 CHOICE_QUESTION_TYPES = ('Radio', 'Checkboxes', 'Dropdown')
@@ -291,8 +291,24 @@ def survey_edit(request, id):
 def survey_take(request):
     surveys = []
     for survey in Surveys.objects.filter(status='p').order_by('id'):
-        user_results = Results.objects.filter(survey_id=survey, user_id=request.user)
+        user_results = Results.objects.filter(
+            survey_id=survey,
+            user_id=request.user,
+            republished_version=survey.republished,
+        )
         has_current_response = user_results.filter(republished_version=survey.republished).exists()
+        submissions = []
+        for index, submission in enumerate(
+            user_results.exclude(submission_id='')
+            .values('submission_id')
+            .annotate(first_result_id=Min('id'))
+            .order_by('first_result_id'),
+            start=1,
+        ):
+            submissions.append({
+                'id': submission['submission_id'],
+                'label': f'Response {index}',
+            })
 
         surveys.append({
             'id': survey.id,
@@ -300,6 +316,7 @@ def survey_take(request):
             'description': survey.description,
             'republished': survey.republished,
             'action_label': 'Submit Another Response' if has_current_response else 'Click to Start',
+            'submissions': submissions,
         })
 
     return {'surveys': surveys}
@@ -317,8 +334,65 @@ def qa_view(request, id):
     survey = get_object_or_404(Surveys.objects.prefetch_related('questions__answers'), id=id, status='p')
     # republished_ver=survey.republished #Directly referenced on the front end
     user=request.user
-    questions = survey.questions.all()
-    return render(request, 'qa.html', {'survey': survey, 'questions': questions,'user':user})
+    question_items = _question_items_for_submission(survey)
+    return render(request, 'qa.html', {'survey': survey, 'question_items': question_items,'user':user})
+
+
+def _question_items_for_submission(survey, submission_id=None, user=None):
+    results = Results.objects.none()
+    if submission_id and user:
+        results = Results.objects.filter(
+            survey_id=survey,
+            user_id=user,
+            republished_version=survey.republished,
+            submission_id=submission_id,
+        )
+
+    question_items = []
+    for question in survey.questions.prefetch_related('answers').all():
+        question_results = list(results.filter(question_id=question))
+        selected_answer_ids = [
+            result.answer_id_id
+            for result in question_results
+            if result.answer_id_id
+        ]
+        text_answer = ''
+        other_text = ''
+        for result in question_results:
+            if result.text_answer:
+                if result.text_answer.startswith('Other: '):
+                    other_text = result.text_answer.removeprefix('Other: ')
+                else:
+                    text_answer = result.text_answer
+
+        question_items.append({
+            'question': question,
+            'selected_answer_ids': selected_answer_ids,
+            'text_answer': text_answer,
+            'other_text': other_text,
+        })
+
+    return question_items
+
+
+@login_required
+def qa_edit_response(request, id, submission_id):
+    survey = get_object_or_404(Surveys.objects.prefetch_related('questions__answers'), id=id, status='p')
+    if not Results.objects.filter(
+        survey_id=survey,
+        user_id=request.user,
+        republished_version=survey.republished,
+        submission_id=submission_id,
+    ).exists():
+        return HttpResponseForbidden("You do not have permission to edit this response.")
+
+    question_items = _question_items_for_submission(survey, submission_id=submission_id, user=request.user)
+    return render(request, 'qa.html', {
+        'survey': survey,
+        'question_items': question_items,
+        'user': request.user,
+        'editing_submission_id': submission_id,
+    })
 
 @login_required
 def qa_submit(request):
@@ -327,9 +401,21 @@ def qa_submit(request):
         user = request.user
         survey = get_object_or_404(Surveys, id=survey_id, status='p')
         republished_ver=survey.republished
-        submission_id = str(uuid.uuid4())
+        submitted_submission_id = (request.POST.get('submission_id') or '').strip()
+        submission_id = submitted_submission_id or str(uuid.uuid4())
 
         with transaction.atomic():
+            if submitted_submission_id:
+                existing_results = Results.objects.filter(
+                    survey_id=survey,
+                    user_id=user,
+                    republished_version=republished_ver,
+                    submission_id=submitted_submission_id,
+                )
+                if not existing_results.exists():
+                    return HttpResponseForbidden("You do not have permission to edit this response.")
+                existing_results.delete()
+
             # Obtain the questions and responses, then store them in the Result table.
             for question in survey.questions.all():
                 if question.type in TEXT_QUESTION_TYPES:

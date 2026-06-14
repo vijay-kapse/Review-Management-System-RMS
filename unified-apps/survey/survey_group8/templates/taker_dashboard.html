@@ -28,7 +28,16 @@
             <td>{{ survey.id }}</td>
             <td>{{ survey.name }}</td>
             <td>{{ survey.description }}</td>
-            <td><a href="{% url 'qa_view' survey.id %}">{{ survey.action_label }}</a></td>
+            <td>
+                <a href="{% url 'qa_view' survey.id %}">{{ survey.action_label }}</a>
+                {% if survey.submissions %}
+                    <div class="response-actions">
+                        {% for submission in survey.submissions %}
+                            <a href="{% url 'qa_edit_response' survey.id submission.id %}">Edit {{ submission.label }}</a>{% if not forloop.last %} | {% endif %}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </td>
         </tr>
     {% empty %}
         <tr>

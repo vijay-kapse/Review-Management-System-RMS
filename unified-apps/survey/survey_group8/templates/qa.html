@@ -74,6 +74,9 @@
     <form method="post" action="{% url 'qa_submit' %}">
         {% csrf_token %}
         <input type="hidden" name="survey_id" value="{{ survey.id }}">
+        {% if editing_submission_id %}
+            <input type="hidden" name="submission_id" value="{{ editing_submission_id }}">
+        {% endif %}
         <input type="hidden" name="user" value="{{ user }}">
 
 
@@ -81,11 +84,15 @@
             <h2 class="survey-title">{{ survey.name }}</h2>
             <p class="survey-description">{{ survey.description }}</p>
             <p class="survey-version">Republished Version: {{ survey.republished }}</p>
+            {% if editing_submission_id %}
+                <p class="survey-version">Editing existing response</p>
+            {% endif %}
         </div>
 
 
         <div class="questions-section">
-            {% for question in questions %}
+            {% for item in question_items %}
+                {% with question=item.question %}
                 <fieldset class="question-fieldset">
                     <legend class="question-legend">{{ question.question }}</legend>
                     <table class="answers-table">
@@ -97,7 +104,7 @@
                             {% for answer in question.answers.all %}
                                 <tr>
                                     <td>
-                                        <input type="radio" name="question_{{ question.id }}" value="{{ answer.id }}" data-other-toggle="{{ question.id }}">
+                                        <input type="radio" name="question_{{ question.id }}" value="{{ answer.id }}" data-other-toggle="{{ question.id }}" {% if answer.id in item.selected_answer_ids %}checked{% endif %}>
                                     </td>
                                     <td>
                                         <label>{{ answer.answer }}</label>
@@ -106,12 +113,12 @@
                             {% endfor %}
                             <tr>
                                 <td>
-                                    <input type="radio" name="question_{{ question.id }}" value="__other__" data-other-toggle="{{ question.id }}" data-other-question="{{ question.id }}">
+                                    <input type="radio" name="question_{{ question.id }}" value="__other__" data-other-toggle="{{ question.id }}" data-other-question="{{ question.id }}" {% if item.other_text %}checked{% endif %}>
                                 </td>
                                 <td>
                                     <label>Other</label>
                                     <div class="other-response" id="otherWrap_{{ question.id }}" hidden>
-                                        <input type="text" id="otherText_{{ question.id }}" name="other_question_{{ question.id }}" class="survey-text-input" placeholder="Enter other response">
+                                        <input type="text" id="otherText_{{ question.id }}" name="other_question_{{ question.id }}" class="survey-text-input" placeholder="Enter other response" value="{{ item.other_text }}">
                                     </div>
                                 </td>
                             </tr>
@@ -119,7 +126,7 @@
                             {% for answer in question.answers.all %}
                                 <tr>
                                     <td>
-                                        <input type="checkbox" name="question_{{ question.id }}" value="{{ answer.id }}">
+                                        <input type="checkbox" name="question_{{ question.id }}" value="{{ answer.id }}" {% if answer.id in item.selected_answer_ids %}checked{% endif %}>
                                     </td>
                                     <td>
                                         <label>{{ answer.answer }}</label>
@@ -128,12 +135,12 @@
                             {% endfor %}
                             <tr>
                                 <td>
-                                    <input type="checkbox" name="question_{{ question.id }}" value="__other__" data-other-toggle="{{ question.id }}" data-other-question="{{ question.id }}">
+                                    <input type="checkbox" name="question_{{ question.id }}" value="__other__" data-other-toggle="{{ question.id }}" data-other-question="{{ question.id }}" {% if item.other_text %}checked{% endif %}>
                                 </td>
                                 <td>
                                     <label>Other</label>
                                     <div class="other-response" id="otherWrap_{{ question.id }}" hidden>
-                                        <input type="text" id="otherText_{{ question.id }}" name="other_question_{{ question.id }}" class="survey-text-input" placeholder="Enter other response">
+                                        <input type="text" id="otherText_{{ question.id }}" name="other_question_{{ question.id }}" class="survey-text-input" placeholder="Enter other response" value="{{ item.other_text }}">
                                     </div>
                                 </td>
                             </tr>
@@ -143,7 +150,7 @@
                                     <select name="question_{{ question.id }}" class="survey-select">
                                         <option value="">Select an answer</option>
                                         {% for answer in question.answers.all %}
-                                            <option value="{{ answer.id }}">{{ answer.answer }}</option>
+                                            <option value="{{ answer.id }}" {% if answer.id in item.selected_answer_ids %}selected{% endif %}>{{ answer.answer }}</option>
                                         {% endfor %}
                                     </select>
                                 </td>
@@ -151,23 +158,24 @@
                         {% elif question.type == "Text" %}
                             <tr>
                                 <td colspan="2">
-                                    <input type="text" name="text_question_{{ question.id }}" class="survey-text-input" placeholder="Enter your answer">
+                                    <input type="text" name="text_question_{{ question.id }}" class="survey-text-input" placeholder="Enter your answer" value="{{ item.text_answer }}">
                                 </td>
                             </tr>
                         {% elif question.type == "Textarea" %}
                             <tr>
                                 <td colspan="2">
-                                    <textarea name="text_question_{{ question.id }}" class="survey-textarea" rows="4" placeholder="Enter your answer"></textarea>
+                                    <textarea name="text_question_{{ question.id }}" class="survey-textarea" rows="4" placeholder="Enter your answer">{{ item.text_answer }}</textarea>
                                 </td>
                             </tr>
                         {% endif %}
                     </table>
                 </fieldset>
+                {% endwith %}
             {% endfor %}
         </div>
 
         <div class="button-container">
-            <button type="submit" class="submit-button">Submit</button>
+            <button type="submit" class="submit-button">{% if editing_submission_id %}Update Response{% else %}Submit{% endif %}</button>
             <a class="button-link button-link-match" href="{% url 'home' %}">HOME</a>
         </div>
     </form>
