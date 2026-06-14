@@ -15,6 +15,7 @@ CHOICE_QUESTION_TYPES = ('Radio', 'Checkboxes', 'Dropdown')
 TEXT_QUESTION_TYPES = ('Text', 'Textarea')
 QUESTION_TYPES = CHOICE_QUESTION_TYPES + TEXT_QUESTION_TYPES
 OTHER_ANSWER_VALUE = '__other__'
+LEGACY_SUBMISSION_PREFIX = 'legacy-response-'
 
 def in_survey_taker_group(user):
     return user.groups.filter(name='Taker').exists()
@@ -309,6 +310,13 @@ def survey_take(request):
                 'id': submission['submission_id'],
                 'label': f'Response {index}',
             })
+        legacy_results = user_results.filter(submission_id='')
+        if legacy_results.exists():
+            submissions.append({
+                'id': f'{LEGACY_SUBMISSION_PREFIX}{request.user.id}',
+                'label': f'Response {len(submissions) + 1}',
+                'legacy': True,
+            })
 
         surveys.append({
             'id': survey.id,
@@ -338,15 +346,21 @@ def qa_view(request, id):
     return render(request, 'qa.html', {'survey': survey, 'question_items': question_items,'user':user})
 
 
+def _results_for_submission(survey, submission_id, user):
+    filters = {
+        'survey_id': survey,
+        'user_id': user,
+        'republished_version': survey.republished,
+    }
+    if submission_id and submission_id.startswith(LEGACY_SUBMISSION_PREFIX):
+        return Results.objects.filter(**filters, submission_id='')
+    return Results.objects.filter(**filters, submission_id=submission_id)
+
+
 def _question_items_for_submission(survey, submission_id=None, user=None):
     results = Results.objects.none()
     if submission_id and user:
-        results = Results.objects.filter(
-            survey_id=survey,
-            user_id=user,
-            republished_version=survey.republished,
-            submission_id=submission_id,
-        )
+        results = _results_for_submission(survey, submission_id, user)
 
     question_items = []
     for question in survey.questions.prefetch_related('answers').all():
@@ -378,12 +392,7 @@ def _question_items_for_submission(survey, submission_id=None, user=None):
 @login_required
 def qa_edit_response(request, id, submission_id):
     survey = get_object_or_404(Surveys.objects.prefetch_related('questions__answers'), id=id, status='p')
-    if not Results.objects.filter(
-        survey_id=survey,
-        user_id=request.user,
-        republished_version=survey.republished,
-        submission_id=submission_id,
-    ).exists():
+    if not _results_for_submission(survey, submission_id, request.user).exists():
         return HttpResponseForbidden("You do not have permission to edit this response.")
 
     question_items = _question_items_for_submission(survey, submission_id=submission_id, user=request.user)
@@ -406,15 +415,12 @@ def qa_submit(request):
 
         with transaction.atomic():
             if submitted_submission_id:
-                existing_results = Results.objects.filter(
-                    survey_id=survey,
-                    user_id=user,
-                    republished_version=republished_ver,
-                    submission_id=submitted_submission_id,
-                )
+                existing_results = _results_for_submission(survey, submitted_submission_id, user)
                 if not existing_results.exists():
                     return HttpResponseForbidden("You do not have permission to edit this response.")
                 existing_results.delete()
+                if submitted_submission_id.startswith(LEGACY_SUBMISSION_PREFIX):
+                    submission_id = str(uuid.uuid4())
 
             # Obtain the questions and responses, then store them in the Result table.
             for question in survey.questions.all():

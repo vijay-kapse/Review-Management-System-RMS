@@ -16,7 +16,8 @@
 {% if user.groups.all %}
 <a class="button-link" href="{% url 'home' %}">Open creator view</a>
 {% endif %}
-<table class="survey-table">
+<div class="survey-table-wrap">
+<table class="survey-table taker-survey-table">
     <tr>
         <th>Survey ID</th>
         <th>Survey Items</th>
@@ -29,12 +30,20 @@
             <td>{{ survey.name }}</td>
             <td>{{ survey.description }}</td>
             <td>
-                <a href="{% url 'qa_view' survey.id %}">{{ survey.action_label }}</a>
+                <a class="primary-action-link" href="{% url 'qa_view' survey.id %}">{{ survey.action_label }}</a>
                 {% if survey.submissions %}
                     <div class="response-actions">
+                        <div class="response-actions-header">
+                            <span>{{ survey.submissions|length }} saved responses</span>
+                        </div>
+                        <div class="response-action-grid">
                         {% for submission in survey.submissions %}
-                            <a href="{% url 'qa_edit_response' survey.id submission.id %}">Edit {{ submission.label }}</a>{% if not forloop.last %} | {% endif %}
+                            <a class="response-edit-link" href="{% url 'qa_edit_response' survey.id submission.id %}">
+                                <span>{{ submission.label }}</span>
+                                <span>Edit</span>
+                            </a>
                         {% endfor %}
+                        </div>
                     </div>
                 {% endif %}
             </td>
@@ -45,5 +54,6 @@
         </tr>
     {% endfor %}
 </table>
+</div>
 </div>
 {% endblock %}
