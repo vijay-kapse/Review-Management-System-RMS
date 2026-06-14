@@ -29,51 +29,68 @@ def _csv_filename(survey, scope):
     return f"{clean_name or 'survey'}-{scope}-results.csv"
 
 
+def _clean_csv_text(value):
+    return ' '.join(str(value or '').split())
+
+
+def _question_headers(questions):
+    seen = {}
+    headers = {}
+    for question in questions:
+        header = _clean_csv_text(question.question)
+        if not header:
+            header = f'Question {question.id}'
+        seen[header] = seen.get(header, 0) + 1
+        headers[question.id] = header if seen[header] == 1 else f'{header} ({seen[header]})'
+    return headers
+
+
+def _submission_key(result):
+    if result.submission_id:
+        return ('submission', result.republished_version, result.submission_id)
+    return ('legacy', result.republished_version, result.user_id_id)
+
+
 def _results_csv_response(survey, results, scope):
-    response = HttpResponse(content_type='text/csv')
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
     response['Content-Disposition'] = f'attachment; filename="{_csv_filename(survey, scope)}"'
+    response.write('\ufeff')
 
     writer = csv.writer(response)
-    writer.writerow([
-        'survey_id',
-        'survey_name',
-        'survey_status',
-        'republished_version',
-        'submission_id',
-        'respondent_id',
-        'respondent_username',
-        'respondent_email',
-        'question_id',
-        'question_text',
-        'question_type',
-        'answer_type',
-        'answer_id',
-        'answer_text',
+    questions = list(survey.questions.all().order_by('id'))
+    question_headers = _question_headers(questions)
+    question_ids = [question.id for question in questions]
+    rows = {}
+
+    for result in results.select_related('question_id', 'answer_id', 'user_id').order_by('id'):
+        key = _submission_key(result)
+        if key not in rows:
+            respondent = result.user_id.email or result.user_id.username
+            rows[key] = {
+                'first_result_id': result.id,
+                'version': result.republished_version,
+                'respondent': respondent,
+                'answers': {question_id: [] for question_id in question_ids},
+            }
+
+        if result.question_id_id not in rows[key]['answers']:
+            rows[key]['answers'][result.question_id_id] = []
+
+        answer_text = result.answer_id.answer if result.answer_id_id else result.text_answer
+        answer_text = _clean_csv_text(answer_text)
+        if answer_text:
+            rows[key]['answers'][result.question_id_id].append(answer_text)
+
+    writer.writerow(['Response', 'Respondent', 'Version'] + [
+        question_headers[question_id] for question_id in question_ids
     ])
 
-    for result in results.select_related('survey_id', 'question_id', 'answer_id', 'user_id').order_by(
-        'republished_version',
-        'user_id_id',
-        'submission_id',
-        'question_id_id',
-        'id',
-    ):
-        answer_text = result.answer_id.answer if result.answer_id_id else result.text_answer
+    for response_number, row in enumerate(sorted(rows.values(), key=lambda item: item['first_result_id']), start=1):
         writer.writerow([
-            survey.id,
-            survey.name,
-            survey.status,
-            result.republished_version,
-            result.submission_id,
-            result.user_id_id,
-            result.user_id.username,
-            result.user_id.email,
-            result.question_id_id,
-            result.question_id.question,
-            result.question_id.type,
-            'choice' if result.answer_id_id else 'text',
-            result.answer_id_id or '',
-            answer_text,
+            f'Response {response_number}',
+            row['respondent'],
+            row['version'],
+            *['; '.join(row['answers'].get(question_id, [])) for question_id in question_ids],
         ])
 
     return response
