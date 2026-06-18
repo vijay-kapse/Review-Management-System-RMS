@@ -28,7 +28,9 @@ const RUN_DIR = `${process.cwd()} ${__dirname}`;
 const IS_SERVERLESS_FS = IS_VERCEL
   || Boolean(process.env.VERCEL_ENV || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT)
   || SERVERLESS_FS_HINTS.some((hint) => RUN_DIR.includes(hint));
-const DEFAULT_DATA_DIR = IS_SERVERLESS_FS ? '/tmp/rms-portal-data' : path.join(__dirname, 'data');
+// Always default to /tmp unless explicitly overridden. This avoids read-only
+// deployment roots on serverless platforms and still works in local dev.
+const DEFAULT_DATA_DIR = '/tmp/rms-portal-data';
 const DATA_DIR = process.env.PORTAL_DATA_DIR || DEFAULT_DATA_DIR;
 const DB_PATH = process.env.PORTAL_DB_PATH || path.join(DATA_DIR, 'portal_auth.db');
 const COOKIE_SECURE = process.env.COOKIE_SECURE
