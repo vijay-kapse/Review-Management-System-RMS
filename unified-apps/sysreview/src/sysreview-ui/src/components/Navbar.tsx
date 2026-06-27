@@ -32,6 +32,9 @@ const MyNavbar = () => {
         </Link>
         <Navbar.Collapse className="justify-content-end">
           <Nav className="gap-2 align-items-center">
+            <Nav.Link href="/rms/apps" className="rms-return-link">
+              Back to RMS
+            </Nav.Link>
             {isAuthenticated && (
               <>
                 <Nav.Link as={Link} to={`${APP_URI_PREFIX}/dashboard`}>

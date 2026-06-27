@@ -196,6 +196,18 @@
       background: #f8fafc;
     }
 
+    .btn-rms {
+      color: var(--blue);
+      border-color: #bfdbfe;
+      background: #eff6ff;
+      box-shadow: none;
+    }
+
+    .btn-rms:hover {
+      color: #1e40af;
+      background: #dbeafe;
+    }
+
     .workspace {
       border: 1px solid var(--line);
       border-radius: 8px;
@@ -541,7 +553,7 @@
 
       <nav class="nav-actions" aria-label="Quest actions">
         <a class="btn btn-secondary" href="admin.html">Admin Entry</a>
-        <a class="btn btn-primary" href="../../apps">RMS Apps</a>
+        <a class="btn btn-rms" href="/rms/apps">Back to RMS</a>
       </nav>
     </header>
 
@@ -604,7 +616,6 @@
           <textarea id="queryInput" placeholder="Ask a question about the uploaded documents..."></textarea>
           <div class="control-row">
             <button id="askBtn" class="btn btn-primary" type="button">Ask Question</button>
-            <a class="btn btn-secondary" href="../../apps">Back to RMS</a>
           </div>
           <h3>Response</h3>
           <div id="answerBox" class="answer-box">Your Quest response will appear here.</div>

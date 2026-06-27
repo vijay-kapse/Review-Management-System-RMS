@@ -50,6 +50,20 @@ import {
           </Text>
   
           <HStack spacing={4}>
+            <Button
+              as="a"
+              href="/rms/apps"
+              variant="outline"
+              borderRadius="full"
+              borderColor="blue.200"
+              bg="blue.50"
+              color="blue.700"
+              _hover={{ bg: 'blue.100', textDecoration: 'none' }}
+              size="sm"
+              fontWeight="700"
+            >
+              Back to RMS
+            </Button>
             <Menu>
               <MenuButton
                 as={Button}
@@ -67,6 +81,5 @@ import {
       </Box>
     );
   };
-  
+
   export default Navbar;
-  

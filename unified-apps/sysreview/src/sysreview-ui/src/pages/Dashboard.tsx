@@ -11,7 +11,6 @@ import {
   FiCheckCircle,
   FiCompass,
   FiFolder,
-  FiGrid,
   FiLayers,
   FiPlus,
   FiSearch,
@@ -199,10 +198,6 @@ const Dashbaord = () => {
               <FiPlus />
               New Project
             </Button>
-            <a className="dashboard-secondary-action" href="/rms/apps">
-              <FiGrid />
-              RMS Apps
-            </a>
           </div>
         </section>
 

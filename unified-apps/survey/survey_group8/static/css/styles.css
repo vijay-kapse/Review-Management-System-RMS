@@ -137,6 +137,12 @@ input[type="submit"] {
     background: #ffffff;
 }
 
+.rms-return-link {
+    color: var(--blue);
+    border-color: #bfdbfe;
+    background: #eff6ff;
+}
+
 .nav-button,
 .button-link,
 button,
@@ -150,6 +156,11 @@ input[type="submit"] {
 .home-button:hover {
     background: var(--soft);
     text-decoration: none;
+}
+
+.rms-return-link:hover {
+    color: var(--blue-dark);
+    background: #dbeafe;
 }
 
 .nav-button:hover,

@@ -81,6 +81,16 @@
   color: #111114 !important;
   background: rgba(17, 17, 20, 0.06);
 }
+.c-navbar .rms-return-link {
+  border: 1px solid rgba(29, 78, 216, 0.26);
+  background: rgba(239, 246, 255, 0.9);
+  color: #1d4ed8 !important;
+}
+.c-navbar .rms-return-link:hover,
+.c-navbar .rms-return-link:focus {
+  background: #dbeafe;
+  color: #1e40af !important;
+}
 .c-navbar .c-btn-negative,
 .c-navbar .c-btn-secondary {
   min-height: 36px;
