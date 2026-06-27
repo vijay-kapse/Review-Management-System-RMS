@@ -475,7 +475,7 @@ function clearSession(req, res) {
 
 async function ensureSysreviewToken(req, res) {
   const identity = getPortalIdentity(req);
-  if (!identity?.email || req.cookies?.token) {
+  if (!identity?.email) {
     return;
   }
 
