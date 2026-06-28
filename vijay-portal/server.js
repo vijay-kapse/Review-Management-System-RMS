@@ -621,7 +621,7 @@ function getPortalIdentity(req) {
   };
 }
 
-function renderArgusBootstrap(res, identity) {
+function renderArgusBootstrap(res, identity, destinationPath = publicPath('/argus/home')) {
   const argusUser = {
     email: identity.email,
     username: identity.username,
@@ -629,6 +629,7 @@ function renderArgusBootstrap(res, identity) {
     last_name: '',
     id: identity.email,
   };
+  const safeDestinationPath = publicPath(stripPublicPrefix(destinationPath || '/argus/home'));
   res.send(`<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -641,7 +642,7 @@ function renderArgusBootstrap(res, identity) {
     fetch(${JSON.stringify(publicPath('/api/results/'))}, { credentials: 'include' })
       .catch(() => null)
       .finally(() => {
-        window.location.replace(${JSON.stringify(publicPath('/argus/home'))});
+        window.location.replace(${JSON.stringify(safeDestinationPath)});
       });
   </script>
 </body>
@@ -1353,8 +1354,15 @@ app.get(['/chatbot', '/chatbot/', '/chatbot/static/index.html'], requireLogin, (
 });
 
 app.get(/^\/argus\/.+/, (req, res, next) => {
-  if (!getPortalIdentity(req)) {
+  const identity = getPortalIdentity(req);
+  if (!identity) {
     return res.redirect(`/login?next=${encodeURIComponent('/launch/argus')}`);
+  }
+
+  const acceptsHtml = String(req.get('accept') || '').includes('text/html');
+  const isStaticAsset = req.path.startsWith('/argus/static/');
+  if (acceptsHtml && !isStaticAsset) {
+    return renderArgusBootstrap(res, identity, publicPath(req.originalUrl || req.path));
   }
 
   next();
