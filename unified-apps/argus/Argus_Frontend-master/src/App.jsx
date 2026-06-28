@@ -11,8 +11,9 @@ const getRouterBasename = () => {
     return '/argus';
   }
 
-  const argusIndex = window.location.pathname.indexOf('/argus');
-  return argusIndex >= 0 ? window.location.pathname.slice(0, argusIndex + '/argus'.length) : '/argus';
+  const argusSegment = `/${window.__ARGUS_ROUTE_SEGMENT__ || 'argus'}`;
+  const argusIndex = window.location.pathname.indexOf(argusSegment);
+  return argusIndex >= 0 ? window.location.pathname.slice(0, argusIndex + argusSegment.length) : argusSegment;
 };
 
 function App() {
