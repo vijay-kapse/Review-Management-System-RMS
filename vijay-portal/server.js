@@ -80,6 +80,15 @@ function publicRedirectTarget(target) {
   return publicPath(value);
 }
 
+function withQueryParam(target, key, value) {
+  const rawTarget = String(target || '/');
+  const hashIndex = rawTarget.indexOf('#');
+  const baseWithSearch = hashIndex === -1 ? rawTarget : rawTarget.slice(0, hashIndex);
+  const hash = hashIndex === -1 ? '' : rawTarget.slice(hashIndex);
+  const separator = baseWithSearch.includes('?') ? '&' : '?';
+  return `${baseWithSearch}${separator}${encodeURIComponent(key)}=${encodeURIComponent(value)}${hash}`;
+}
+
 function escapeRegExp(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -630,6 +639,7 @@ function renderArgusBootstrap(res, identity, destinationPath = publicPath('/argu
     id: identity.email,
   };
   const safeDestinationPath = publicPath(stripPublicPrefix(destinationPath || '/argus/home'));
+  const destinationWithReadyFlag = withQueryParam(safeDestinationPath, 'portalReady', '1');
   res.send(`<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -642,7 +652,7 @@ function renderArgusBootstrap(res, identity, destinationPath = publicPath('/argu
     fetch(${JSON.stringify(publicPath('/api/results/'))}, { credentials: 'include' })
       .catch(() => null)
       .finally(() => {
-        window.location.replace(${JSON.stringify(safeDestinationPath)});
+        window.location.replace(${JSON.stringify(destinationWithReadyFlag)});
       });
   </script>
 </body>
@@ -1361,7 +1371,8 @@ app.get(/^\/argus\/.+/, (req, res, next) => {
 
   const acceptsHtml = String(req.get('accept') || '').includes('text/html');
   const isStaticAsset = req.path.startsWith('/argus/static/');
-  if (acceptsHtml && !isStaticAsset) {
+  const isPortalReady = req.query?.portalReady === '1';
+  if (acceptsHtml && !isStaticAsset && !isPortalReady) {
     return renderArgusBootstrap(res, identity, publicPath(req.originalUrl || req.path));
   }
 
