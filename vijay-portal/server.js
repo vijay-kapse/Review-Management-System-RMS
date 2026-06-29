@@ -1247,8 +1247,8 @@ app.get('/apps', requireLogin, (req, res) => {
     <section class="hero">
       <img class="hero-logo" src="${publicPath(RMS_LOGO_PATH)}" alt="RMS - Review Management System" />
       <div class="eyebrow">RMS workspace</div>
-      <h1>Choose your research workflow.</h1>
-      <p>You are signed in once through RMS. Launch TRACE, ARGUS, QUEST, or SPARK below without separate app-level login screens.</p>
+      <h1>The Complete Ecosystem for Systematic Literature Reviews.</h1>
+      <p>Launch TRACE, ARGUS, QUEST, or SPARK for Literature Discovery to Research Synthesis.</p>
     </section>
     <div class="metrics">
       <div class="metric"><strong>TRACE</strong><span>Query and evidence tracking</span></div>
