@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 140" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="140" viewBox="0 0 560 140" role="img" aria-labelledby="title desc">
   <title id="title">QUEST logo</title>
   <desc id="desc">QUEST logo with a scholarly chat bubble and open text pages.</desc>
   <defs>
@@ -19,6 +19,6 @@
     <circle cx="74" cy="73" r="3.5" fill="#14b8a6"/>
     <circle cx="98" cy="73" r="3.5" fill="#14b8a6"/>
   </g>
-  <text x="154" y="72" font-family="Inter, Avenir Next, Arial, sans-serif" font-size="42" font-weight="800" fill="#0f172a">QUEST</text>
-  <text x="156" y="101" font-family="Inter, Avenir Next, Arial, sans-serif" font-size="15" font-weight="700" fill="#475569">Scholarly question answering</text>
+  <text x="154" y="72" font-family="Avenir Next, Arial, sans-serif" font-size="42" font-weight="800" fill="#0f172a">QUEST</text>
+  <text x="156" y="101" font-family="Avenir Next, Arial, sans-serif" font-size="15" font-weight="700" fill="#475569">Document-based Q&amp;A</text>
 </svg>

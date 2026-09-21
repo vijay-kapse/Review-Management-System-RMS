@@ -35,7 +35,7 @@ const Footer = () => {
           <Col sm={4} className="text-end">
             <p className="mb-0">
               <BiCopyright className="mb-1 " size={"24px"} />
-              {"  "} Binghamton University. All Rights Reserved.
+              {"  "} PRISM-RMS. All Rights Reserved.
             </p>
           </Col>
         </Row>
