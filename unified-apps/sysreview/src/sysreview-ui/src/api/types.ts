@@ -4,6 +4,7 @@ export type projectType = {
   description: string;
   owner: string;
   collections: number[];
+  archived?: boolean;
 };
 
 export type querySetType = {

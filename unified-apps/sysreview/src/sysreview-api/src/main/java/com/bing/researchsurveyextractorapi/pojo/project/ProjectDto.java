@@ -16,5 +16,6 @@ public class ProjectDto {
     private String description;
     private String owner;
     private Collection<String> collaborators;
+    private boolean archived;
 
 }

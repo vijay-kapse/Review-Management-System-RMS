@@ -6,7 +6,9 @@ import com.bing.researchsurveyextractorapi.models.User;
 import com.bing.researchsurveyextractorapi.pojo.project.ProjectRequest;
 import com.bing.researchsurveyextractorapi.repository.ProjectRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -47,6 +49,15 @@ public class ProjectServiceImpl implements ProjectService {
         } else {
             throw new ProjectNotFoundException(projectId);
         }
+    }
+
+    @Override
+    public void setArchived(long projectId, boolean archived, String username) {
+        Project project = loadProjectById(projectId);
+        if (!project.getOwner().getUsername().equals(username)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the project owner can archive it");
+        }
+        projectRepository.updateArchivedByProjectId(archived, projectId);
     }
 
     @Override

@@ -75,4 +75,24 @@ const deleteProject = async (pId: number) => {
   return resp.data;
 };
 
-export { getProjects, getProject, postProject, updateProject, deleteProject };
+const setProjectArchived = async (pId: number, archived: boolean) => {
+  const config = getConfig();
+
+  console.log(archived ? "Archiving project" : "Restoring project", pId);
+  const url = API_URI + "/projects/" + pId + "/archive";
+
+  const resp = await axios.patch(url, null, {
+    ...config,
+    params: { archived },
+  });
+  return resp.data;
+};
+
+export {
+  getProjects,
+  getProject,
+  postProject,
+  updateProject,
+  deleteProject,
+  setProjectArchived,
+};

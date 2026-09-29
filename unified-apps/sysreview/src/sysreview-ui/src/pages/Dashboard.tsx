@@ -1,6 +1,10 @@
 import { Button, Container, Spinner } from "react-bootstrap";
 import ProjectCard from "../components/ProjectCard";
-import { getProjects, postProject } from "../api/project";
+import {
+  getProjects,
+  postProject,
+  setProjectArchived,
+} from "../api/project";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import { categorySetType, projectType, querySetType } from "../api/types";
 import NewPorjectModal from "../components/NewPorjectModal";
@@ -8,6 +12,7 @@ import { getCategories } from "../api/category";
 import { arrayToObject } from "../api/utility";
 import { getQueries } from "../api/query";
 import {
+  FiArchive,
   FiCheckCircle,
   FiCompass,
   FiFolder,
@@ -31,6 +36,23 @@ const Dashbaord = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
   const [searchText, setSearchText] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
+
+  const toggleArchive = (project: projectType) => {
+    const archived = !project.archived;
+    setProjectArchived(project.projectId, archived)
+      .then(() =>
+        setProjects((currentProjects) =>
+          currentProjects.map((p) =>
+            p.projectId === project.projectId ? { ...p, archived } : p,
+          ),
+        ),
+      )
+      .catch((e) => {
+        alert(`Failed to ${archived ? "archive" : "restore"} the project`);
+        console.log(e);
+      });
+  };
 
   const saveProject = (name: string, description: string) => {
     postProject({ name, description })
@@ -114,45 +136,57 @@ const Dashbaord = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Summary tiles describe the active workspace; archived projects are counted separately
+  const activeProjects = useMemo(
+    () => projects.filter((project) => !project.archived),
+    [projects],
+  );
+  const archivedCount = projects.length - activeProjects.length;
+
   const filteredProjects = useMemo(() => {
     const normalizedSearch = searchText.trim().toLowerCase();
-    if (!normalizedSearch) return projects;
-    return projects.filter(({ projectName, description }) =>
+    const inView = projects.filter(
+      (project) => !!project.archived === showArchived,
+    );
+    if (!normalizedSearch) return inView;
+    return inView.filter(({ projectName, description }) =>
       `${projectName} ${description}`.toLowerCase().includes(normalizedSearch),
     );
-  }, [projects, searchText]);
+  }, [projects, searchText, showArchived]);
 
   const totalQueries = useMemo(
     () =>
-      Object.values(projQueries).reduce(
-        (count, queries) => count + Object.keys(queries).length,
+      activeProjects.reduce(
+        (count, project) =>
+          count + Object.keys(projQueries[project.projectId] || {}).length,
         0,
       ),
-    [projQueries],
+    [activeProjects, projQueries],
   );
 
   const totalCategories = useMemo(
     () =>
-      Object.values(projCategories).reduce(
-        (count, categories) => count + Object.keys(categories).length,
+      activeProjects.reduce(
+        (count, project) =>
+          count + Object.keys(projCategories[project.projectId] || {}).length,
         0,
       ),
-    [projCategories],
+    [activeProjects, projCategories],
   );
 
   const readyProjects = useMemo(
     () =>
-      projects.filter(
+      activeProjects.filter(
         (project) =>
           Object.keys(projCategories[project.projectId] || {}).length > 0,
       ).length,
-    [projects, projCategories],
+    [activeProjects, projCategories],
   );
 
   const dashboardStats = [
     {
       label: "Projects",
-      value: projects.length,
+      value: activeProjects.length,
       icon: <FiFolder />,
     },
     {
@@ -215,17 +249,42 @@ const Dashbaord = () => {
           <div className="dashboard-section-bar">
             <div>
               <p className="dashboard-kicker">Library</p>
-              <h2>Projects</h2>
+              <h2>{showArchived ? "Archived projects" : "Projects"}</h2>
             </div>
-            <label className="dashboard-search" aria-label="Search projects">
-              <FiSearch />
-              <input
-                type="search"
-                placeholder="Search projects"
-                value={searchText}
-                onChange={handleSearchChange}
-              />
-            </label>
+            <div className="dashboard-section-tools">
+              <div
+                className="dashboard-view-toggle"
+                role="group"
+                aria-label="Project view"
+              >
+                <button
+                  type="button"
+                  className={!showArchived ? "is-active" : ""}
+                  aria-pressed={!showArchived}
+                  onClick={() => setShowArchived(false)}
+                >
+                  Active <span>{activeProjects.length}</span>
+                </button>
+                <button
+                  type="button"
+                  className={showArchived ? "is-active" : ""}
+                  aria-pressed={showArchived}
+                  onClick={() => setShowArchived(true)}
+                >
+                  <FiArchive />
+                  Archived <span>{archivedCount}</span>
+                </button>
+              </div>
+              <label className="dashboard-search" aria-label="Search projects">
+                <FiSearch />
+                <input
+                  type="search"
+                  placeholder="Search projects"
+                  value={searchText}
+                  onChange={handleSearchChange}
+                />
+              </label>
+            </div>
           </div>
 
           {!isLoading ? (
@@ -238,19 +297,26 @@ const Dashbaord = () => {
                     queries={projQueries[proj.projectId] || {}}
                     categories={projCategories[proj.projectId] || {}}
                     accentIndex={i}
+                    onToggleArchive={toggleArchive}
                   />
                 ))}
               </div>
             ) : (
               <div className="dashboard-empty-state">
-                <FiFolder />
-                <h3>No projects found</h3>
+                {showArchived ? <FiArchive /> : <FiFolder />}
+                <h3>
+                  {showArchived && !searchText
+                    ? "No archived projects"
+                    : "No projects found"}
+                </h3>
                 <p>
                   {searchText
                     ? "Try a different search."
-                    : "Create a project to get started."}
+                    : showArchived
+                      ? "Archived projects will appear here."
+                      : "Create a project to get started."}
                 </p>
-                {!searchText && (
+                {!searchText && !showArchived && (
                   <Button
                     className="dashboard-primary-action"
                     onClick={() => setShowNewProjectModal(true)}

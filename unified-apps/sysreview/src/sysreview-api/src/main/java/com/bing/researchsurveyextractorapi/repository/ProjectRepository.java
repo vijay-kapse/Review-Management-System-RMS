@@ -14,5 +14,10 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
     @Query("update Project p set p.projectName = ?1, p.description = ?2 where p.projectId = ?3")
     void updateProjectNameAndDescriptionByProjectId(String projectName, String description, long projectId);
 
+    @Transactional
+    @Modifying
+    @Query("update Project p set p.archived = ?1 where p.projectId = ?2")
+    void updateArchivedByProjectId(boolean archived, long projectId);
+
     List<Project> findByOwnerUsername(String username);
 }

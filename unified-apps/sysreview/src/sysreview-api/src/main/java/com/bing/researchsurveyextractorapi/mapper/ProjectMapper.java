@@ -21,6 +21,7 @@ public class ProjectMapper {
                 .description(project.getDescription())
                 .owner(project.getOwner().getUsername())
                 .collaborators(getCollaborators(project))
+                .archived(project.isArchived())
                 .build();
     }
 

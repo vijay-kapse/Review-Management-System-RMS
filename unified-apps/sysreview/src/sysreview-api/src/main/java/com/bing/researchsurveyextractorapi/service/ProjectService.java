@@ -16,4 +16,6 @@ public interface ProjectService {
     void updateProject(long projectId, ProjectRequest project);
 
     void deleteProject(long projectId);
+
+    void setArchived(long projectId, boolean archived, String username);
 }

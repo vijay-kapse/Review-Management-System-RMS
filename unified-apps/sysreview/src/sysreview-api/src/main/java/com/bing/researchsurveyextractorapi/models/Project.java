@@ -29,6 +29,10 @@ public class Project implements Serializable {
     @Column(nullable = false)
     private String description;
 
+    @Builder.Default
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean archived = false;
+
     @ManyToOne(cascade = CascadeType.REFRESH)
     @JoinColumn(name = "user_id")
     private User owner;

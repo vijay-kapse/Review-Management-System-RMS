@@ -43,6 +43,11 @@ public class ProjectController {
         projectService.updateProject(projectId, request);
     }
 
+    @PatchMapping("/{projectId}/archive")
+    public void setArchived(@PathVariable long projectId, @RequestParam boolean archived) {
+        projectService.setArchived(projectId, archived, AuthUtils.getLoggedInUsername());
+    }
+
     @DeleteMapping("/{projectId}")
     public void deleteProject(@PathVariable long projectId) {
         projectService.deleteProject(projectId);

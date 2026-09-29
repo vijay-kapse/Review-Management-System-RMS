@@ -4,7 +4,12 @@ import ReportIconButton from "./IconButtons/ReportIconButton";
 import { categorySetType, projectType, querySetType } from "../api/types";
 import { FC } from "react";
 import { FaTasks } from "react-icons/fa";
-import { FiArrowUpRight, FiLayers } from "react-icons/fi";
+import {
+  FiArchive,
+  FiArrowUpRight,
+  FiLayers,
+  FiRotateCcw,
+} from "react-icons/fi";
 import { MdOutlineManageSearch } from "react-icons/md";
 import { APP_URI_PREFIX } from "../constants";
 
@@ -13,14 +18,17 @@ interface ProjectCardProps {
   categories: categorySetType;
   queries: querySetType;
   accentIndex?: number;
+  onToggleArchive?: (project: projectType) => void;
 }
 const ProjectCard: FC<ProjectCardProps> = ({
   project,
   categories,
   queries,
   accentIndex = 0,
+  onToggleArchive,
 }) => {
-  const { projectId, projectName, description, collections } = project;
+  const { projectId, projectName, description, collections, archived } =
+    project;
   const categoryList = Object.values(categories).sort(
     (a, b) => a.priority - b.priority,
   );
@@ -30,9 +38,15 @@ const ProjectCard: FC<ProjectCardProps> = ({
   const accentClass = `project-card--accent-${accentIndex % 4}`;
 
   return (
-    <article className={`project-card ${accentClass}`}>
+    <article
+      className={`project-card ${accentClass}${
+        archived ? " project-card--archived" : ""
+      }`}
+    >
       <div className="project-card__topline">
-        <span className="project-card__status">Ready</span>
+        <span className="project-card__status">
+          {archived ? "Archived" : "Ready"}
+        </span>
         <span className="project-card__id">Project #{projectId}</span>
       </div>
 
@@ -106,6 +120,17 @@ const ProjectCard: FC<ProjectCardProps> = ({
         <div className="project-report-action" title="Project report">
           <ReportIconButton variant="dark" size="md" queries={queries} />
         </div>
+        {onToggleArchive && (
+          <button
+            type="button"
+            className="project-action project-action--secondary"
+            title={archived ? "Restore project" : "Archive project"}
+            onClick={() => onToggleArchive(project)}
+          >
+            {archived ? <FiRotateCcw /> : <FiArchive />}
+            {archived ? "Restore" : "Archive"}
+          </button>
+        )}
       </div>
     </article>
   );
