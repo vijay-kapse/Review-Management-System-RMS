@@ -14,6 +14,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.net.URI;
 import java.time.YearMonth;
 import java.util.*;
+import java.util.regex.Pattern;
 
 @Service
 public class ScopusSearchService extends AbstractSearchService {
@@ -50,6 +51,14 @@ public class ScopusSearchService extends AbstractSearchService {
 
     @Value("${api.scopus.maxRecords}")
     private Integer maxRecords;
+
+    // Without a field code Scopus searches ALL fields, reference lists included,
+    // which buries on-topic papers under ones that merely cite them
+    @Value("${api.scopus.defaultField:TITLE-ABS-KEY}")
+    private String defaultField;
+
+    // A Scopus field code such as TITLE-ABS-KEY( or AUTH( — boolean operators excluded
+    private static final Pattern FIELD_CODE = Pattern.compile("\\b(?!(?:AND|OR|NOT)\\()[A-Z][A-Z0-9-]*\\(|\\bPUBYEAR\\b", Pattern.CASE_INSENSITIVE);
 
     @Override
     public DatasourceApi getServiceName() {
@@ -158,7 +167,7 @@ public class ScopusSearchService extends AbstractSearchService {
 
     @Override
     public String fetchFromApi(String queryText, int startRecord, YearMonth from, YearMonth to) {
-        String researchPaperQuery = String.format("(%s) AND (DOCTYPE(ar) OR DOCTYPE(cp) OR DOCTYPE(re) OR DOCTYPE(ip))", queryText);
+        String researchPaperQuery = String.format("%s AND (DOCTYPE(ar) OR DOCTYPE(cp) OR DOCTYPE(re) OR DOCTYPE(ip))", scopeToField(queryText));
         UriComponentsBuilder uriComponentsBuilder = UriComponentsBuilder.fromUri(URI.create(apiScopusUrl))
                 .queryParam("query", researchPaperQuery)
                 .queryParam("start", startRecord)
@@ -185,6 +194,17 @@ public class ScopusSearchService extends AbstractSearchService {
         URI apiUrl = uriComponentsBuilder.build().toUri();
         RestTemplate restTemplate = new RestTemplate();
         return restTemplate.getForObject(apiUrl, String.class);
+    }
+
+    /**
+     * Wraps the query in the default field (TITLE-ABS-KEY) unless the user already
+     * targeted fields themselves, in which case their codes are respected as written.
+     */
+    String scopeToField(String queryText) {
+        if (defaultField == null || defaultField.trim().isEmpty() || FIELD_CODE.matcher(queryText).find()) {
+            return String.format("(%s)", queryText);
+        }
+        return String.format("%s(%s)", defaultField.trim(), queryText);
     }
 
     private boolean isResearchPaper(JsonNode entry) {
