@@ -13,11 +13,17 @@ import com.bing.researchsurveyextractorapi.util.AuthUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
+import java.util.Base64;
 
 import java.util.Map;
 
@@ -29,6 +35,24 @@ public class AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final JWTService jwtService;
     private final AuthenticationManager authenticationManager;
+
+    public static final String SHARED_SECRET_HEADER = "X-RMS-Shared-Secret";
+    // Password that shared-login accounts used to be created with; it must never authenticate
+    private static final String LEGACY_SHARED_PASSWORD = "shared-login-placeholder";
+    private static final SecureRandom RANDOM = new SecureRandom();
+
+    // Only the RMS portal knows this; blank disables shared login entirely
+    @Value("${rms.shared-login.secret:}")
+    private String sharedLoginSecret;
+
+    public boolean isTrustedPortal(String presentedSecret) {
+        if (sharedLoginSecret == null || sharedLoginSecret.isEmpty() || presentedSecret == null) {
+            return false;
+        }
+        return MessageDigest.isEqual(
+                sharedLoginSecret.getBytes(StandardCharsets.UTF_8),
+                presentedSecret.getBytes(StandardCharsets.UTF_8));
+    }
 
     public AuthenticationResponse register(RegisterRequest request) {
         String authError = null;
@@ -58,6 +82,12 @@ public class AuthenticationService {
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
         String authError;
+        if (LEGACY_SHARED_PASSWORD.equals(request.getPassword())) {
+            return AuthenticationResponse.builder()
+                    .authenticated(false)
+                    .authToken("[Bad credentials] Incorrect password!")
+                    .build();
+        }
         try {
 //            1. Find the user, if not we get an exception that user doesn't exist
             User user = userService.loadUserByUsername(request.getUsername());
@@ -94,7 +124,7 @@ public class AuthenticationService {
                 .lastName(lastName)
                 .email(email)
                 .username(candidateUsername)
-                .password(passwordEncoder.encode("shared-login-placeholder"))
+                .password(passwordEncoder.encode(randomPassword()))
                 .userRole(UserRole.USER)
                 .build();
         User createdUser = userService.createUser(user);
@@ -129,4 +159,11 @@ public class AuthenticationService {
                 .build();
     }
 
+
+    // Shared-login accounts sign in through the portal only, so their password is unguessable
+    private static String randomPassword() {
+        byte[] bytes = new byte[32];
+        RANDOM.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
 }

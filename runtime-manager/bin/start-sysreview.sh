@@ -6,4 +6,4 @@ if [ ! -f "$JAR_PATH" ]; then
   echo "Sysreview boot jar not found at $JAR_PATH" >&2
   exit 1
 fi
-exec java -jar "$JAR_PATH" --spring.config.import=file:/home/vkapse/unified-apps/sysreview/secrets.properties --server.port=3013
+exec java -jar "$JAR_PATH" --spring.config.import=file:/home/vkapse/unified-apps/sysreview/secrets.properties --server.port=3013 --server.address=127.0.0.1

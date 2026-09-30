@@ -22,6 +22,9 @@ const CHATBOT_TARGET = process.env.CHATBOT_TARGET || 'http://127.0.0.1:3010';
 const SURVEY_TARGET = process.env.SURVEY_TARGET || 'http://127.0.0.1:8201';
 const API_TARGET = process.env.API_TARGET || 'http://127.0.0.1:8100';
 const SYSREVIEW_TARGET = process.env.SYSREVIEW_TARGET || 'http://127.0.0.1:3013';
+// Proves to TRACE that a shared-login request comes from the portal, not a browser
+const SYSREVIEW_SHARED_SECRET = process.env.SYSREVIEW_SHARED_SECRET || '';
+const SYSREVIEW_SHARED_SECRET_HEADER = 'x-rms-shared-secret';
 const SURVEY_STATIC_DIR = process.env.SURVEY_STATIC_DIR || '/home/vkapse/unified-apps/survey/survey_group8/static';
 const SERVERLESS_FS_HINTS = ['/var/task', '/opt/rust'];
 const RUN_DIR = `${process.cwd()} ${__dirname}`;
@@ -496,7 +499,10 @@ async function ensureSysreviewToken(req, res) {
   });
 
   const response = await fetch(`${SYSREVIEW_TARGET}/sysreview/api/v1/auth/shared-login?${params.toString()}`, {
-    headers: { accept: 'application/json' },
+    headers: {
+      accept: 'application/json',
+      [SYSREVIEW_SHARED_SECRET_HEADER]: SYSREVIEW_SHARED_SECRET,
+    },
   });
 
   if (!response.ok) {
@@ -1101,11 +1107,7 @@ app.get(['/login', '/unified-login.html'], (req, res) => {
           window.location.href = ${JSON.stringify(publicPath('/login'))} + '?error=' + encodeURIComponent(result.error || 'Google sign-in failed.') + '&next=' + encodeURIComponent(${JSON.stringify(next)});
         }
       </script>`
-    : `
-      <div class="hint">
-        <strong>Google login ready</strong><br />
-        Set <code>GOOGLE_CLIENT_ID</code> for the portal process to enable Google-based sign-in on this page.
-      </div>`;
+    : '';
   const body = `
     <section class="hero">
       <img class="hero-logo" src="${publicPath(RMS_LOGO_PATH)}" alt="RMS - Review Management System" />
@@ -1438,6 +1440,11 @@ app.use('/survey/static', express.static(SURVEY_STATIC_DIR));
 app.use('/survey', surveyProxy);
 
 app.use('/sysreview', requireLogin, (req, res, next) => {
+  // Shared login mints a token for any email, so only the portal itself may call it
+  if (/^\/(sysreview\/)?api\/v1\/auth\/shared-login/i.test(req.path)) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  delete req.headers[SYSREVIEW_SHARED_SECRET_HEADER];
   ensureSysreviewToken(req, res)
     .then(() => {
       req.headers['x-forwarded-prefix'] = '/sysreview';
