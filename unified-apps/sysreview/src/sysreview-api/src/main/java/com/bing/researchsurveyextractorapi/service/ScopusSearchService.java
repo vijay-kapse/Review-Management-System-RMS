@@ -84,8 +84,12 @@ public class ScopusSearchService extends AbstractSearchService {
             }
 
             JsonNode entries = articlesNode.get("entry");
+            if (totalRecords == 0 || entries == null) {
+                break;
+            }
             for (JsonNode entry : entries) {
-                if (!isResearchPaper(entry)) {
+                // An empty result set comes back as one placeholder entry: {"error": "Result set was empty"}
+                if (entry.has("error") || !isResearchPaper(entry)) {
                     continue;
                 }
 
