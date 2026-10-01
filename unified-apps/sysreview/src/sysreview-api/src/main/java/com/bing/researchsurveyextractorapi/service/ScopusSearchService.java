@@ -5,6 +5,7 @@ import com.bing.researchsurveyextractorapi.models.Document;
 import com.bing.researchsurveyextractorapi.models.DocumentSet;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.bing.researchsurveyextractorapi.util.PublicationDates;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -89,7 +90,8 @@ public class ScopusSearchService extends AbstractSearchService {
             }
             for (JsonNode entry : entries) {
                 // An empty result set comes back as one placeholder entry: {"error": "Result set was empty"}
-                if (entry.has("error") || !isResearchPaper(entry)) {
+                if (entry.has("error") || !isResearchPaper(entry)
+                        || !PublicationDates.within(PublicationDates.parse(lowerText(entry, "prism:coverDate"), null), from, to)) {
                     continue;
                 }
 

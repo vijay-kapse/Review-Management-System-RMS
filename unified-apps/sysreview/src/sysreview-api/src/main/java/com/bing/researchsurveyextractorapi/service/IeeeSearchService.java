@@ -5,6 +5,7 @@ import com.bing.researchsurveyextractorapi.models.Document;
 import com.bing.researchsurveyextractorapi.models.DocumentSet;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.bing.researchsurveyextractorapi.util.PublicationDates;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -12,9 +13,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
-import java.time.LocalDate;
 import java.time.YearMonth;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -55,6 +54,12 @@ public class IeeeSearchService extends AbstractSearchService {
             JsonNode articlesNode = rootNode.path("articles");
 
             for (JsonNode articleNode : articlesNode) {
+                // The API filters by year only; trim to the requested months here
+                JsonNode yearNode = articleNode.get("publication_year");
+                Integer year = yearNode != null && yearNode.canConvertToInt() ? yearNode.asInt() : null;
+                if (!PublicationDates.within(PublicationDates.parse(articleNode.path("publication_date").asText(null), year), from, to)) {
+                    continue;
+                }
                 Document.DocumentBuilder documentBuilder = Document.builder();
                 //Title
                 extractTitle(documentBuilder, articleNode);
@@ -91,12 +96,10 @@ public class IeeeSearchService extends AbstractSearchService {
                 .queryParam("max_records", maxRecords)
                 .queryParam("start_record", startRecord);
 
+        // start_date/end_date filter on when a record was added to Xplore, not when it was published
         if (from != null && to != null) {
-            LocalDate startDate = from.atDay(1);
-            LocalDate endDate = to.atEndOfMonth();
-            DateTimeFormatter dateFormat = DateTimeFormatter.BASIC_ISO_DATE;
-            uriComponentsBuilder.queryParam("start_date", startDate.format(dateFormat));
-            uriComponentsBuilder.queryParam("end_date", endDate.format(dateFormat));
+            uriComponentsBuilder.queryParam("start_year", from.getYear());
+            uriComponentsBuilder.queryParam("end_year", to.getYear());
         }
 
         URI apiUrl = uriComponentsBuilder.build().toUri();
