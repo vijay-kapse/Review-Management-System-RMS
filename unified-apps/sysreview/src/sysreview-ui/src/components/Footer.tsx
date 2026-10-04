@@ -4,22 +4,18 @@ import {
   APP_NAME,
   AUTHORS_URI,
   DOCS_URI,
-  IMAGE_URI_PREFIX,
 } from "../constants";
 import { BiCopyright } from "react-icons/bi";
+import AppBrand from "./AppBrand";
 
 const Footer = () => {
   return (
     <footer className="footer">
       <Container>
         <Row className="d-flex align-items-center">
-          <Col sm={2}>
-            <Link to={`/${APP_NAME}`} className="logo">
-              <img
-                className="app-logo"
-                src={`${IMAGE_URI_PREFIX}/trace-logo.svg`}
-                alt="TRACE logo"
-              />
+          <Col sm={4}>
+            <Link to={`/${APP_NAME}`} className="logo" aria-label="TRACE home">
+              <AppBrand variant="dark" />
             </Link>
           </Col>
           <Col>

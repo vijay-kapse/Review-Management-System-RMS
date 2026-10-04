@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="620" height="140" viewBox="0 0 620 140" role="img" aria-labelledby="title desc">
-  <title id="title">QUEST logo</title>
+  <title id="title">QUEST logo (for dark backgrounds)</title>
   <desc id="desc">QUEST logo with a scholarly chat bubble and open text pages.</desc>
   <defs>
     <linearGradient id="quest-bg" x1="22" y1="18" x2="124" y2="122" gradientUnits="userSpaceOnUse">
@@ -19,6 +19,6 @@
     <circle cx="74" cy="73" r="3.5" fill="#14b8a6"/>
     <circle cx="98" cy="73" r="3.5" fill="#14b8a6"/>
   </g>
-  <text x="154" y="72" font-family="Avenir Next, Arial, sans-serif" font-size="42" font-weight="800" fill="#0f172a">QUEST</text>
-  <text x="156" y="101" font-family="Avenir Next, Arial, sans-serif" font-size="15" font-weight="700" fill="#475569">Querying Uploads for Educational and Scholarly Texts</text>
+  <text x="154" y="72" font-family="Avenir Next, Arial, sans-serif" font-size="42" font-weight="800" fill="#f8fafc">QUEST</text>
+  <text x="156" y="101" font-family="Avenir Next, Arial, sans-serif" font-size="15" font-weight="700" fill="#cbd5e1">Querying Uploads for Educational and Scholarly Texts</text>
 </svg>

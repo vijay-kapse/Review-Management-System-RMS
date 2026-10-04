@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="560" height="140" viewBox="0 0 560 140" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="620" height="140" viewBox="0 0 620 140" role="img" aria-labelledby="title desc">
   <title id="title">TRACE logo</title>
   <desc id="desc">TRACE logo with a connected evidence path and research nodes.</desc>
   <defs>
@@ -20,5 +20,5 @@
     <path d="M55 100h43" stroke="#93c5fd" stroke-width="5" stroke-linecap="round"/>
   </g>
   <text x="154" y="72" font-family="Avenir Next, Arial, sans-serif" font-size="42" font-weight="800" fill="#0f172a">TRACE</text>
-  <text x="156" y="101" font-family="Avenir Next, Arial, sans-serif" font-size="15" font-weight="700" fill="#475569">Document managing, tracking and curation</text>
+  <text x="156" y="101" font-family="Avenir Next, Arial, sans-serif" font-size="15" font-weight="700" fill="#475569">Tracking, Reporting, Analyzing, Curating, and Extracting data</text>
 </svg>

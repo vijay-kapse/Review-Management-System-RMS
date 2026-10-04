@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="620" height="140" viewBox="0 0 620 140" role="img" aria-labelledby="title desc">
-  <title id="title">TRACE logo</title>
+  <title id="title">TRACE logo (for dark backgrounds)</title>
   <desc id="desc">TRACE logo with a connected evidence path and research nodes.</desc>
   <defs>
     <linearGradient id="trace-bg" x1="22" y1="18" x2="120" y2="122" gradientUnits="userSpaceOnUse">
@@ -19,6 +19,6 @@
     <circle cx="102" cy="58" r="8" fill="#ffffff"/>
     <path d="M55 100h43" stroke="#93c5fd" stroke-width="5" stroke-linecap="round"/>
   </g>
-  <text x="154" y="72" font-family="Avenir Next, Arial, sans-serif" font-size="42" font-weight="800" fill="#0f172a">TRACE</text>
-  <text x="156" y="101" font-family="Avenir Next, Arial, sans-serif" font-size="15" font-weight="700" fill="#475569">Tracking, Reporting, Analyzing, Curating, and Extracting data</text>
+  <text x="154" y="72" font-family="Avenir Next, Arial, sans-serif" font-size="42" font-weight="800" fill="#f8fafc">TRACE</text>
+  <text x="156" y="101" font-family="Avenir Next, Arial, sans-serif" font-size="15" font-weight="700" fill="#cbd5e1">Tracking, Reporting, Analyzing, Curating, and Extracting data</text>
 </svg>

@@ -4,12 +4,12 @@ import { Link } from "react-router-dom";
 import AppContext from "../contexts/AppContext";
 import {
   APP_URI_PREFIX,
-  IMAGE_URI_PREFIX,
   TUTORIAL_URI,
   UNIFIED_LOGIN_URI,
   UNIFIED_LOGOUT_URI,
 } from "../constants";
 import { validateToken } from "../api/utility";
+import AppBrand from "./AppBrand";
 
 const MyNavbar = () => {
   const { unsetUserDetails } = useContext(AppContext);
@@ -24,11 +24,7 @@ const MyNavbar = () => {
     <Navbar className="c-navbar" fixed="top">
       <Container>
         <Link to={`${APP_URI_PREFIX}/dashboard`} className="navbar navbar-brand ">
-          <img
-            className="app-logo"
-            src={`${IMAGE_URI_PREFIX}/trace-logo.svg`}
-            alt="TRACE logo"
-          />
+          <AppBrand />
         </Link>
         <Navbar.Collapse className="justify-content-end">
           <Nav className="gap-2 align-items-center">

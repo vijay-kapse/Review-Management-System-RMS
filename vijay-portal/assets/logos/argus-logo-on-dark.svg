@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="620" height="140" viewBox="0 0 620 140" role="img" aria-labelledby="title desc">
-  <title id="title">ARGUS logo</title>
+  <title id="title">ARGUS logo (for dark backgrounds)</title>
   <desc id="desc">ARGUS logo with a document lens for assisted reading.</desc>
   <defs>
     <linearGradient id="argus-bg" x1="22" y1="18" x2="124" y2="122" gradientUnits="userSpaceOnUse">
@@ -22,6 +22,6 @@
     <circle cx="80" cy="76" r="24" fill="none" stroke="url(#argus-accent)" stroke-width="8"/>
     <path d="M96 93l18 18" stroke="#a7f3d0" stroke-width="8" stroke-linecap="round"/>
   </g>
-  <text x="154" y="72" font-family="Avenir Next, Arial, sans-serif" font-size="42" font-weight="800" fill="#0f172a">ARGUS</text>
-  <text x="156" y="101" font-family="Avenir Next, Arial, sans-serif" font-size="15" font-weight="700" fill="#475569">Assisted Reading and Guided Understanding through Search</text>
+  <text x="154" y="72" font-family="Avenir Next, Arial, sans-serif" font-size="42" font-weight="800" fill="#f8fafc">ARGUS</text>
+  <text x="156" y="101" font-family="Avenir Next, Arial, sans-serif" font-size="15" font-weight="700" fill="#cbd5e1">Assisted Reading and Guided Understanding through Search</text>
 </svg>

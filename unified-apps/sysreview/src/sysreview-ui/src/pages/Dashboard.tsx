@@ -220,7 +220,7 @@ const Dashbaord = () => {
               TRACE workspace
             </div>
             <h1 id="dashboard-title">
-              Research projects, beautifully organized.
+              Research projects, systematically organized.
             </h1>
             <p>Projects, saved queries, curation, and reports at a glance.</p>
           </div>

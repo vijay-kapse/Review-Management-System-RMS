@@ -5,7 +5,8 @@
     <meta charset="utf-8">
     {% load static %}
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Survey Management{% endblock %}</title>
+    <title>{% block title %}Home{% endblock %} · SPARK</title>
+    <link rel="icon" type="image/svg+xml" href="{% static 'img/spark-mark.svg' %}">
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     {% block header %}
     {% endblock %}
@@ -14,7 +15,7 @@
 <body>
   <div class="app-shell">
     <header class="app-topbar">
-      <a class="brand" href="{% url 'home' %}" aria-label="Survey home">
+      <a class="brand" href="{% url 'home' %}" aria-label="SPARK home">
         <svg class="brand-mark" viewBox="16 12 116 116" role="img" aria-label="SPARK logo" xmlns="http://www.w3.org/2000/svg">
   
   
@@ -39,8 +40,8 @@
   
 </svg>
         <span class="brand-name">
-          <span class="brand-title">Survey</span>
-          <span class="brand-subtitle">RMS workspace</span>
+          <span class="brand-title">SPARK</span>
+          <span class="brand-subtitle">Survey Platform for Academic Research and Knowledge</span>
         </span>
       </a>
 

@@ -2409,3 +2409,49 @@ a {
     justify-content: center;
   }
 }
+
+/* App brand: mark + name + full name (matches the QUEST, SPARK and ARGUS headers) */
+.app-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.app-brand__mark {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  border-radius: 11px;
+  box-shadow: 0 10px 22px rgba(29, 78, 216, 0.18);
+}
+.app-brand__name {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  text-align: left;
+}
+.app-brand__title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0;
+  color: #0f172a;
+}
+.app-brand__subtitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: #475569;
+  white-space: normal;
+}
+.app-brand--dark .app-brand__title {
+  color: #f8fafc;
+}
+.app-brand--dark .app-brand__subtitle {
+  color: #cbd5e1;
+}
+@media (max-width: 900px) {
+  .c-navbar .app-brand__subtitle {
+    display: none;
+  }
+}

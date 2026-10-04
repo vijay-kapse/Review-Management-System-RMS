@@ -679,7 +679,7 @@ const RMS_COMPONENTS = [
   {
     key: 'argus',
     name: 'ARGUS',
-    fullName: 'Technology-assisted reading assistant',
+    fullName: 'Assisted Reading and Guided Understanding through Search',
     logo: '/assets/logos/argus-logo.svg',
     route: '/launch/argus',
     directRoute: '/argus/',
@@ -1253,10 +1253,10 @@ app.get('/apps', requireLogin, (req, res) => {
       <p>Launch TRACE, ARGUS, QUEST, or SPARK for Literature Discovery to Research Synthesis.</p>
     </section>
     <div class="metrics">
-      <div class="metric"><strong>TRACE</strong><span>Query and evidence tracking</span></div>
-      <div class="metric"><strong>ARGUS</strong><span>Assisted document reading</span></div>
-      <div class="metric"><strong>QUEST</strong><span>Research-aware Q&A</span></div>
-      <div class="metric"><strong>SPARK</strong><span>Academic survey collection</span></div>
+      <div class="metric"><strong>TRACE</strong><span>Tracking, Reporting, Analyzing, Curating, and Extracting data</span></div>
+      <div class="metric"><strong>ARGUS</strong><span>Assisted Reading and Guided Understanding through Search</span></div>
+      <div class="metric"><strong>QUEST</strong><span>Querying Uploads for Educational and Scholarly Texts</span></div>
+      <div class="metric"><strong>SPARK</strong><span>Survey Platform for Academic Research and Knowledge</span></div>
     </div>
     <div class="grid">
       ${componentCards({ authenticated: true })}
