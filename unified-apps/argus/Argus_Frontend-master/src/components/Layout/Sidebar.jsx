@@ -77,7 +77,9 @@ const NavItem = ({ icon, children, path, helper }) => {
 
 const SidebarContent = () => {
   return (
-    <VStack align="stretch" mt="24" spacing="2">
+    // Desktop: the sidebar starts below the navbar; 64px lines the badge up with the page's section label.
+    // Mobile: the drawer opens from the top of the screen, so keep it compact.
+    <VStack align="stretch" mt={{ base: 4, md: 16 }} spacing="2">
       <Box px="6" pb="2">
         <Badge colorScheme="green" variant="subtle" borderRadius="full" px="3" py="1">
           Workspace

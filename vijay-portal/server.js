@@ -181,6 +181,18 @@ function applyProxyRedirect(proxyRes, mountPath, upstreamTarget) {
   }
 }
 
+// True when `path` is the mount itself or sits under it, e.g. "/argus" or "/argus/home",
+// but not a sibling that merely starts with the same letters, e.g. "/argus-mark.svg".
+function hasMountSegment(path, mountPath) {
+  return path === mountPath || path.startsWith(`${mountPath}/`) || path.startsWith(`${mountPath}?`);
+}
+
+function stripMountSegment(path, mountPath) {
+  if (!hasMountSegment(path, mountPath)) return path;
+  const rest = path.slice(mountPath.length);
+  return rest.startsWith('/') ? rest : `/${rest}`;
+}
+
 function createPublicPrefixResponseHandler(mountPath, upstreamTarget, extraMountPaths = []) {
   if (!PUBLIC_PATH_PREFIX) {
     return (proxyRes) => applyProxyRedirect(proxyRes, mountPath, upstreamTarget);
@@ -1275,7 +1287,7 @@ const surveyProxy = createProxyMiddleware({
     if (path.startsWith('/survey/static/')) {
       return path;
     }
-    return path.replace(/^\/survey/, '') || '/';
+    return stripMountSegment(path, '/survey');
   },
   on: {
     proxyReq(proxyReq, req) {
@@ -1409,7 +1421,7 @@ app.use('/argus', createProxyMiddleware({
   target: ARGUS_TARGET,
   changeOrigin: true,
   selfHandleResponse: Boolean(PUBLIC_PATH_PREFIX),
-  pathRewrite: (path) => path.replace(/^\/argus/, '') || '/',
+  pathRewrite: (path) => stripMountSegment(path, '/argus'),
   on: {
     proxyReq(proxyReq, req) {
       proxyReq.setHeader('accept-encoding', 'identity');
@@ -1426,7 +1438,7 @@ app.use('/chatbot', requireLogin, (req, _res, next) => {
 }, createProxyMiddleware({
   target: CHATBOT_TARGET,
   changeOrigin: true,
-  pathRewrite: (path) => path.startsWith('/chatbot') ? path : `/chatbot${path}`,
+  pathRewrite: (path) => hasMountSegment(path, '/chatbot') ? path : `/chatbot${path}`,
   on: {
     proxyReq(proxyReq, req) {
       fixRequestBody(proxyReq, req);
@@ -1459,7 +1471,7 @@ app.use('/sysreview', requireLogin, (req, res, next) => {
   changeOrigin: true,
   xfwd: true,
   selfHandleResponse: Boolean(PUBLIC_PATH_PREFIX),
-  pathRewrite: (path) => path.startsWith('/sysreview') ? path : `/sysreview${path}`,
+  pathRewrite: (path) => hasMountSegment(path, '/sysreview') ? path : `/sysreview${path}`,
   on: {
     proxyReq(proxyReq, req) {
       proxyReq.setHeader('accept-encoding', 'identity');

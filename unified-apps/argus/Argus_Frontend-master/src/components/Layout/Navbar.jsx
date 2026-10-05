@@ -44,7 +44,7 @@ import {
           />
   
           {/* Mark + name + full name, matching the TRACE, QUEST and SPARK headers */}
-          <HStack spacing={3} minW={0}>
+          <HStack spacing={3} flexShrink={0} ml={{ base: 3, md: 0 }} mr="auto">
             <Image
               src={publicAsset('argus-mark.svg')}
               alt=""
@@ -52,9 +52,10 @@ import {
               borderRadius="11px"
               boxShadow="0 10px 22px rgba(109, 40, 217, 0.18)"
               flexShrink={0}
+              display={{ base: 'none', sm: 'block' }}
             />
-            <Box minW={0} lineHeight="1">
-              <Text fontSize="xl" fontWeight="800" color="#0f172a" lineHeight="1">
+            <Box flexShrink={0} lineHeight="1">
+              <Text fontSize="xl" fontWeight="800" color="#0f172a" lineHeight="1" whiteSpace="nowrap">
                 ARGUS
               </Text>
               <Text
@@ -69,7 +70,7 @@ import {
             </Box>
           </HStack>
   
-          <HStack spacing={4}>
+          <HStack spacing={{ base: 1, sm: 4 }} flexShrink={0}>
             <Button
               as="a"
               href="/rms/apps"
@@ -89,6 +90,8 @@ import {
                 as={Button}
                 rightIcon={<ChevronDownIcon />}
                 variant="ghost"
+                size={{ base: 'sm', sm: 'md' }}
+                px={{ base: 2, sm: 4 }}
               >
                 {user?.username}
               </MenuButton>
