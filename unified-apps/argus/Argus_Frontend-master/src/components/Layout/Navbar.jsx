@@ -46,11 +46,11 @@ import {
           {/* Mark + name + full name, matching the TRACE, QUEST and SPARK headers */}
           <HStack spacing={3} flexShrink={0} ml={{ base: 3, md: 0 }} mr="auto">
             <Image
-              src={publicAsset('argus-mark.svg')}
+              src={publicAsset('argus-mark.svg?v=20261005b')}
               alt=""
               boxSize="42px"
               borderRadius="11px"
-              boxShadow="0 10px 22px rgba(109, 40, 217, 0.18)"
+              boxShadow="0 10px 22px rgba(15, 23, 42, 0.18)"
               flexShrink={0}
               display={{ base: 'none', sm: 'block' }}
             />

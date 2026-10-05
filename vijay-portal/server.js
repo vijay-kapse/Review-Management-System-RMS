@@ -26,7 +26,7 @@ const SYSREVIEW_TARGET = process.env.SYSREVIEW_TARGET || 'http://127.0.0.1:3013'
 const SYSREVIEW_SHARED_SECRET = process.env.SYSREVIEW_SHARED_SECRET || '';
 const SYSREVIEW_SHARED_SECRET_HEADER = 'x-rms-shared-secret';
 // Bump when a logo file changes so browsers don't keep showing a cached copy
-const LOGO_VERSION = '20261005';
+const LOGO_VERSION = '20261005b';
 const SURVEY_STATIC_DIR = process.env.SURVEY_STATIC_DIR || '/home/vkapse/unified-apps/survey/survey_group8/static';
 const SERVERLESS_FS_HINTS = ['/var/task', '/opt/rust'];
 const RUN_DIR = `${process.cwd()} ${__dirname}`;
@@ -953,6 +953,9 @@ function page(title, body, session) {
     .app-card h2, .card h2 { margin: 0 0 8px; font-size: 29px; letter-spacing: 0; }
     .app-card p, .card p { color: var(--muted); line-height: 1.5; margin: 0; }
     .app-full-name { min-height: 48px; color: #24272d !important; font-weight: 700; margin-bottom: 12px !important; }
+    /* Descriptions differ in length; keep every Launch button on the same line at the card's foot */
+    .app-card { display: flex; flex-direction: column; }
+    .app-card .actions { margin-top: auto; padding-top: 24px; }
     .sr-only {
       position: absolute;
       width: 1px;
