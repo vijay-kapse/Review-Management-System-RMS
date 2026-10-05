@@ -15,6 +15,7 @@ import {
   import { HamburgerIcon, ChevronDownIcon } from '@chakra-ui/icons';
   import { useAuth } from '../../contexts/AuthContext'
   import { useNavigate } from 'react-router-dom';
+  import { publicAsset } from '../../utils/appBase';
   
   const Navbar = ({ onOpen }) => {
     const { user, logout } = useAuth();
@@ -45,7 +46,7 @@ import {
           {/* Mark + name + full name, matching the TRACE, QUEST and SPARK headers */}
           <HStack spacing={3} minW={0}>
             <Image
-              src={`${process.env.PUBLIC_URL}/argus-mark.svg`}
+              src={publicAsset('argus-mark.svg')}
               alt=""
               boxSize="42px"
               borderRadius="11px"
