@@ -2,9 +2,9 @@
 
 RMS is a unified web-based research workflow portal that brings four components behind one interface and one login:
 
-- **TRACE**: Tracking, Reporting, Analyzing, Curating, and Extracting data. Supports keyword query design, article fetching/categorization, and relevance tracking.
-- **ARGUS**: Technology-assisted reading assistant for efficient multi-document reading and insight extraction.
-- **QUEST**: Querying Uploads for Educational and Scholarly Texts. Lets users upload research articles and ask plain-English questions.
+- **TRACE**: Tracking, Retrieval, Acquisition, Curation, and Evidence Management. Supports keyword query design, article fetching/categorization, and relevance tracking.
+- **ARGUS**: Assisted Reading and Guided Understanding through Search. Supports efficient multi-document reading and insight extraction.
+- **QUEST**: Querying Uploaded Evidence in Scholarly Texts. Lets users upload research articles and ask plain-English questions.
 - **SPARK**: Survey Platform for Academic Research and Knowledge. Supports academic survey creation, collection, and summarized research information.
 
 ## Repository Layout

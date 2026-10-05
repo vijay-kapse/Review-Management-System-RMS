@@ -57,13 +57,13 @@ import {
                 ARGUS
               </Text>
               <Text
-                display={{ base: 'none', lg: 'block' }}
+                display={{ base: 'none', sm: 'block' }}
                 fontSize="xs"
                 fontWeight="600"
                 color="#475569"
                 mt="3px"
               >
-                Assisted Reading and Guided Understanding through Search
+                Assisted document reading
               </Text>
             </Box>
           </HStack>

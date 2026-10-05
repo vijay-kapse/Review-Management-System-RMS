@@ -106,9 +106,23 @@
 
     .hero {
       display: grid;
-      grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+      grid-template-columns: minmax(0, 1fr);
       gap: clamp(26px, 4vw, 54px);
       align-items: center;
+    }
+
+    .hero-status {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .hero-status strong {
+      color: var(--ink);
     }
 
     .eyebrow {
@@ -209,126 +223,22 @@
       background: #dbeafe;
     }
 
-    .workspace {
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.9);
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
 
-    .workspace-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      padding: 16px 18px;
-      border-bottom: 1px solid var(--line);
-      background: #f8fafc;
-    }
 
-    .window-dots {
-      display: flex;
-      gap: 7px;
-    }
 
-    .window-dots span {
-      width: 10px;
-      height: 10px;
-      border-radius: 999px;
-      background: #94a3b8;
-    }
 
-    .window-dots span:nth-child(1) {
-      background: #ef4444;
-    }
 
-    .window-dots span:nth-child(2) {
-      background: #f59e0b;
-    }
 
-    .window-dots span:nth-child(3) {
-      background: #22c55e;
-    }
 
-    .workspace-title {
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 800;
-    }
 
-    .workspace-body {
-      display: grid;
-      gap: 14px;
-      padding: 20px;
-    }
 
-    .upload-strip {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      gap: 14px;
-      align-items: center;
-      padding: 15px;
-      border: 1px dashed #93c5fd;
-      border-radius: 8px;
-      background: #eff6ff;
-    }
 
-    .file-icon {
-      display: grid;
-      place-items: center;
-      width: 42px;
-      height: 42px;
-      border-radius: 8px;
-      color: #ffffff;
-      background: var(--cyan);
-      font-weight: 900;
-    }
 
-    .small-label {
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-    }
 
-    .question-box {
-      display: grid;
-      gap: 12px;
-      padding: 18px;
-      border: 1px solid #bbf7d0;
-      border-radius: 8px;
-      background: #f0fdf4;
-    }
 
-    .question {
-      min-height: 52px;
-      padding: 14px 16px;
-      border: 1px solid #86efac;
-      border-radius: 8px;
-      color: #166534;
-      background: #ffffff;
-      font-weight: 700;
-    }
 
-    .answer {
-      padding: 18px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: #ffffff;
-    }
 
-    .answer h2 {
-      margin: 0 0 10px;
-      font-size: 18px;
-    }
 
-    .answer p {
-      margin: 0;
-      color: var(--muted);
-      line-height: 1.6;
-    }
 
     .workspace-grid {
       display: grid;
@@ -524,9 +434,6 @@
         width: 100%;
       }
 
-      .upload-strip {
-        grid-template-columns: 1fr;
-      }
     }
   </style>
 </head>
@@ -560,12 +467,11 @@
 </svg>
         <span class="brand-name">
           <span class="brand-title">QUEST</span>
-          <span class="brand-subtitle">Querying Uploads for Educational and Scholarly Texts</span>
+          <span class="brand-subtitle">Document-based Q&amp;A</span>
         </span>
       </a>
 
-      <nav class="nav-actions" aria-label="Quest actions">
-        <a class="btn btn-secondary" href="admin.html">Admin Entry</a>
+      <nav class="nav-actions" aria-label="QUEST actions">
         <a class="btn btn-rms" href="/rms/apps">Back to RMS</a>
       </nav>
     </header>
@@ -573,46 +479,23 @@
     <main class="main">
       <section class="hero" aria-labelledby="quest-title">
         <div>
-          <div class="eyebrow"><span class="dot"></span> Shared platform workspace</div>
-          <h1 id="quest-title">Quest q&a for your docs</h1>
+          <div class="eyebrow"><span class="dot"></span> QUEST WORKSPACE</div>
+          <h1 id="quest-title">Evidence-Grounded Research Workspace</h1>
           <p class="lead">
-            Upload research documents, keep your workspace organized, and ask focused questions against the files already indexed for your session.
+            Upload research papers and ask focused questions to find, confirm, and refine evidence grounded in your documents.
+          </p>
+          <p class="hero-status">
+            <strong id="fileCountLabel">Checking files...</strong>
+            <span aria-hidden="true">&middot;</span>
+            <span id="sessionLabel">Session</span>
           </p>
         </div>
 
-        <aside class="workspace" aria-label="Quest session summary">
-          <div class="workspace-header">
-            <div class="window-dots" aria-hidden="true"><span></span><span></span><span></span></div>
-            <div class="workspace-title">Quest workspace</div>
-          </div>
-          <div class="workspace-body">
-            <div class="upload-strip">
-              <div class="file-icon">PDF</div>
-              <div>
-                <div class="small-label">Indexed documents</div>
-                <strong id="fileCountLabel">Checking files...</strong>
-              </div>
-              <div class="small-label" id="sessionLabel">Session</div>
-            </div>
-
-            <div class="question-box">
-              <div class="small-label">Question</div>
-              <div class="question">Ask a focused question after uploading PDF, TXT, or CSV documents.</div>
-            </div>
-
-            <div class="answer">
-              <h2>Ready for Q&A</h2>
-              <p>
-                This page is the live Quest workspace. Your RMS login is used to create the Quest session automatically.
-              </p>
-            </div>
-          </div>
-        </aside>
       </section>
 
-      <div id="statusBox" class="status">Checking Quest session...</div>
+      <div id="statusBox" class="status">Checking QUEST session...</div>
 
-      <section class="workspace-grid" aria-label="Quest document Q&A workspace">
+      <section class="workspace-grid" aria-label="QUEST document Q&A workspace">
         <section class="panel" aria-labelledby="upload-title">
           <h2 id="upload-title">Document Upload</h2>
           <input id="fileInput" type="file" multiple accept=".pdf,.txt,.csv" />
@@ -625,13 +508,13 @@
         </section>
 
         <section class="panel" aria-labelledby="ask-title">
-          <h2 id="ask-title">Ask Quest</h2>
+          <h2 id="ask-title">Ask QUEST</h2>
           <textarea id="queryInput" placeholder="Ask a question about the uploaded documents..."></textarea>
           <div class="control-row">
             <button id="askBtn" class="btn btn-primary" type="button">Ask Question</button>
           </div>
           <h3>Response</h3>
-          <div id="answerBox" class="answer-box">Your Quest response will appear here.</div>
+          <div id="answerBox" class="answer-box">Your QUEST response will appear here.</div>
           <h3>Sources</h3>
           <ul id="sourcesList" class="source-list"><li>No sources yet.</li></ul>
         </section>
@@ -639,7 +522,7 @@
     </main>
 
     <footer class="footer">
-      Quest is part of the unified RMS workspace.
+      QUEST is part of the unified RMS workspace.
     </footer>
   </div>
   <script>
@@ -681,12 +564,12 @@
       const response = await fetch(endpoint('admin/check'), { credentials: 'include' });
       const data = await readJson(response);
       if (!data.logged_in) {
-        setStatus('Quest session is missing. Reopening from RMS...', true);
+        setStatus('QUEST session is missing. Reopening from RMS...', true);
         window.location.replace(new URL('../../launch/chatbot', window.location.href).pathname);
         return false;
       }
       sessionLabel.textContent = data.username || 'Live session';
-      setStatus(`Signed in to Quest as ${data.username || 'RMS user'}.`);
+      setStatus(`Signed in to QUEST as ${data.username || 'RMS user'}.`);
       return true;
     }
 
@@ -731,7 +614,7 @@
           credentials: 'include'
         });
         const data = await readJson(response);
-        answerBox.textContent = 'Your Quest response will appear here.';
+        answerBox.textContent = 'Your QUEST response will appear here.';
         sourcesList.innerHTML = '<li>No sources yet.</li>';
         setStatus(data.message || 'Uploaded files cleared.');
         await refreshFiles();
@@ -748,7 +631,7 @@
       }
       const formData = new FormData();
       formData.append('query', query);
-      setStatus('Generating Quest response...');
+      setStatus('Generating QUEST response...');
       try {
         const response = await fetch(endpoint('query'), {
           method: 'POST',
@@ -763,7 +646,7 @@
           : '<li>No sources returned.</li>';
         setStatus('Response ready.');
       } catch (error) {
-        setStatus(error.message || 'Quest request failed.', true);
+        setStatus(error.message || 'QUEST request failed.', true);
       }
     }
 
@@ -777,7 +660,7 @@
         return null;
       })
       .catch((error) => {
-        setStatus(error.message || 'Could not verify the Quest session.', true);
+        setStatus(error.message || 'Could not verify the QUEST session.', true);
       });
   </script>
 </body>

@@ -198,7 +198,7 @@ const HomePage = () => {
       setDocuments([]);
       toast({
         title: "Uploaded files cleared",
-        description: `Removed ${data.deleted_count || 0} files from your current Argus session`,
+        description: `Removed ${data.deleted_count || 0} files from your current ARGUS session`,
         status: "success",
         duration: 4000,
       });
@@ -233,10 +233,10 @@ const HomePage = () => {
               ARGUS WORKSPACE
             </Text>
             <Heading as="h1" size={{ base: "lg", md: "xl" }} color="slate.900" mt="2">
-              Current session documents
+              Assisted Literature Exploration
             </Heading>
             <Text color="slate.600" mt="3" maxW="720px" lineHeight="1.7">
-              Keep uploaded research documents, image files, and extracted evidence together in one active review session.
+              Upload research documents to locate, compare, and explore relevant evidence through focused search and guided reading.
             </Text>
           </Box>
           <Flex

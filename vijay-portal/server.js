@@ -25,6 +25,8 @@ const SYSREVIEW_TARGET = process.env.SYSREVIEW_TARGET || 'http://127.0.0.1:3013'
 // Proves to TRACE that a shared-login request comes from the portal, not a browser
 const SYSREVIEW_SHARED_SECRET = process.env.SYSREVIEW_SHARED_SECRET || '';
 const SYSREVIEW_SHARED_SECRET_HEADER = 'x-rms-shared-secret';
+// Bump when a logo file changes so browsers don't keep showing a cached copy
+const LOGO_VERSION = '20261005';
 const SURVEY_STATIC_DIR = process.env.SURVEY_STATIC_DIR || '/home/vkapse/unified-apps/survey/survey_group8/static';
 const SERVERLESS_FS_HINTS = ['/var/task', '/opt/rust'];
 const RUN_DIR = `${process.cwd()} ${__dirname}`;
@@ -669,8 +671,8 @@ const RMS_COMPONENTS = [
   {
     key: 'trace',
     name: 'TRACE',
-    fullName: 'Tracking, Reporting, Analyzing, Curating, and Extracting data',
-    logo: '/assets/logos/trace-logo.svg',
+    fullName: 'Tracking, Retrieval, Acquisition, Curation, and Evidence Management',
+    logo: `/assets/logos/trace-logo.svg?v=${LOGO_VERSION}`,
     route: '/launch/sysreview',
     directRoute: '/sysreview/',
     accent: 'blue',
@@ -680,7 +682,7 @@ const RMS_COMPONENTS = [
     key: 'argus',
     name: 'ARGUS',
     fullName: 'Assisted Reading and Guided Understanding through Search',
-    logo: '/assets/logos/argus-logo.svg',
+    logo: `/assets/logos/argus-logo.svg?v=${LOGO_VERSION}`,
     route: '/launch/argus',
     directRoute: '/argus/',
     accent: 'graphite',
@@ -689,8 +691,8 @@ const RMS_COMPONENTS = [
   {
     key: 'quest',
     name: 'QUEST',
-    fullName: 'Querying Uploads for Educational and Scholarly Texts',
-    logo: '/assets/logos/quest-logo.svg',
+    fullName: 'Querying Uploaded Evidence in Scholarly Texts',
+    logo: `/assets/logos/quest-logo.svg?v=${LOGO_VERSION}`,
     route: '/launch/chatbot',
     directRoute: '/chatbot/',
     accent: 'teal',
@@ -700,7 +702,7 @@ const RMS_COMPONENTS = [
     key: 'spark',
     name: 'SPARK',
     fullName: 'Survey Platform for Academic Research and Knowledge',
-    logo: '/assets/logos/spark-logo.svg',
+    logo: `/assets/logos/spark-logo.svg?v=${LOGO_VERSION}`,
     route: '/launch/survey',
     directRoute: '/survey/',
     accent: 'amber',
@@ -1253,9 +1255,9 @@ app.get('/apps', requireLogin, (req, res) => {
       <p>Launch TRACE, ARGUS, QUEST, or SPARK for Literature Discovery to Research Synthesis.</p>
     </section>
     <div class="metrics">
-      <div class="metric"><strong>TRACE</strong><span>Tracking, Reporting, Analyzing, Curating, and Extracting data</span></div>
+      <div class="metric"><strong>TRACE</strong><span>Tracking, Retrieval, Acquisition, Curation, and Evidence Management</span></div>
       <div class="metric"><strong>ARGUS</strong><span>Assisted Reading and Guided Understanding through Search</span></div>
-      <div class="metric"><strong>QUEST</strong><span>Querying Uploads for Educational and Scholarly Texts</span></div>
+      <div class="metric"><strong>QUEST</strong><span>Querying Uploaded Evidence in Scholarly Texts</span></div>
       <div class="metric"><strong>SPARK</strong><span>Survey Platform for Academic Research and Knowledge</span></div>
     </div>
     <div class="grid">

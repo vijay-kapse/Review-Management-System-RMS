@@ -220,9 +220,12 @@ const Dashbaord = () => {
               TRACE workspace
             </div>
             <h1 id="dashboard-title">
-              Research projects, systematically organized.
+              Build and Manage Your Review
             </h1>
-            <p>Projects, saved queries, curation, and reports at a glance.</p>
+            <p>
+              Design search strategies, retrieve and organize scholarly records,
+              track decisions, and curate your review corpus.
+            </p>
           </div>
           <div className="dashboard-hero-actions">
             <Button

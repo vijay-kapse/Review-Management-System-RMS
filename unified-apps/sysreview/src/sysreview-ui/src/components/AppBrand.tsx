@@ -1,8 +1,8 @@
 import { FC } from "react";
 import { IMAGE_URI_PREFIX } from "../constants";
 
-export const TRACE_FULL_NAME =
-  "Tracking, Reporting, Analyzing, Curating, and Extracting data";
+// Same short description as the TRACE logo
+export const TRACE_TAGLINE = "Document managing, tracking and curation";
 
 interface AppBrandProps {
   variant?: "light" | "dark";
@@ -18,7 +18,7 @@ const AppBrand: FC<AppBrandProps> = ({ variant = "light" }) => (
     />
     <span className="app-brand__name">
       <span className="app-brand__title">TRACE</span>
-      <span className="app-brand__subtitle">{TRACE_FULL_NAME}</span>
+      <span className="app-brand__subtitle">{TRACE_TAGLINE}</span>
     </span>
   </span>
 );

@@ -129,10 +129,14 @@ const Sidebar = ({ isOpen, onClose }) => {
     );
   }
 
+  // Start below the fixed 64px navbar so the ARGUS logo and tagline stay visible
   return (
     <Box
       {...sidebarProps}
       pos="fixed"
+      top="64px"
+      h="calc(100vh - 64px)"
+      overflowY="auto"
     >
       <Box p={4}>
         <SidebarContent />
