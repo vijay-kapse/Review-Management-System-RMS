@@ -25,7 +25,11 @@ const Layout = ({ children }) => {
   }
 
   return (
-    <Box minH="100vh" bg="gray.50">
+    <Box
+      minH="100vh"
+      bg="slate.50"
+      backgroundImage="linear-gradient(180deg, #f8fafc 0%, #f6f8fb 42%, #eef4f8 100%)"
+    >
       <Navbar onMobileMenuOpen={onOpen} />
       <Sidebar 
         isOpen={isOpen} 
@@ -33,11 +37,12 @@ const Layout = ({ children }) => {
         display={{ base: isOpen ? 'block' : 'none', md: 'block' }} 
       />
       <Box
-        ml={{ base: 0, md: '240px' }}
-        p={4}
+        ml={{ base: 0, md: '264px' }}
+        px={{ base: 4, md: 8 }}
+        py={{ base: 4, md: 7 }}
         transition=".3s ease"
       >
-        <Box pt="20">
+        <Box pt={{ base: '76px', md: '84px' }}>
           {children}
         </Box>
       </Box>

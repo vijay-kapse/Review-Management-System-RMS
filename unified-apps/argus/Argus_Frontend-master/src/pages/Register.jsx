@@ -13,7 +13,6 @@ import {
   } from '@chakra-ui/react';
   import { useState } from 'react';
   import { Link as RouterLink } from 'react-router-dom';
-  import { apiUrl } from '../services/api';
   
   const Register = () => {
     const [formData, setFormData] = useState({
@@ -31,7 +30,7 @@ import {
       setIsLoading(true);
   
       try {
-        const response = await fetch(apiUrl('/register/'), {
+        const response = await fetch('/api/register/', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -1,4 +1,3 @@
-//src/componnents/SearchResults/Documentviewer.js
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams, useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -9,18 +8,21 @@ import {
   Badge,
   Checkbox,
   IconButton,
-  Center  // Add this
+  Center,
+  Spinner
 } from '@chakra-ui/react';
 import { ArrowBackIcon } from '@chakra-ui/icons';
-import { apiUrl } from '../../services/api';
+import * as pdfjsLib from 'pdfjs-dist/build/pdf';
+import pdfWorker from 'pdfjs-dist/build/pdf.worker.entry';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 
 const ColorPanel = ({ matches, onToggle }) => {
-    // Exact colors that will be used for both display and highlighting
     const colors = [
-      { bg: "#FFD700", border: "#B8860B", name: "yellow" },     // vector
-      { bg: "#4169E1", border: "#0000CD", name: "blue" },       // pathogen
-      { bg: "#32CD32", border: "#228B22", name: "green" },      // vector and pathogen
+      { bg: "#FFD700", border: "#B8860B", name: "yellow" },
+      { bg: "#4169E1", border: "#0000CD", name: "blue" },
+      { bg: "#32CD32", border: "#228B22", name: "green" },
       { bg: "#FF69B4", border: "#DB7093", name: "pink" },
       { bg: "#9370DB", border: "#6A5ACD", name: "purple" },
       { bg: "#FFA500", border: "#FF8C00", name: "orange" },
@@ -49,16 +51,23 @@ const ColorPanel = ({ matches, onToggle }) => {
       bg="white" 
       p={4} 
       borderLeft="1px" 
-      borderColor="gray.200"
+      borderColor="slate.200"
       overflowY="auto"
       h="100vh"
     >
       <VStack spacing={4} align="stretch">
-        <Text fontWeight="bold" fontSize="lg">Search Highlights</Text>
+        <Text fontWeight="900" fontSize="lg" color="slate.900">Search Highlights</Text>
+        {Object.keys(matches).length === 0 && (
+          <Box p={3} bg="slate.50" borderRadius="8px" border="1px solid" borderColor="slate.200">
+            <Text fontSize="sm" color="slate.600">
+              No search highlights are active for this view.
+            </Text>
+          </Box>
+        )}
         {Object.entries(matches).map(([term, positions], index) => {
           const color = colors[index % colors.length];
           return (
-            <Box key={term} p={3} bg="gray.50" borderRadius="md">
+            <Box key={term} p={3} bg="slate.50" borderRadius="8px" border="1px solid" borderColor="slate.200">
               <HStack spacing={2} mb={2}>
                 <Checkbox 
                   isChecked={activeTerms[term]}
@@ -94,26 +103,174 @@ const ColorPanel = ({ matches, onToggle }) => {
 };
 
 
-const FileViewer = ({ fileType, url }) => {
-  if (!url) return null;
+const LoadingState = ({ label = 'Loading document...' }) => (
+  <Center h="full" bg="slate.100">
+    <VStack spacing={3}>
+      <Spinner color="brand.500" size="xl" thickness="4px" />
+      <Text fontSize="sm" color="slate.600" fontWeight="700">{label}</Text>
+    </VStack>
+  </Center>
+);
 
-  // Image files
-  if (fileType?.startsWith('image/')) {
+const PdfCanvasViewer = ({ blob }) => {
+  const [pages, setPages] = useState([]);
+  const [pageCount, setPageCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    let loadingTask;
+
+    const renderPdf = async () => {
+      if (!blob) return;
+      setLoading(true);
+      setError('');
+      setPages([]);
+
+      try {
+        const data = await blob.arrayBuffer();
+        loadingTask = pdfjsLib.getDocument({ data });
+        const pdf = await loadingTask.promise;
+        const limit = Math.min(pdf.numPages, 4);
+        const renderedPages = [];
+
+        for (let pageNumber = 1; pageNumber <= limit; pageNumber += 1) {
+          const page = await pdf.getPage(pageNumber);
+          const baseViewport = page.getViewport({ scale: 1 });
+          const targetWidth = 980;
+          const scale = Math.min(1.8, targetWidth / baseViewport.width);
+          const viewport = page.getViewport({ scale });
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          canvas.width = Math.floor(viewport.width);
+          canvas.height = Math.floor(viewport.height);
+
+          await page.render({ canvasContext: context, viewport }).promise;
+          renderedPages.push({
+            pageNumber,
+            src: canvas.toDataURL('image/jpeg', 0.94),
+            width: canvas.width,
+            height: canvas.height,
+          });
+        }
+
+        if (!cancelled) {
+          setPageCount(pdf.numPages);
+          setPages(renderedPages);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err.message || 'Unable to render this PDF.');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    renderPdf();
+
+    return () => {
+      cancelled = true;
+      loadingTask?.destroy?.();
+    };
+  }, [blob]);
+
+  if (loading) {
+    return <LoadingState label="Rendering paper preview..." />;
+  }
+
+  if (error) {
     return (
-      <Center h="full">
-        <Box 
-          as="img"
-          src={url}
-          maxH="90vh"
-          maxW="100%"
-          objectFit="contain"
-        />
+      <Center h="full" bg="slate.100">
+        <Box p={5} bg="white" borderRadius="8px" border="1px solid" borderColor="slate.200">
+          <Text fontWeight="900" color="slate.900">Preview unavailable</Text>
+          <Text mt={1} fontSize="sm" color="slate.600">{error}</Text>
+        </Box>
       </Center>
     );
   }
 
-  // HTML files
-  if (fileType === 'text/html') {
+  return (
+    <Box
+      h="full"
+      overflowY="auto"
+      bg="slate.100"
+      px={{ base: 4, md: 8 }}
+      py={6}
+      data-argus-pdf-rendered="true"
+    >
+      <VStack spacing={6} align="center">
+        {pages.map((page) => (
+          <Box
+            key={page.pageNumber}
+            bg="white"
+            border="1px solid"
+            borderColor="slate.200"
+            boxShadow="0 18px 45px rgba(15, 23, 42, 0.12)"
+            borderRadius="6px"
+            overflow="hidden"
+            maxW="100%"
+          >
+            <Box
+              as="img"
+              src={page.src}
+              alt={`Rendered page ${page.pageNumber}`}
+              display="block"
+              maxW="100%"
+              w={`${Math.min(page.width, 980)}px`}
+              h="auto"
+            />
+          </Box>
+        ))}
+        {pageCount > pages.length && (
+          <Badge borderRadius="full" colorScheme="green" px={3} py={1}>
+            Previewing first {pages.length} of {pageCount} pages
+          </Badge>
+        )}
+      </VStack>
+    </Box>
+  );
+};
+
+const ImageViewer = ({ url }) => {
+  const [loaded, setLoaded] = useState(false);
+
+  return (
+    <Center h="full" bg="slate.100" p={8} position="relative">
+      {!loaded && <LoadingState label="Loading image preview..." />}
+      <Box
+        as="img"
+        src={url}
+        maxH="calc(100vh - 150px)"
+        maxW="100%"
+        objectFit="contain"
+        bg="white"
+        border="1px solid"
+        borderColor="slate.200"
+        boxShadow="0 18px 45px rgba(15, 23, 42, 0.12)"
+        borderRadius="6px"
+        onLoad={() => setLoaded(true)}
+        data-argus-image-rendered={loaded ? 'true' : undefined}
+      />
+    </Center>
+  );
+};
+
+const FileViewer = ({ fileType, url, blob }) => {
+  if (!url || !blob) return <LoadingState />;
+
+  const normalizedType = (fileType || '').toLowerCase();
+
+  if (normalizedType.includes('pdf')) {
+    return <PdfCanvasViewer blob={blob} />;
+  }
+
+  if (normalizedType.startsWith('image/')) {
+    return <ImageViewer url={url} />;
+  }
+
+  if (normalizedType.includes('html')) {
     return (
       <Box 
         as="iframe"
@@ -129,7 +286,6 @@ const FileViewer = ({ fileType, url }) => {
     );
   }
 
-  // Default viewer for PDFs and converted documents
   return (
     <Box 
       as="iframe"
@@ -149,18 +305,31 @@ const DocumentViewer = () => {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const [url, setUrl] = useState(null);
+  const [fileBlob, setFileBlob] = useState(null);
+  const [loadError, setLoadError] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
   
   const query = searchParams.get('query');
   const matches = location.state?.matchData || {};
+  const fileName = location.state?.fileName || 'Document preview';
+  const initialFileType = location.state?.fileType || null;
   const [fileType, setFileType] = useState(null);
 
+  const applyDocumentResponse = async (response) => {
+    const contentType = response.headers.get('content-type') || initialFileType || '';
+    const blob = await response.blob();
+    setFileType(contentType);
+    setFileBlob(blob);
+    setUrl(URL.createObjectURL(blob));
+  };
+
   const handleTermToggle = async (activeTerms) => {
+    setLoadError('');
+
     if (activeTerms.length === 0) {
-      // Show original document if no terms are active
       try {
-        const response = await fetch(apiUrl(`/view/${id}/`), {
+        const response = await fetch(`/api/view/${id}/`, {
           method: 'GET',
           credentials: 'include',
         });
@@ -169,27 +338,20 @@ const DocumentViewer = () => {
           throw new Error('Failed to load original document');
         }
 
-        const contentType = response.headers.get('content-type');
-        setFileType(contentType);
-        const blob = await response.blob();
-        
-        if (url) URL.revokeObjectURL(url);
-        const newUrl = URL.createObjectURL(blob);
-        setUrl(newUrl);
+        await applyDocumentResponse(response);
       } catch (err) {
+        setLoadError(err.message || 'Unable to load the document.');
         console.error('Error loading original document:', err);
       }
       return;
     }
 
     try {
-      // Create color map for active terms
       const colors = [
         'yellow', 'blue', 'green', 'pink', 'purple', 
         'orange', 'cyan', 'teal', 'red', 'lime'
       ];
 
-      // Preserve original color assignments for active terms
       const activeColorMap = {};
       Object.entries(matches).forEach(([term, _], index) => {
         if (activeTerms.includes(term)) {
@@ -203,7 +365,7 @@ const DocumentViewer = () => {
       );
 
       const response = await fetch(
-        apiUrl(`/view/${id}/?query=${queryStr}&colors=${colorStr}`),
+        `/api/view/${id}/?query=${queryStr}&colors=${colorStr}`,
         {
           method: 'GET',
           credentials: 'include',
@@ -217,37 +379,32 @@ const DocumentViewer = () => {
         throw new Error('Failed to update highlights');
       }
 
-      const contentType = response.headers.get('content-type');
-      setFileType(contentType);
-
-      const blob = await response.blob();
-      
-      if (url) {
-        URL.revokeObjectURL(url);
-      }
-
-      const newUrl = URL.createObjectURL(blob);
-      setUrl(newUrl);
+      await applyDocumentResponse(response);
 
     } catch (err) {
+      setLoadError(err.message || 'Unable to update highlights.');
       console.error('Error updating highlights:', err);
     }
   };
 
   useEffect(() => {
+    setLoadError('');
+    setFileBlob(null);
+    setUrl(null);
+
     const loadDocument = async () => {
       try {
-        let requestUrl = apiUrl(`/view/${id}/`);
+        let apiUrl = `/api/view/${id}/`;
         if (query) {
           const colors = [
             'yellow', 'blue', 'green', 'pink', 'purple', 
             'orange', 'cyan', 'teal', 'red', 'lime'
           ];
           const terms = query.split('|||');
-          requestUrl += `?query=${encodeURIComponent(query)}&colors=${encodeURIComponent(terms.map((_, i) => colors[i % colors.length]).join(','))}`;
+          apiUrl += `?query=${encodeURIComponent(query)}&colors=${encodeURIComponent(terms.map((_, i) => colors[i % colors.length]).join(','))}`;
         }
         
-        const response = await fetch(requestUrl, {
+        const response = await fetch(apiUrl, {
           method: 'GET',
           credentials: 'include',
           headers: {
@@ -259,58 +416,74 @@ const DocumentViewer = () => {
           throw new Error('Failed to load document');
         }
 
-        const contentType = response.headers.get('content-type');
-        setFileType(contentType);
-
-        const blob = await response.blob();
-        
-        // Clean up old URL if it exists
-        if (url) {
-          URL.revokeObjectURL(url);
-        }
-        
-        const newUrl = URL.createObjectURL(blob);
-        setUrl(newUrl);
+        await applyDocumentResponse(response);
         
       } catch (err) {
+        setLoadError(err.message || 'Unable to load the document.');
         console.error('Error:', err);
       }
     };
 
     loadDocument();
 
-    // Cleanup function
-    return () => {
-      if (url) {
-        URL.revokeObjectURL(url);
-      }
-    };
+    // eslint-disable-next-line
+  }, [id, query]);
 
-    // eslint-disable-next-line 
-  }, [id, query]); // Removed url from dependencies
+  useEffect(() => {
+    return () => {
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [url]);
 
   return (
-    <Box>
-      <Box 
-        position="fixed" 
-        top={4} 
-        left={4} 
-        zIndex={10}
-      >
-        <IconButton
-          icon={<ArrowBackIcon />}
-          onClick={() => navigate('/results')}
-          colorScheme="green"
-          aria-label="Go back"
-          size="lg"
-          rounded="full"
-          shadow="md"
-        />
-      </Box>
+    <Box h="100vh" overflow="hidden">
+      <HStack spacing={0} align="stretch" w="100%" h="100%">
+        <Box flex="1" minW={0} h="100%" bg="slate.100">
+          <HStack
+            h="70px"
+            px={4}
+            bg="slate.900"
+            color="white"
+            borderBottom="1px solid"
+            borderColor="slate.700"
+            spacing={4}
+          >
+            <IconButton
+              icon={<ArrowBackIcon />}
+              onClick={() => navigate('/results')}
+              aria-label="Go back"
+              size="lg"
+              rounded="full"
+              shadow="md"
+              colorScheme="green"
+            />
+            <Box minW={0} flex="1">
+              <Text fontSize="xs" fontWeight="900" color="green.200" textTransform="uppercase" letterSpacing="0">
+                ARGUS document viewer
+              </Text>
+              <Text fontWeight="900" fontSize="lg" noOfLines={1}>
+                {fileName}
+              </Text>
+            </Box>
+            {fileType && (
+              <Badge borderRadius="full" colorScheme={(fileType || '').toLowerCase().startsWith('image/') ? 'blue' : 'green'} px={3} py={1}>
+                {fileType}
+              </Badge>
+            )}
+          </HStack>
 
-      <HStack spacing={0} align="stretch" w="100%">
-        <Box flex="1" h="100vh" bg="gray.50">
-          <FileViewer fileType={fileType} url={url} />
+          <Box h="calc(100vh - 70px)">
+            {loadError ? (
+              <Center h="full" bg="slate.100">
+                <Box p={5} bg="white" borderRadius="8px" border="1px solid" borderColor="slate.200">
+                  <Text fontWeight="900" color="slate.900">Document could not be loaded</Text>
+                  <Text mt={1} fontSize="sm" color="slate.600">{loadError}</Text>
+                </Box>
+              </Center>
+            ) : (
+              <FileViewer fileType={fileType} url={url} blob={fileBlob} />
+            )}
+          </Box>
         </Box>
         <ColorPanel 
           matches={matches} 
@@ -321,4 +494,5 @@ const DocumentViewer = () => {
   );
 };
 
+export { FileViewer };
 export default DocumentViewer;

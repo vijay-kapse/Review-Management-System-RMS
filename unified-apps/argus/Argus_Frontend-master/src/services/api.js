@@ -1,18 +1,4 @@
-const getPublicPathPrefix = () => {
-  if (typeof window === 'undefined') {
-    return '';
-  }
-
-  const argusIndex = window.location.pathname.indexOf('/argus');
-  return argusIndex > 0 ? window.location.pathname.slice(0, argusIndex) : '';
-};
-
-export const API_BASE_URL = `${getPublicPathPrefix()}/api`;
-
-export const apiUrl = (path = '') => {
-  const normalizedPath = String(path).startsWith('/') ? path : `/${path}`;
-  return `${API_BASE_URL}${normalizedPath}`;
-};
+const API_BASE_URL = '/api';
 
 
 
@@ -59,7 +45,7 @@ const getDefaultOptions = (options = {}) => {
 
 export const api = {
   async login(credentials) {
-    const response = await fetch(apiUrl('/login/'), {
+    const response = await fetch(`${API_BASE_URL}/login/`, {
       ...getDefaultOptions({
         method: 'POST',
         body: JSON.stringify(credentials),
@@ -69,7 +55,7 @@ export const api = {
   },
 
   async register(userData) {
-    const response = await fetch(apiUrl('/register/'), {
+    const response = await fetch(`${API_BASE_URL}/register/`, {
       ...getDefaultOptions({
         method: 'POST',
         body: JSON.stringify(userData),
@@ -82,7 +68,7 @@ export const api = {
     const formData = new FormData();
     files.forEach(file => formData.append('files', file));
 
-    const response = await fetch(apiUrl('/upload/'), {
+    const response = await fetch(`${API_BASE_URL}/upload/`, {
       credentials: 'include',  
       method: 'POST',
       headers: {
@@ -94,7 +80,7 @@ export const api = {
   },
 
   async getSearchResults() {
-    const response = await fetch(apiUrl('/results/'), {
+    const response = await fetch(`${API_BASE_URL}/results/`, {
       ...getDefaultOptions({
         method: 'GET',
       }),
@@ -107,7 +93,7 @@ export const api = {
       ? query.map(q => `q=${encodeURIComponent(q)}`).join('&')
       : `q=${encodeURIComponent(query)}`;
       
-    const response = await fetch(apiUrl(`/search/?${queryString}`), {
+    const response = await fetch(`${API_BASE_URL}/search/?${queryString}`, {
       ...getDefaultOptions({
         method: 'GET',
       }),
@@ -116,7 +102,7 @@ export const api = {
   },
 
   async getDocument(id) {
-    const response = await fetch(apiUrl(`/view/${id}/`), {
+    const response = await fetch(`${API_BASE_URL}/view/${id}/`, {
       ...getDefaultOptions({
         method: 'GET',
       }),
@@ -126,7 +112,7 @@ export const api = {
 
   async updateDocument(id, query, colors) {  // Added update document endpoint
     const queryString = `query=${encodeURIComponent(query)}&colors=${encodeURIComponent(colors)}`;
-    const response = await fetch(apiUrl(`/update_document/${id}?${queryString}`), {
+    const response = await fetch(`${API_BASE_URL}/update_document/${id}?${queryString}`, {
       ...getDefaultOptions({
         method: 'GET',
       }),
@@ -135,7 +121,7 @@ export const api = {
   },
 
   async saveSession(sessionData) {
-    const response = await fetch(apiUrl('/save_session/'), {
+    const response = await fetch(`${API_BASE_URL}/save_session/`, {
       ...getDefaultOptions({
         method: 'POST',
         body: JSON.stringify(sessionData),
@@ -145,7 +131,7 @@ export const api = {
   },
 
   async loadSession(sessionKey) {
-    const response = await fetch(apiUrl('/load_session/'), {
+    const response = await fetch(`${API_BASE_URL}/load_session/`, {
       ...getDefaultOptions({
         method: 'POST',
         body: JSON.stringify({ session_key: sessionKey }),
@@ -155,7 +141,7 @@ export const api = {
   },
 
   async logout() {  // Added logout endpoint
-    const response = await fetch(apiUrl('/logout/'), {
+    const response = await fetch(`${API_BASE_URL}/logout/`, {
       ...getDefaultOptions({
         method: 'POST',
       }),
@@ -164,7 +150,7 @@ export const api = {
   },
 
   async fetchDocument(id) {  // Added fetch document endpoint
-    const response = await fetch(apiUrl(`/fetch_document/${id}`), {
+    const response = await fetch(`${API_BASE_URL}/fetch_document/${id}`, {
       credentials: 'include',
       method: 'GET',
     });

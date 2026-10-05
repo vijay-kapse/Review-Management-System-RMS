@@ -24,7 +24,6 @@ import { AddIcon, AttachmentIcon, SearchIcon, SmallCloseIcon } from '@chakra-ui/
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DocumentCard from './DocumentCard';
-import { apiUrl } from '../../services/api';
 
 // Search terms outlive the tab so a review can be resumed later; the matched
 // results only make sense for the current ARGUS session, so they stay per-tab.
@@ -89,7 +88,7 @@ const SearchResults = () => {
 
   const fetchSessionDocuments = useCallback(async () => {
     try {
-      const response = await fetch(apiUrl('/results/'), {
+      const response = await fetch('/api/results/', {
         credentials: 'include'
       });
       if (response.ok) {
@@ -171,7 +170,7 @@ const SearchResults = () => {
         throw new Error('CSRF token not found. Ensure you are authenticated.');
       }
 
-      const response = await fetch(apiUrl('/search/'), {
+      const response = await fetch('/api/search/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

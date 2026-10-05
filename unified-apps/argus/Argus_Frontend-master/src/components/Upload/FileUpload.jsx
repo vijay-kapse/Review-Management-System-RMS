@@ -8,7 +8,6 @@ import {
 } from '@chakra-ui/react';
 import { useState, useRef } from 'react';
 import { AddIcon } from '@chakra-ui/icons';
-import { apiUrl } from '../../services/api';
 
 const FileUpload = ({ onUploadSuccess }) => {
   const [isDragging, setIsDragging] = useState(false);
@@ -40,7 +39,7 @@ const FileUpload = ({ onUploadSuccess }) => {
     fileList.forEach(file => formData.append('files', file));
 
     try {
-      const response = await fetch(apiUrl('/upload/'), {
+      const response = await fetch('/api/upload/', {
         method: 'POST',
         body: formData,
       });
