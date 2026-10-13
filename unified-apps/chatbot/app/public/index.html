@@ -250,6 +250,8 @@
 
     .panel {
       display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      min-width: 0;
       gap: 16px;
       align-content: start;
       padding: 20px;
@@ -308,6 +310,8 @@
     }
 
     input[type="file"] {
+      min-width: 0;
+      max-width: 100%;
       padding: 12px;
     }
 
@@ -343,6 +347,7 @@
       background: #f8fafc;
       color: var(--muted);
       line-height: 1.45;
+      overflow-wrap: anywhere;
     }
 
     .answer-box {
