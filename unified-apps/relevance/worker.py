@@ -34,9 +34,11 @@ import psycopg2
 import psycopg2.extras
 import requests
 
-LLM_URL = os.getenv("RELEVANCE_LLM_URL", "http://127.0.0.1:8090/v1/chat/completions")
+LLM_URL = os.getenv("RELEVANCE_LLM_URL", "http://127.0.0.1:8090")
 MODEL_NAME = os.getenv("RELEVANCE_MODEL_NAME", "Qwen3.5-9B-Q4_K_M")
-PROMPT_VERSION = "v1"
+# v2: scored by resuming from the shared-prefix checkpoint (logits differ from v1 by
+# up to ~0.5 from numerics), so v1 scores are redone rather than mixed with v2.
+PROMPT_VERSION = "v2"
 SECRETS_PATH = os.path.expanduser(
     os.getenv("SYSREVIEW_SECRETS", "~/unified-apps/sysreview/secrets.properties")
 )
@@ -207,12 +209,18 @@ def get_abstract(conn, title_key, title):
 # ---------------------------------------------------------------- scoring
 
 
-def build_messages(research_question, title, abstract):
+PAPER_MARKER = "<<<PAPER>>>"
+
+
+def paper_block(title, abstract):
     if abstract:
         words = abstract.split()
         if len(words) > MAX_ABSTRACT_WORDS:
             abstract = " ".join(words[:MAX_ABSTRACT_WORDS]) + " ..."
-    paper = f"Title: {title}\nAbstract: {abstract or '(no abstract available; judge from the title)'}"
+    return f"Title: {title}\nAbstract: {abstract or '(no abstract available; judge from the title)'}"
+
+
+def build_messages(research_question, paper):
     return [
         {"role": "system", "content": SYSTEM_PROMPT},
         {
@@ -231,22 +239,55 @@ def log_sum_exp(values):
     return peak + math.log(sum(math.exp(v - peak) for v in values))
 
 
-def score_logit(messages):
-    """Log-odds of yes vs no for the first answer token."""
+class PromptTemplate:
+    """The chat-templated prompt split around the paper, so everything before the paper
+    (instructions, research question, criteria) is identical for every paper of a project.
+
+    Qwen3.5 is a hybrid model, so llama.cpp can only resume from a saved state
+    checkpoint, not from an arbitrary cached token. warm() processes the prefix on its
+    own, which leaves a checkpoint exactly where every paper prompt diverges; each paper
+    then costs only its own tokens (~13 s instead of ~30 s on sysrev2). This needs
+    --checkpoint-min-step 0 on the server (start-relevance-llm.sh)."""
+
+    def __init__(self, research_question):
+        response = requests.post(
+            f"{LLM_URL}/apply-template",
+            json={
+                "messages": build_messages(research_question, PAPER_MARKER),
+                "chat_template_kwargs": {"enable_thinking": False},
+            },
+            timeout=60,
+        )
+        response.raise_for_status()
+        self.prefix, self.suffix = response.json()["prompt"].split(PAPER_MARKER)
+        self.prefix_tokens = None
+
+    def warm(self):
+        timings = complete(self.prefix, n_predict=0)["timings"]
+        self.prefix_tokens = timings["prompt_n"] + timings.get("cache_n", 0)
+
+    def score(self, paper):
+        if self.prefix_tokens is None:
+            self.warm()
+        result = complete(self.prefix + paper + self.suffix, n_predict=1, n_probs=20)
+        # After a model server restart the checkpoint is gone; re-warm for the next paper.
+        if result["timings"].get("cache_n", 0) < self.prefix_tokens:
+            self.prefix_tokens = None
+        return answer_logit(result["completion_probabilities"][0]["top_logprobs"])
+
+
+def complete(prompt, **options):
     response = requests.post(
-        LLM_URL,
-        json={
-            "messages": messages,
-            "max_tokens": 1,
-            "temperature": 0,
-            "logprobs": True,
-            "top_logprobs": 20,
-            "chat_template_kwargs": {"enable_thinking": False},
-        },
+        f"{LLM_URL}/completion",
+        json={"prompt": prompt, "temperature": 0, "cache_prompt": True, **options},
         timeout=900,
     )
     response.raise_for_status()
-    top = response.json()["choices"][0]["logprobs"]["content"][0]["top_logprobs"]
+    return response.json()
+
+
+def answer_logit(top):
+    """Log-odds of yes vs no for the first answer token."""
     yes = [t["logprob"] for t in top if t["token"].strip().lower() == "yes"]
     no = [t["logprob"] for t in top if t["token"].strip().lower() == "no"]
     floor = min(t["logprob"] for t in top)
@@ -274,6 +315,7 @@ def to_probability(logit, calibration):
 def score_project(conn, project_id, research_question):
     current_hash = rq_hash(research_question)
     calibration = load_calibration()
+    template = None
     groups = load_project_groups(conn, project_id)
     pending = [
         (key, rows)
@@ -290,7 +332,9 @@ def score_project(conn, project_id, research_question):
             log(f"abstract lookup failed, retrying next pass: {title[:60]!r}: {exc}")
             continue
         started = time.time()
-        logit = score_logit(build_messages(research_question, title, abstract))
+        if template is None:
+            template = PromptTemplate(research_question)
+        logit = template.score(paper_block(title, abstract))
         with conn.cursor() as cur:
             cur.execute(
                 """UPDATE search_results

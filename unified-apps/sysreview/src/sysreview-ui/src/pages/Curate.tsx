@@ -16,6 +16,12 @@ import {
 import { getQuery, updateQuery } from "../api/query";
 import { getCategories } from "../api/category";
 import { mergeResults } from "../api/utility";
+import { getProject } from "../api/project";
+import useRelevanceRefresh, {
+  hasUnscored,
+  relevanceScoresById,
+  withRelevanceScores,
+} from "../hooks/useRelevanceRefresh";
 import { dummyQuery } from "../api/dummyData";
 import { APP_URI_PREFIX } from "../constants";
 import { IoMdCheckmarkCircleOutline } from "react-icons/io";
@@ -38,6 +44,7 @@ const Curate = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showBulkActionModal, setShowBulkActionModal] = useState(false);
   const [categories, setCategories] = useState<categorySetType>({});
+  const [hasResearchQuestion, setHasResearchQuestion] = useState(false);
 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -126,8 +133,21 @@ const Curate = () => {
     if (id === 0 || pId === 0) navigate(`${APP_URI_PREFIX}/`); // send to dashboard if no id in url
     fetchQuery(id);
     fetchCategory(pId);
+    getProject(pId)
+      .then((project) => setHasResearchQuestion(!!project.researchQuestion?.trim()))
+      .catch((e) => console.log(e));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useRelevanceRefresh(hasResearchQuestion && hasUnscored(results), () =>
+    getQuery(query.queryId).then((data) => {
+      const scores = relevanceScoresById(
+        mergeResults(Object.values(data.searchResults)),
+      );
+      setResults((current) => withRelevanceScores(current, scores));
+      setFilteredResults((current) => withRelevanceScores(current, scores));
+    }),
+  );
 
   const visibleResults = selectedSources.length ? filteredResults : results;
 

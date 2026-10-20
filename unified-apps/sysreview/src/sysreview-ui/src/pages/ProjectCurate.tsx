@@ -24,7 +24,13 @@ import {
   getCategoryColor,
   getCategoryLabel,
   getProjectCurationResults,
+  mergeResults,
 } from "../api/utility";
+import useRelevanceRefresh, {
+  hasUnscored,
+  relevanceScoresById,
+  withRelevanceScores,
+} from "../hooks/useRelevanceRefresh";
 import { APP_URI_PREFIX } from "../constants";
 import { IoMdCheckmarkCircleOutline } from "react-icons/io";
 import { GrAction } from "react-icons/gr";
@@ -208,6 +214,20 @@ const ProjectCurate = () => {
     loadProjectCuration(projectId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useRelevanceRefresh(
+    !!project.researchQuestion?.trim() && hasUnscored(results),
+    () =>
+      getQueries(projectId).then((queryData) => {
+        const scores = relevanceScoresById(
+          queryData.flatMap((query) =>
+            mergeResults(Object.values(query.searchResults)),
+          ),
+        );
+        setResults((current) => withRelevanceScores(current, scores));
+        setFilteredResults((current) => withRelevanceScores(current, scores));
+      }),
+  );
 
   const visibleResults = selectedSources.length ? filteredResults : results;
 

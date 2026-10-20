@@ -24,8 +24,11 @@ column. It is a suggestion only: nothing here changes a paper's category.
 - Changing a project's research question, the model or the prompt changes
   `relevance_rq_hash`, so the worker rescores that project.
 
-Speed on sysrev2 (4 vCPU, no GPU): about 30 s per paper, so a 160-paper
-project takes about 80 minutes. The worker (`relevance-worker` in PM2) polls
+Speed on sysrev2 (4 vCPU, no GPU): about 15-20 s per paper with an abstract
+(about 3 s title-only), so a 160-paper project takes about 45 minutes. The shared part of the prompt (instructions,
+research question, criteria; ~330 tokens) is processed once per pass and
+resumed from a llama.cpp context checkpoint for every paper; without that it
+is ~30 s per paper. The worker (`relevance-worker` in PM2) polls
 active projects every 5 minutes.
 
 ## Server layout
