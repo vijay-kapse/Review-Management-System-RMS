@@ -35,6 +35,7 @@ public class ProjectServiceImpl implements ProjectService {
                 Project.builder()
                         .projectName(dto.getProjectName())
                         .description(dto.getDescription())
+                        .researchQuestion(dto.getResearchQuestion())
                         .owner(user)
                         .build()
         );
@@ -46,6 +47,10 @@ public class ProjectServiceImpl implements ProjectService {
             String projectName = updatedProject.getProjectName();
             String description = updatedProject.getDescription();
             projectRepository.updateProjectNameAndDescriptionByProjectId(projectName, description, projectId);
+            // Older clients omit the field; only overwrite it when it was sent.
+            if (updatedProject.getResearchQuestion() != null) {
+                projectRepository.updateResearchQuestionByProjectId(updatedProject.getResearchQuestion().trim(), projectId);
+            }
         } else {
             throw new ProjectNotFoundException(projectId);
         }

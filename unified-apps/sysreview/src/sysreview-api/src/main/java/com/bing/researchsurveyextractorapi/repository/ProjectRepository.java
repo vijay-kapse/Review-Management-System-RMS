@@ -16,6 +16,11 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
 
     @Transactional
     @Modifying
+    @Query("update Project p set p.researchQuestion = ?1 where p.projectId = ?2")
+    void updateResearchQuestionByProjectId(String researchQuestion, long projectId);
+
+    @Transactional
+    @Modifying
     @Query("update Project p set p.archived = ?1 where p.projectId = ?2")
     void updateArchivedByProjectId(boolean archived, long projectId);
 

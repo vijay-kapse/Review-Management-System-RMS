@@ -270,8 +270,14 @@ export const getProjectCurationResults = (
         new Set(occurrences.map((occurrence) => occurrence.priority))
       );
       const hasMixedCategories = priorities.length > 1;
+      // The relevance worker scores one paper per title key, so the rows normally agree;
+      // take the highest in case some were scored before others.
+      const scores = occurrences
+        .map(({ relevanceScore }) => relevanceScore)
+        .filter((score): score is number => typeof score === "number");
       const projectResult: projectResultType = {
         ...representative,
+        relevanceScore: scores.length ? Math.max(...scores) : null,
         curationSortPriority: representative.priority,
         duplicateCount: occurrences.length,
         duplicateResultIds: occurrences.map(({ resultId }) => resultId),

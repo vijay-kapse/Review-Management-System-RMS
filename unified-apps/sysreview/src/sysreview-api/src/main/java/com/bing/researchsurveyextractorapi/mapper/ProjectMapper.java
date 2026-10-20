@@ -19,6 +19,7 @@ public class ProjectMapper {
                 .projectId(project.getProjectId())
                 .projectName(project.getProjectName())
                 .description(project.getDescription())
+                .researchQuestion(project.getResearchQuestion())
                 .owner(project.getOwner().getUsername())
                 .collaborators(getCollaborators(project))
                 .archived(project.isArchived())

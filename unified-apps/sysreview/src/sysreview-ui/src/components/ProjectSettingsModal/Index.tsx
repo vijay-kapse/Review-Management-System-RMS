@@ -20,8 +20,8 @@ const Index = ({ show, handleClose }: projectSettingsModalProps) => {
   const [projectEdited, setProjectEdited] = useState(false);
 
   const modifyProject = () => {
-    const { projectId, projectName, description } = project;
-    updateProject({ projectId, projectName, description })
+    const { projectId, projectName, description, researchQuestion } = project;
+    updateProject({ projectId, projectName, description, researchQuestion })
       .then(() => {
         setProjectEdited(false);
       })
@@ -103,6 +103,22 @@ const Index = ({ show, handleClose }: projectSettingsModalProps) => {
                   value={project.description}
                   onChange={handleProjectChange}
                 />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Research question and inclusion criteria</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={6}
+                  placeholder={"RQ1: ...\nInclusion criteria: ...\nExclude: ..."}
+                  name="researchQuestion"
+                  value={project.researchQuestion || ""}
+                  onChange={handleProjectChange}
+                />
+                <Form.Text muted>
+                  Papers are scored against this text to suggest likely-relevant
+                  ones on the curation page. Changing it rescores the project in
+                  the background (about 30 seconds per paper).
+                </Form.Text>
               </Form.Group>
               {projectEdited && (
                 <ProjectSettingsActionButtons

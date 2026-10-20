@@ -53,6 +53,24 @@ module.exports = {
       autorestart: true,
       restart_delay: 2000,
       max_restarts: 10
+    },
+    {
+      name: 'relevance-llm',
+      script: '/home/vkapse/runtime-manager/bin/start-relevance-llm.sh',
+      interpreter: '/bin/bash',
+      cwd: '/home/vkapse/relevance',
+      autorestart: true,
+      restart_delay: 5000,
+      max_restarts: 10
+    },
+    {
+      name: 'relevance-worker',
+      script: '/home/vkapse/runtime-manager/bin/start-relevance-worker.sh',
+      interpreter: '/bin/bash',
+      cwd: '/home/vkapse/unified-apps/relevance',
+      autorestart: true,
+      restart_delay: 5000,
+      max_restarts: 10
     }
   ]
 };

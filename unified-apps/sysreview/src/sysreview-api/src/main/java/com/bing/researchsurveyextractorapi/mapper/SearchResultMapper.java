@@ -32,6 +32,8 @@ public class SearchResultMapper {
                 .priority(searchResult.getCategory().getPriority())
                 .document(searchResult.getDocument())
                 .datasource(searchResult.getDatasource())
+                .relevanceScore(searchResult.getRelevanceScore())
+                .relevanceScoredAt(searchResult.getRelevanceScoredAt() == null ? null : searchResult.getRelevanceScoredAt().toString())
                 .build();
     }
 

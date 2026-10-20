@@ -117,6 +117,38 @@ const CurationTable: FC<CurationTableProps> = ({
     });
 
   columns.push({
+      id: "suggested",
+      name: (
+        <span title="Machine-suggested relevance to the project's research question and inclusion criteria (local Qwen3.5-9B model). A suggestion only; it never changes the category.">
+          Suggested
+        </span>
+      ),
+      // Unscored papers sort below every scored one.
+      selector: (row) => row.relevanceScore ?? -1,
+      cell: (res) => {
+        const score = res.relevanceScore;
+        if (typeof score !== "number") {
+          return (
+            <span className="text-muted" title="Not scored yet. Set a research question in Project settings; scoring runs in the background.">
+              —
+            </span>
+          );
+        }
+        const percent = Math.round(score * 100);
+        const bg = score >= 0.5 ? "success" : score >= 0.15 ? "warning" : "secondary";
+        const label = score >= 0.5 ? "Likely relevant" : score >= 0.15 ? "Possibly relevant" : "Unlikely";
+        return (
+          <Badge bg={bg} title={`${label}: estimated ${percent}% chance of being relevant`}>
+            {percent < 1 ? "<1" : percent}%
+          </Badge>
+        );
+      },
+      width: "9%",
+      center: true,
+      sortable: true,
+    });
+
+  columns.push({
       name: "Source",
       selector: (row) => (row as any).duplicateSourceSummary || row.datasource,
       cell: (res) => (

@@ -8,6 +8,7 @@ import org.hibernate.annotations.TypeDef;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Getter
@@ -40,6 +41,18 @@ public class SearchResult implements Serializable {
     @JoinColumn(name = "query_id", nullable = false)
     @ToString.Exclude
     private Query query;
+
+    // Machine-suggested relevance, written by the relevance worker (~/relevance on the server).
+    // Null until the paper has been scored against the project's research question.
+    private Double relevanceScore;
+
+    private Double relevanceLogit;
+
+    private String relevanceModel;
+
+    private String relevanceRqHash;
+
+    private LocalDateTime relevanceScoredAt;
 
     @Override
     public boolean equals(Object o) {

@@ -15,4 +15,6 @@ public class ProjectRequest {
     @NonNull
     private String description;
 
+    private String researchQuestion;
+
 }

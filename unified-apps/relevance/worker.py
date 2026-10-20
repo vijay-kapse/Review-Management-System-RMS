@@ -1,0 +1,465 @@
+"""TRACE relevance worker.
+
+Scores every saved paper in a TRACE project against that project's
+"research question and inclusion criteria", and writes the score back to
+search_results so the curation table can suggest likely-relevant papers.
+
+The score is a Jev-style decision readout from a local LLM served by
+llama.cpp: one forward pass, then the probability mass the model puts on
+"yes" versus "no". Papers are ranked by the log-odds (relevance_logit) and
+shown as a calibrated probability (relevance_score = sigmoid(a * logit + b)).
+
+Usage:
+    python worker.py loop                     # PM2: score active projects forever
+    python worker.py score --project 91512    # one pass over one project, archived or not
+    python worker.py calibrate --project 91512  # fit a, b on that project's human labels
+    python worker.py rescale                  # recompute relevance_score from stored logits
+
+The score is a suggestion only: this worker never touches categories.
+"""
+
+import argparse
+import difflib
+import hashlib
+import json
+import math
+import os
+import re
+import sys
+import time
+import urllib.parse
+from datetime import datetime, timedelta
+
+import psycopg2
+import psycopg2.extras
+import requests
+
+LLM_URL = os.getenv("RELEVANCE_LLM_URL", "http://127.0.0.1:8090/v1/chat/completions")
+MODEL_NAME = os.getenv("RELEVANCE_MODEL_NAME", "Qwen3.5-9B-Q4_K_M")
+PROMPT_VERSION = "v1"
+SECRETS_PATH = os.path.expanduser(
+    os.getenv("SYSREVIEW_SECRETS", "~/unified-apps/sysreview/secrets.properties")
+)
+CALIBRATION_PATH = os.path.expanduser(
+    os.getenv("RELEVANCE_CALIBRATION", "~/relevance/calibration.json")
+)
+IDLE_SLEEP_SECONDS = 300
+ABSTRACT_RETRY_DAYS = 14
+MAX_ABSTRACT_WORDS = 350
+MIN_TITLE_MATCH = 0.92
+
+SYSTEM_PROMPT = (
+    "You screen papers for a systematic literature review. A paper is relevant only if it "
+    "addresses at least one of the review's research questions and meets every inclusion "
+    "criterion. Judge from the title and abstract."
+)
+
+
+def log(message):
+    print(f"[{datetime.now().isoformat(timespec='seconds')}] {message}", flush=True)
+
+
+# ---------------------------------------------------------------- database
+
+
+def connect():
+    props = {}
+    with open(SECRETS_PATH) as handle:
+        for line in handle:
+            if "=" in line and not line.lstrip().startswith("#"):
+                key, value = line.split("=", 1)
+                props[key.strip()] = value.strip()
+    return psycopg2.connect(
+        host="localhost",
+        dbname=props.get("spring.datasource.name", "sysreview_vijay"),
+        user=props["spring.datasource.username"],
+        password=props["spring.datasource.password"],
+    )
+
+
+def ensure_schema(conn):
+    # TRACE's entities map the same columns (ddl-auto=update); creating them here as well
+    # means the worker does not depend on the order the two are deployed in.
+    with conn.cursor() as cur:
+        cur.execute("ALTER TABLE projects ADD COLUMN IF NOT EXISTS research_question text")
+        for column, kind in (
+            ("relevance_score", "float8"),
+            ("relevance_logit", "float8"),
+            ("relevance_model", "varchar(255)"),
+            ("relevance_rq_hash", "varchar(255)"),
+            ("relevance_scored_at", "timestamp"),
+        ):
+            cur.execute(f"ALTER TABLE search_results ADD COLUMN IF NOT EXISTS {column} {kind}")
+        cur.execute(
+            """CREATE TABLE IF NOT EXISTS relevance_abstracts (
+                   title_key   text PRIMARY KEY,
+                   doi         text,
+                   abstract    text,
+                   source      text,
+                   fetched_at  timestamp NOT NULL
+               )"""
+        )
+    conn.commit()
+
+
+# ---------------------------------------------------------------- grouping
+
+
+def normalize_title(title):
+    # Same key as getProjectCurationResults in sysreview-ui/src/api/utility.ts,
+    # so one score covers exactly one row of the deduplicated curation table.
+    title = (title or "").strip()
+    title = re.sub(r"[.\s]+$", "", title)
+    return re.sub(r"\s+", " ", title).lower()
+
+
+def group_key(row):
+    return (
+        normalize_title(row["title"])
+        or (row["url"] or "").strip().lower()
+        or f"{row['datasource']}:{row['result_id']}"
+    )
+
+
+def rq_hash(research_question):
+    payload = f"{PROMPT_VERSION}|{MODEL_NAME}|{research_question.strip()}"
+    return hashlib.sha1(payload.encode()).hexdigest()[:16]
+
+
+def load_project_groups(conn, project_id):
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute(
+            """SELECT sr.result_id, sr.datasource,
+                      sr.document->>'title' AS title, sr.document->>'url' AS url,
+                      sr.relevance_rq_hash
+                 FROM search_results sr JOIN queries q ON q.query_id = sr.query_id
+                WHERE q.project_id = %s
+                ORDER BY sr.result_id""",
+            (project_id,),
+        )
+        rows = cur.fetchall()
+    groups = {}
+    for row in rows:
+        groups.setdefault(group_key(row), []).append(row)
+    return groups
+
+
+# ---------------------------------------------------------------- abstracts
+
+
+def reconstruct_abstract(inverted_index):
+    positions = {}
+    for word, indexes in (inverted_index or {}).items():
+        for index in indexes:
+            positions[index] = word
+    return " ".join(positions[i] for i in sorted(positions))
+
+
+def fetch_openalex(title):
+    """Returns (doi, abstract) for a confident title match, (None, None) when OpenAlex has
+    no such paper. Raises on network/HTTP errors so the caller retries later instead of
+    caching a false miss."""
+    response = requests.get(
+        "https://api.openalex.org/works",
+        params={"search": title, "per_page": 5, "select": "title,doi,abstract_inverted_index"},
+        timeout=30,
+    )
+    response.raise_for_status()
+    wanted = normalize_title(title)
+    best, best_ratio = None, 0.0
+    for work in response.json().get("results", []):
+        ratio = difflib.SequenceMatcher(None, wanted, normalize_title(work.get("title"))).ratio()
+        if ratio > best_ratio:
+            best, best_ratio = work, ratio
+    if not best or best_ratio < MIN_TITLE_MATCH:
+        return None, None
+    abstract = reconstruct_abstract(best.get("abstract_inverted_index")) or None
+    return best.get("doi"), abstract
+
+
+def get_abstract(conn, title_key, title):
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT abstract, fetched_at FROM relevance_abstracts WHERE title_key = %s",
+            (title_key,),
+        )
+        cached = cur.fetchone()
+    if cached and (
+        cached[0] or cached[1] > datetime.now() - timedelta(days=ABSTRACT_RETRY_DAYS)
+    ):
+        return cached[0]
+    if not title:
+        return None
+    doi, abstract = fetch_openalex(title)
+    with conn.cursor() as cur:
+        cur.execute(
+            """INSERT INTO relevance_abstracts (title_key, doi, abstract, source, fetched_at)
+               VALUES (%s, %s, %s, 'openalex', now())
+               ON CONFLICT (title_key) DO UPDATE
+                  SET doi = EXCLUDED.doi, abstract = EXCLUDED.abstract,
+                      source = EXCLUDED.source, fetched_at = EXCLUDED.fetched_at""",
+            (title_key, doi, abstract),
+        )
+    conn.commit()
+    return abstract
+
+
+# ---------------------------------------------------------------- scoring
+
+
+def build_messages(research_question, title, abstract):
+    if abstract:
+        words = abstract.split()
+        if len(words) > MAX_ABSTRACT_WORDS:
+            abstract = " ".join(words[:MAX_ABSTRACT_WORDS]) + " ..."
+    paper = f"Title: {title}\nAbstract: {abstract or '(no abstract available; judge from the title)'}"
+    return [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {
+            "role": "user",
+            "content": (
+                f"Review research questions and inclusion criteria:\n{research_question.strip()}\n\n"
+                f"Paper:\n{paper}\n\n"
+                "Is this paper relevant to the review? Answer yes or no."
+            ),
+        },
+    ]
+
+
+def log_sum_exp(values):
+    peak = max(values)
+    return peak + math.log(sum(math.exp(v - peak) for v in values))
+
+
+def score_logit(messages):
+    """Log-odds of yes vs no for the first answer token."""
+    response = requests.post(
+        LLM_URL,
+        json={
+            "messages": messages,
+            "max_tokens": 1,
+            "temperature": 0,
+            "logprobs": True,
+            "top_logprobs": 20,
+            "chat_template_kwargs": {"enable_thinking": False},
+        },
+        timeout=900,
+    )
+    response.raise_for_status()
+    top = response.json()["choices"][0]["logprobs"]["content"][0]["top_logprobs"]
+    yes = [t["logprob"] for t in top if t["token"].strip().lower() == "yes"]
+    no = [t["logprob"] for t in top if t["token"].strip().lower() == "no"]
+    floor = min(t["logprob"] for t in top)
+    # An answer missing from the top 20 has at most the smallest listed probability.
+    yes_lp = log_sum_exp(yes) if yes else floor
+    no_lp = log_sum_exp(no) if no else floor
+    return yes_lp - no_lp
+
+
+def load_calibration():
+    try:
+        with open(CALIBRATION_PATH) as handle:
+            data = json.load(handle)
+        return float(data["a"]), float(data["b"])
+    except (OSError, ValueError, KeyError):
+        return 1.0, 0.0
+
+
+def to_probability(logit, calibration):
+    a, b = calibration
+    z = a * logit + b
+    return 1 / (1 + math.exp(-z)) if z >= 0 else math.exp(z) / (1 + math.exp(z))
+
+
+def score_project(conn, project_id, research_question):
+    current_hash = rq_hash(research_question)
+    calibration = load_calibration()
+    groups = load_project_groups(conn, project_id)
+    pending = [
+        (key, rows)
+        for key, rows in groups.items()
+        if any(row["relevance_rq_hash"] != current_hash for row in rows)
+    ]
+    if pending:
+        log(f"project {project_id}: {len(pending)} of {len(groups)} papers to score")
+    for done, (key, rows) in enumerate(pending, 1):
+        title = rows[0]["title"] or ""
+        try:
+            abstract = get_abstract(conn, key, title)
+        except requests.RequestException as exc:
+            log(f"abstract lookup failed, retrying next pass: {title[:60]!r}: {exc}")
+            continue
+        started = time.time()
+        logit = score_logit(build_messages(research_question, title, abstract))
+        with conn.cursor() as cur:
+            cur.execute(
+                """UPDATE search_results
+                      SET relevance_logit = %s, relevance_score = %s, relevance_model = %s,
+                          relevance_rq_hash = %s, relevance_scored_at = now()
+                    WHERE result_id = ANY(%s)""",
+                (
+                    logit,
+                    to_probability(logit, calibration),
+                    MODEL_NAME,
+                    current_hash,
+                    [row["result_id"] for row in rows],
+                ),
+            )
+        conn.commit()
+        log(
+            f"project {project_id} [{done}/{len(pending)}] logit={logit:+.2f} "
+            f"{'abstract' if abstract else 'title-only'} {time.time() - started:.0f}s {title[:70]!r}"
+        )
+    return len(pending)
+
+
+def active_projects(conn):
+    with conn.cursor() as cur:
+        cur.execute(
+            """SELECT project_id, research_question FROM projects
+                WHERE NOT archived AND coalesce(btrim(research_question), '') <> ''
+                ORDER BY project_id DESC"""
+        )
+        return cur.fetchall()
+
+
+def project_question(conn, project_id):
+    with conn.cursor() as cur:
+        cur.execute("SELECT research_question FROM projects WHERE project_id = %s", (project_id,))
+        row = cur.fetchone()
+    if not row or not (row[0] or "").strip():
+        sys.exit(f"project {project_id} has no research question set")
+    return row[0]
+
+
+# ---------------------------------------------------------------- calibration
+
+
+def calibrate(conn, project_id):
+    """Platt scaling on one project's human labels: Relevant = 1, Not Relevant = 0,
+    one data point per deduplicated paper. Only a and b change; the ranking does not."""
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute(
+            """SELECT sr.result_id, sr.datasource, sr.document->>'title' AS title,
+                      sr.document->>'url' AS url, sr.relevance_logit, c.label
+                 FROM search_results sr
+                 JOIN queries q ON q.query_id = sr.query_id
+                 JOIN categories c ON c.category_id = sr.category_id
+                WHERE q.project_id = %s AND sr.relevance_logit IS NOT NULL""",
+            (project_id,),
+        )
+        rows = cur.fetchall()
+    papers = {}
+    for row in rows:
+        label = row["label"].strip().lower()
+        if label not in ("relevant", "not relevant"):
+            continue
+        key = group_key(row)
+        positive = papers.get(key, (row["relevance_logit"], False))[1] or label == "relevant"
+        papers[key] = (row["relevance_logit"], positive)
+    xs = [x for x, _ in papers.values()]
+    ys = [1.0 if y else 0.0 for _, y in papers.values()]
+    if sum(ys) < 5 or len(ys) - sum(ys) < 5:
+        sys.exit(f"not enough labelled papers to calibrate ({int(sum(ys))} relevant of {len(ys)})")
+    a, b = 1.0, 0.0
+    for _ in range(100):  # Newton's method on the logistic log-likelihood
+        ga = gb = haa = hab = hbb = 0.0
+        for x, y in zip(xs, ys):
+            p = to_probability(x, (a, b))
+            w = p * (1 - p)
+            ga += (y - p) * x
+            gb += y - p
+            haa += w * x * x
+            hab += w * x
+            hbb += w
+        det = haa * hbb - hab * hab
+        if det <= 1e-12:
+            break
+        da = (hbb * ga - hab * gb) / det
+        db = (haa * gb - hab * ga) / det
+        a, b = a + da, b + db
+        if abs(da) < 1e-9 and abs(db) < 1e-9:
+            break
+    ranked = sorted(zip(xs, ys), key=lambda pair: -pair[0])
+    positives = sum(ys)
+    auc_hits = sum(
+        1 for i, (_, yi) in enumerate(ranked) if yi for _, yj in ranked[i + 1:] if not yj
+    )
+    auc = auc_hits / (positives * (len(ys) - positives))
+    found = {k: int(sum(y for _, y in ranked[:k])) for k in (20, 50, 100)}
+    os.makedirs(os.path.dirname(CALIBRATION_PATH), exist_ok=True)
+    with open(CALIBRATION_PATH, "w") as handle:
+        json.dump(
+            {
+                "a": a,
+                "b": b,
+                "project_id": project_id,
+                "papers": len(ys),
+                "relevant": int(positives),
+                "auc": round(auc, 4),
+                "relevant_in_top": found,
+                "model": MODEL_NAME,
+                "prompt_version": PROMPT_VERSION,
+                "fitted_at": datetime.now().isoformat(timespec="seconds"),
+            },
+            handle,
+            indent=2,
+        )
+    log(f"calibration a={a:.4f} b={b:.4f} from {len(ys)} papers ({int(positives)} relevant), "
+        f"AUC={auc:.3f}, relevant in top 20/50/100: {found}")
+
+
+def rescale(conn):
+    calibration = load_calibration()
+    with conn.cursor() as cur:
+        cur.execute("SELECT DISTINCT relevance_logit FROM search_results WHERE relevance_logit IS NOT NULL")
+        logits = [row[0] for row in cur.fetchall()]
+        for logit in logits:
+            cur.execute(
+                "UPDATE search_results SET relevance_score = %s WHERE relevance_logit = %s",
+                (to_probability(logit, calibration), logit),
+            )
+    conn.commit()
+    log(f"rescaled {len(logits)} distinct scores with a={calibration[0]:.4f} b={calibration[1]:.4f}")
+
+
+# ---------------------------------------------------------------- main
+
+
+def loop():
+    while True:
+        try:
+            conn = connect()
+            try:
+                ensure_schema(conn)
+                scored = sum(score_project(conn, pid, rq) for pid, rq in active_projects(conn))
+            finally:
+                conn.close()
+        except (psycopg2.Error, requests.RequestException) as exc:
+            # Fail open: nothing is written for a paper unless it was scored, so a down
+            # database or model server just delays suggestions until the next pass.
+            log(f"pass failed, retrying in {IDLE_SLEEP_SECONDS}s: {exc}")
+            scored = 0
+        if not scored:
+            time.sleep(IDLE_SLEEP_SECONDS)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("command", choices=["loop", "score", "calibrate", "rescale"])
+    parser.add_argument("--project", type=int)
+    args = parser.parse_args()
+    if args.command == "loop":
+        return loop()
+    conn = connect()
+    ensure_schema(conn)
+    if args.command == "score":
+        score_project(conn, args.project, project_question(conn, args.project))
+    elif args.command == "calibrate":
+        calibrate(conn, args.project)
+    elif args.command == "rescale":
+        rescale(conn)
+
+
+if __name__ == "__main__":
+    main()

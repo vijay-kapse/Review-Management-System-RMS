@@ -29,6 +29,9 @@ public class Project implements Serializable {
     @Column(nullable = false)
     private String description;
 
+    @Column(columnDefinition = "text")
+    private String researchQuestion;
+
     @Builder.Default
     @Column(nullable = false, columnDefinition = "boolean default false")
     private boolean archived = false;

@@ -2,6 +2,7 @@ export type projectType = {
   projectId: number;
   projectName: string;
   description: string;
+  researchQuestion?: string | null;
   owner: string;
   collections: number[];
   archived?: boolean;
@@ -69,6 +70,8 @@ export type resultType = {
   curationSortPriority?: number;
   resultId: number;
   document: resultDocumentType;
+  relevanceScore?: number | null;
+  relevanceScoredAt?: string | null;
 };
 
 export type projectResultOccurrenceType = resultType & {

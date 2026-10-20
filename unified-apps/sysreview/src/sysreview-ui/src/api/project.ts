@@ -47,6 +47,7 @@ interface updateProjectBody {
   projectId: number;
   projectName: string;
   description: string;
+  researchQuestion?: string | null;
 }
 type returnUpdatedProject = (data: updateProjectBody) => Promise<projectType>;
 const updateProject: returnUpdatedProject = async (data) => {
@@ -54,6 +55,7 @@ const updateProject: returnUpdatedProject = async (data) => {
   const body = {
     projectName: data.projectName,
     description: data.description,
+    researchQuestion: data.researchQuestion ?? "",
   };
 
   console.log("Updating project", body);

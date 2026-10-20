@@ -14,6 +14,7 @@ public class ProjectDto {
     private long projectId;
     private String projectName;
     private String description;
+    private String researchQuestion;
     private String owner;
     private Collection<String> collaborators;
     private boolean archived;

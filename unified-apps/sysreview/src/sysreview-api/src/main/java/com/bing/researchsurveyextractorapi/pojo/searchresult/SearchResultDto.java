@@ -14,4 +14,6 @@ public class SearchResultDto {
     private Document document;
     private int priority;
     private DatasourceApi datasource;
+    private Double relevanceScore;
+    private String relevanceScoredAt;
 }
