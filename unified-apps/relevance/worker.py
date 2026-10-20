@@ -49,6 +49,8 @@ IDLE_SLEEP_SECONDS = 300
 ABSTRACT_RETRY_DAYS = 14
 MAX_ABSTRACT_WORDS = 350
 MIN_TITLE_MATCH = 0.92
+MAX_LOOKUP_FAILURES = 3
+DOI_PATTERN = re.compile(r"(10\.\d{4,9}/[^\s?#&]+)")
 
 SYSTEM_PROMPT = (
     "You screen papers for a systematic literature review. A paper is relevant only if it "
@@ -157,29 +159,69 @@ def reconstruct_abstract(inverted_index):
     return " ".join(positions[i] for i in sorted(positions))
 
 
-def fetch_openalex(title):
-    """Returns (doi, abstract) for a confident title match, (None, None) when OpenAlex has
-    no such paper. Raises on network/HTTP errors so the caller retries later instead of
-    caching a false miss."""
-    response = requests.get(
-        "https://api.openalex.org/works",
-        params={"search": title, "per_page": 5, "select": "title,doi,abstract_inverted_index"},
-        timeout=30,
+class LookupUnavailable(Exception):
+    """A metadata service kept failing after retries; try this paper again on a later pass."""
+
+
+def fetch_json(url, params=None):
+    """GET with retries. Returns parsed JSON, or None for a 404. Rate limits wait for the
+    service's Retry-After (capped); server errors, timeouts and non-JSON error pages back
+    off and retry. Raises LookupUnavailable when every attempt fails."""
+    delays = [5, 15, 45, 120]
+    for attempt in range(len(delays) + 1):
+        wait = None
+        try:
+            response = requests.get(url, params=params, timeout=30)
+            if response.status_code == 404:
+                return None
+            if response.status_code == 429 or response.status_code >= 500:
+                retry_after = response.headers.get("Retry-After", "")
+                wait = min(int(retry_after), 300) if retry_after.isdigit() else None
+                error = f"HTTP {response.status_code}"
+            else:
+                response.raise_for_status()
+                return response.json()
+        except (requests.RequestException, ValueError) as exc:
+            error = str(exc)
+        if attempt == len(delays):
+            raise LookupUnavailable(f"{url}: {error}")
+        time.sleep(wait if wait is not None else delays[attempt])
+    return None
+
+
+def find_doi(title, urls):
+    for url in urls:
+        match = DOI_PATTERN.search(url or "")
+        if match:
+            return match.group(1).rstrip(".")
+    data = fetch_json(
+        "https://api.crossref.org/works",
+        {"rows": 5, "select": "DOI,title", "query.bibliographic": title},
     )
-    response.raise_for_status()
     wanted = normalize_title(title)
-    best, best_ratio = None, 0.0
-    for work in response.json().get("results", []):
-        ratio = difflib.SequenceMatcher(None, wanted, normalize_title(work.get("title"))).ratio()
-        if ratio > best_ratio:
-            best, best_ratio = work, ratio
-    if not best or best_ratio < MIN_TITLE_MATCH:
-        return None, None
-    abstract = reconstruct_abstract(best.get("abstract_inverted_index")) or None
-    return best.get("doi"), abstract
+    for item in (data or {}).get("message", {}).get("items", []):
+        candidate = normalize_title((item.get("title") or [""])[0])
+        if difflib.SequenceMatcher(None, wanted, candidate).ratio() >= MIN_TITLE_MATCH:
+            return item["DOI"]
+    return None
 
 
-def get_abstract(conn, title_key, title):
+def fetch_abstract(doi):
+    """OpenAlex by DOI first (free; searches are metered), then Crossref's deposited abstract."""
+    work = fetch_json(
+        f"https://api.openalex.org/works/doi:{doi}", {"select": "abstract_inverted_index"}
+    )
+    abstract = reconstruct_abstract((work or {}).get("abstract_inverted_index"))
+    if abstract:
+        return abstract, "openalex"
+    record = fetch_json(f"https://api.crossref.org/works/{urllib.parse.quote(doi)}")
+    jats = (record or {}).get("message", {}).get("abstract") or ""
+    abstract = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", jats)).strip()
+    abstract = re.sub(r"^Abstract\s+", "", abstract)
+    return (abstract, "crossref") if abstract else (None, None)
+
+
+def get_abstract(conn, title_key, title, urls):
     with conn.cursor() as cur:
         cur.execute(
             "SELECT abstract, fetched_at FROM relevance_abstracts WHERE title_key = %s",
@@ -192,15 +234,16 @@ def get_abstract(conn, title_key, title):
         return cached[0]
     if not title:
         return None
-    doi, abstract = fetch_openalex(title)
+    doi = find_doi(title, urls)
+    abstract, source = fetch_abstract(doi) if doi else (None, None)
     with conn.cursor() as cur:
         cur.execute(
             """INSERT INTO relevance_abstracts (title_key, doi, abstract, source, fetched_at)
-               VALUES (%s, %s, %s, 'openalex', now())
+               VALUES (%s, %s, %s, %s, now())
                ON CONFLICT (title_key) DO UPDATE
                   SET doi = EXCLUDED.doi, abstract = EXCLUDED.abstract,
                       source = EXCLUDED.source, fetched_at = EXCLUDED.fetched_at""",
-            (title_key, doi, abstract),
+            (title_key, doi, abstract, source),
         )
     conn.commit()
     return abstract
@@ -324,12 +367,20 @@ def score_project(conn, project_id, research_question):
     ]
     if pending:
         log(f"project {project_id}: {len(pending)} of {len(groups)} papers to score")
+    lookup_failures = 0
     for done, (key, rows) in enumerate(pending, 1):
         title = rows[0]["title"] or ""
         try:
-            abstract = get_abstract(conn, key, title)
-        except requests.RequestException as exc:
-            log(f"abstract lookup failed, retrying next pass: {title[:60]!r}: {exc}")
+            abstract = get_abstract(conn, key, title, [row["url"] for row in rows])
+            lookup_failures = 0
+        except LookupUnavailable as exc:
+            # Never score without the abstract because a service was down; and stop the
+            # pass if it stays down rather than skipping through the whole project.
+            lookup_failures += 1
+            log(f"abstract lookup failed, will retry: {title[:60]!r}: {exc}")
+            if lookup_failures >= MAX_LOOKUP_FAILURES:
+                log(f"project {project_id}: lookups keep failing, pausing this pass")
+                break
             continue
         started = time.time()
         if template is None:
@@ -479,7 +530,7 @@ def loop():
                 scored = sum(score_project(conn, pid, rq) for pid, rq in active_projects(conn))
             finally:
                 conn.close()
-        except (psycopg2.Error, requests.RequestException) as exc:
+        except (psycopg2.Error, requests.RequestException, LookupUnavailable) as exc:
             # Fail open: nothing is written for a paper unless it was scored, so a down
             # database or model server just delays suggestions until the next pass.
             log(f"pass failed, retrying in {IDLE_SLEEP_SECONDS}s: {exc}")

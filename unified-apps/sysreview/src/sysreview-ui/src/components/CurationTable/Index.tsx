@@ -143,7 +143,9 @@ const CurationTable: FC<CurationTableProps> = ({
           </Badge>
         );
       },
-      width: "9%",
+      // Fixed px: the label, sort arrow and cell padding need ~135px, and a % width
+      // (which overrides minWidth here) clipped "Suggested" on both sides.
+      width: "145px",
       center: true,
       sortable: true,
     });
@@ -170,7 +172,8 @@ const CurationTable: FC<CurationTableProps> = ({
           {(res as any).duplicateCount || 1}
         </Badge>
       ),
-      width: "8%",
+      // Same as Suggested: a % width clipped "Instances" plus its sort arrow.
+      width: "120px",
       center: true,
       sortable: true,
     });
