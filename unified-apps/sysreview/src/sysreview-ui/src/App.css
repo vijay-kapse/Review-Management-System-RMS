@@ -2460,3 +2460,56 @@ a {
     display: none;
   }
 }
+
+.paper-blocks {
+  display: grid;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+.paper-block {
+  border-left: 4px solid var(--block-accent);
+  background: var(--block-tint);
+  border-radius: 0 6px 6px 0;
+  padding: 0.5rem 0.9rem;
+  --block-accent: #6c757d;
+  --block-tint: rgba(108, 117, 125, 0.07);
+}
+.paper-block-title { --block-accent: #1d4ed8; --block-tint: rgba(29, 78, 216, 0.07); }
+.paper-block-abstract { --block-accent: #0f766e; --block-tint: rgba(15, 118, 110, 0.07); }
+.paper-block-keywords { --block-accent: #7c3aed; --block-tint: rgba(124, 58, 237, 0.07); }
+.paper-block-why { --block-accent: #b45309; --block-tint: rgba(180, 83, 9, 0.07); }
+.paper-block-label {
+  color: var(--block-accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.paper-block-body {
+  color: #1f2937;
+  line-height: 1.5;
+  max-width: 100ch;
+}
+.paper-keyword {
+  display: inline-block;
+  background: rgba(124, 58, 237, 0.12);
+  color: #5b21b6;
+  border-radius: 999px;
+  padding: 0.05rem 0.65rem;
+  margin: 0.1rem 0.3rem 0.1rem 0;
+  font-size: 0.85rem;
+}
+.paper-note { color: #6b7280; font-size: 0.75rem; margin-top: 0.25rem; }
+.match-mark { color: inherit; padding: 0 0.1rem; border-radius: 3px; }
+.paper-matches { margin-top: 0.25rem; }
+.paper-match-chip {
+  display: inline-block;
+  border-radius: 4px;
+  padding: 0 0.4rem;
+  margin: 0.1rem 0.25rem 0.1rem 0;
+  font-size: 0.85rem;
+}
+.scoring-progress { margin: 0.5rem 0 0.75rem; font-size: 0.9rem; color: #374151; }
+.scoring-progress .progress { height: 0.5rem; margin-top: 0.3rem; }
+.rank-cell { font-variant-numeric: tabular-nums; line-height: 1.15; text-align: center; }
+.rank-cell small { display: block; color: #6b7280; font-size: 0.7rem; }

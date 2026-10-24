@@ -2,8 +2,10 @@ package com.bing.researchsurveyextractorapi.controllers;
 
 import com.bing.researchsurveyextractorapi.mapper.ProjectMapper;
 import com.bing.researchsurveyextractorapi.models.User;
+import com.bing.researchsurveyextractorapi.pojo.paperdetails.PaperDetailsDto;
 import com.bing.researchsurveyextractorapi.pojo.project.ProjectDto;
 import com.bing.researchsurveyextractorapi.pojo.project.ProjectRequest;
+import com.bing.researchsurveyextractorapi.service.PaperDetailsService;
 import com.bing.researchsurveyextractorapi.service.ProjectService;
 import com.bing.researchsurveyextractorapi.util.AuthUtils;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,7 @@ import java.util.stream.Collectors;
 public class ProjectController {
 
     private final ProjectService projectService;
+    private final PaperDetailsService paperDetailsService;
 
     @GetMapping("")
     public List<ProjectDto> getAllProjects() {
@@ -30,6 +33,13 @@ public class ProjectController {
     @GetMapping("/{projectId}")
     public ProjectDto getProject(@PathVariable long projectId) {
         return ProjectMapper.toDto(projectService.loadProjectById(projectId));
+    }
+
+    @GetMapping("/{projectId}/paper-details")
+    public List<PaperDetailsDto> getPaperDetails(@PathVariable long projectId) {
+        // Loading the project first keeps the same existence/access behaviour as the other endpoints.
+        projectService.loadProjectById(projectId);
+        return paperDetailsService.loadForProject(projectId);
     }
 
     @PostMapping("")

@@ -74,6 +74,13 @@ export type resultType = {
   relevanceScoredAt?: string | null;
 };
 
+export type paperDetailsType = {
+  titleKey: string;
+  abstractText: string | null;
+  keywords: string[];
+  abstractSource: string | null;
+};
+
 export type projectResultOccurrenceType = resultType & {
   queryId: number;
   queryName: string;

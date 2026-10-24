@@ -14,6 +14,7 @@ Usage:
     python worker.py score --project 91512    # one pass over one project, archived or not
     python worker.py calibrate --project 91512  # fit a, b on that project's human labels
     python worker.py rescale                  # recompute relevance_score from stored logits
+    python worker.py backfill-keywords        # fetch OpenAlex keywords for cached abstracts (no model calls)
 
 The score is a suggestion only: this worker never touches categories.
 """
@@ -103,6 +104,8 @@ def ensure_schema(conn):
                    fetched_at  timestamp NOT NULL
                )"""
         )
+        # JSON array of OpenAlex keyword strings; NULL = not fetched yet, '[]' = none exist.
+        cur.execute("ALTER TABLE relevance_abstracts ADD COLUMN IF NOT EXISTS keywords text")
     conn.commit()
 
 
@@ -206,19 +209,30 @@ def find_doi(title, urls):
     return None
 
 
+def openalex_keywords(work):
+    """OpenAlex's machine-assigned keywords, falling back to its topic names."""
+    names = [item.get("display_name") for item in (work or {}).get("keywords") or []]
+    if not any(names):
+        names = [item.get("display_name") for item in (work or {}).get("topics") or []]
+    return [name for name in names if name][:12]
+
+
 def fetch_abstract(doi):
-    """OpenAlex by DOI first (free; searches are metered), then Crossref's deposited abstract."""
+    """OpenAlex by DOI first (free; searches are metered), then Crossref's deposited abstract.
+    Returns (abstract, source, keywords)."""
     work = fetch_json(
-        f"https://api.openalex.org/works/doi:{doi}", {"select": "abstract_inverted_index"}
+        f"https://api.openalex.org/works/doi:{doi}",
+        {"select": "abstract_inverted_index,keywords,topics"},
     )
+    keywords = openalex_keywords(work)
     abstract = reconstruct_abstract((work or {}).get("abstract_inverted_index"))
     if abstract:
-        return abstract, "openalex"
+        return abstract, "openalex", keywords
     record = fetch_json(f"https://api.crossref.org/works/{urllib.parse.quote(doi)}")
     jats = (record or {}).get("message", {}).get("abstract") or ""
     abstract = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", jats)).strip()
     abstract = re.sub(r"^Abstract\s+", "", abstract)
-    return (abstract, "crossref") if abstract else (None, None)
+    return (abstract, "crossref", keywords) if abstract else (None, None, keywords)
 
 
 def get_abstract(conn, title_key, title, urls):
@@ -235,15 +249,16 @@ def get_abstract(conn, title_key, title, urls):
     if not title:
         return None
     doi = find_doi(title, urls)
-    abstract, source = fetch_abstract(doi) if doi else (None, None)
+    abstract, source, keywords = fetch_abstract(doi) if doi else (None, None, None)
     with conn.cursor() as cur:
         cur.execute(
-            """INSERT INTO relevance_abstracts (title_key, doi, abstract, source, fetched_at)
-               VALUES (%s, %s, %s, %s, now())
+            """INSERT INTO relevance_abstracts (title_key, doi, abstract, source, keywords, fetched_at)
+               VALUES (%s, %s, %s, %s, %s, now())
                ON CONFLICT (title_key) DO UPDATE
                   SET doi = EXCLUDED.doi, abstract = EXCLUDED.abstract,
-                      source = EXCLUDED.source, fetched_at = EXCLUDED.fetched_at""",
-            (title_key, doi, abstract, source),
+                      source = EXCLUDED.source, keywords = EXCLUDED.keywords,
+                      fetched_at = EXCLUDED.fetched_at""",
+            (title_key, doi, abstract, source, json.dumps(keywords) if keywords is not None else None),
         )
     conn.commit()
     return abstract
@@ -518,6 +533,34 @@ def rescale(conn):
     log(f"rescaled {len(logits)} distinct scores with a={calibration[0]:.4f} b={calibration[1]:.4f}")
 
 
+def backfill_keywords(conn):
+    """Adds OpenAlex keywords to abstracts cached before the keywords column existed.
+    Only reads OpenAlex by DOI; never touches scores or the model."""
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT title_key, doi FROM relevance_abstracts WHERE keywords IS NULL AND doi IS NOT NULL"
+        )
+        pending = cur.fetchall()
+    log(f"backfilling keywords for {len(pending)} cached papers")
+    for done, (title_key, doi) in enumerate(pending, 1):
+        try:
+            work = fetch_json(
+                f"https://api.openalex.org/works/doi:{doi}", {"select": "keywords,topics"}
+            )
+        except LookupUnavailable as exc:
+            log(f"keyword lookup failed, will retry next run: {doi}: {exc}")
+            continue
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE relevance_abstracts SET keywords = %s WHERE title_key = %s",
+                (json.dumps(openalex_keywords(work)), title_key),
+            )
+        conn.commit()
+        if done % 25 == 0:
+            log(f"keywords {done}/{len(pending)}")
+        time.sleep(0.2)
+
+
 # ---------------------------------------------------------------- main
 
 
@@ -541,7 +584,7 @@ def loop():
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("command", choices=["loop", "score", "calibrate", "rescale"])
+    parser.add_argument("command", choices=["loop", "score", "calibrate", "rescale", "backfill-keywords"])
     parser.add_argument("--project", type=int)
     args = parser.parse_args()
     if args.command == "loop":
@@ -554,6 +597,8 @@ def main():
         calibrate(conn, args.project)
     elif args.command == "rescale":
         rescale(conn)
+    elif args.command == "backfill-keywords":
+        backfill_keywords(conn)
 
 
 if __name__ == "__main__":

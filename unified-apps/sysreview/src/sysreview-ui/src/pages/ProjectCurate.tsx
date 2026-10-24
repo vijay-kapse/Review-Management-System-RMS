@@ -7,9 +7,11 @@ import {
 } from "react-bootstrap";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
+import { ProgressBar } from "react-bootstrap";
 import {
   categorySetType,
   datasourceKeyType,
+  paperDetailsType,
   projectResultOccurrenceType,
   projectResultType,
   projectType,
@@ -17,6 +19,8 @@ import {
   resultType,
 } from "../api/types";
 import { getProject } from "../api/project";
+import { getPaperDetails } from "../api/paperDetails";
+import { buildQueryTerms } from "../utils/matchHighlight";
 import { getQueries, updateQuery } from "../api/query";
 import { getCategories } from "../api/category";
 import {
@@ -61,6 +65,9 @@ const ProjectCurate = () => {
   );
   const [categories, setCategories] = useState<categorySetType>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [paperDetails, setPaperDetails] = useState<
+    Map<string, paperDetailsType>
+  >(new Map());
   const [showBulkActionModal, setShowBulkActionModal] = useState(false);
 
   const navigate = useNavigate();
@@ -88,6 +95,14 @@ const ProjectCurate = () => {
     [results],
   );
 
+  // Abstracts/keywords are a convenience: if they fail to load the table works without them.
+  const loadPaperDetails = (id: number) =>
+    getPaperDetails(id)
+      .then((rows) =>
+        setPaperDetails(new Map(rows.map((row) => [row.titleKey, row]))),
+      )
+      .catch((e) => console.log("Paper details unavailable", e));
+
   const loadProjectCuration = (id: number) => {
     setIsLoading(true);
     return Promise.all([getProject(id), getCategories(id), getQueries(id)])
@@ -102,6 +117,7 @@ const ProjectCurate = () => {
         setResults(getProjectCurationResults(queryData, categorySet));
         setFilteredResults([]);
         setSelectedSources([]);
+        loadPaperDetails(id);
       })
       .catch((e) => {
         alert("Failed to fetch project curation data");
@@ -226,10 +242,26 @@ const ProjectCurate = () => {
         );
         setResults((current) => withRelevanceScores(current, scores));
         setFilteredResults((current) => withRelevanceScores(current, scores));
+        return loadPaperDetails(projectId);
       }),
   );
 
   const visibleResults = selectedSources.length ? filteredResults : results;
+
+  const queryTerms = useMemo(
+    () => buildQueryTerms(project.researchQuestion),
+    [project.researchQuestion],
+  );
+  const scoredCount = useMemo(
+    () =>
+      results.filter((result) => typeof result.relevanceScore === "number")
+        .length,
+    [results],
+  );
+  const scoringInProgress =
+    !!project.researchQuestion?.trim() &&
+    results.length > 0 &&
+    scoredCount < results.length;
 
   const categoryCounts = useMemo(() => {
     const categoryList = Object.values(categories)
@@ -382,8 +414,25 @@ const ProjectCurate = () => {
             </section>
 
             <section className="curation-table-panel">
+              {scoringInProgress && (
+                <div className="scoring-progress">
+                  Scoring papers against the research question:{" "}
+                  <strong>
+                    {scoredCount} of {results.length}
+                  </strong>{" "}
+                  done. Suggested order fills in as papers are scored; this
+                  page updates by itself.
+                  <ProgressBar
+                    now={(scoredCount / results.length) * 100}
+                    animated
+                  />
+                </div>
+              )}
               <CurationTable
                 results={visibleResults}
+                rankAmong={results}
+                details={paperDetails}
+                terms={queryTerms}
                 categories={categories}
                 analyse={handleExtract}
                 updateCategory={updateDocCategory}

@@ -1,8 +1,9 @@
 import { FC, useMemo, useState } from "react";
-import { categorySetType, resultType } from "../../api/types";
+import { categorySetType, paperDetailsType, resultType } from "../../api/types";
 import DataTable, { TableColumn } from "react-data-table-component";
 import { FiExternalLink } from "react-icons/fi";
-import ResultDetails from "../ResultsTable/ResultDetails";
+import ResultDetails, { ResultDetailsExtras } from "../ResultsTable/ResultDetails";
+import { queryTerm, rankByScore } from "../../utils/matchHighlight";
 import { Badge, Dropdown } from "react-bootstrap";
 import { MdOutlineManageSearch } from "react-icons/md";
 import { CategorySymbol } from "../CategoryLabel";
@@ -18,6 +19,12 @@ interface CurationTableProps {
   setSelectedRows: (p: resultType[]) => void;
   showProjectColumns?: boolean;
   showDeduplication?: boolean;
+  // Cached abstracts/keywords by normalized title, and the research question's content words.
+  details?: Map<string, paperDetailsType>;
+  terms?: queryTerm[];
+  // Rows the suggested rank is computed over (the whole project even when a source filter
+  // narrows what is shown); defaults to the rows shown.
+  rankAmong?: resultType[];
 }
 
 const CurationTable: FC<CurationTableProps> = ({
@@ -28,7 +35,20 @@ const CurationTable: FC<CurationTableProps> = ({
   setSelectedRows,
   showProjectColumns = false,
   showDeduplication = false,
+  details,
+  terms,
+  rankAmong,
 }) => {
+  // Order is relative to every scored paper in the project, not just the rows on screen.
+  const ranking = useMemo(
+    () => rankByScore((rankAmong ?? results).map((row) => row.relevanceScore)),
+    [rankAmong, results]
+  );
+  const rankFor = (row: resultType) =>
+    typeof row.relevanceScore === "number"
+      ? { rank: ranking.rankOf(row.relevanceScore), total: ranking.total }
+      : null;
+  const detailsProps: ResultDetailsExtras = { details, terms, rank: rankFor };
   const categoriesByPriority = Object.values(categories).filter(
     (category, index, allCategories) =>
       allCategories.findIndex((cat) => cat.priority === category.priority) ===
@@ -119,33 +139,35 @@ const CurationTable: FC<CurationTableProps> = ({
   columns.push({
       id: "suggested",
       name: (
-        <span title="Machine-suggested relevance to the project's research question and inclusion criteria (local Qwen3.5-9B model). A suggestion only; it never changes the category.">
-          Suggested
+        <span title="Suggested review order from a local model's reading of each paper against the project's research question. Rank 1 = look first. An ordering aid only: it never changes the category and is not a verdict on relevance.">
+          Suggested order
         </span>
       ),
       // Unscored papers sort below every scored one.
       selector: (row) => row.relevanceScore ?? -1,
       cell: (res) => {
-        const score = res.relevanceScore;
-        if (typeof score !== "number") {
+        const position = rankFor(res);
+        if (!position) {
           return (
             <span className="text-muted" title="Not scored yet. Set a research question in Project settings; scoring runs in the background.">
               —
             </span>
           );
         }
-        const percent = Math.round(score * 100);
-        const bg = score >= 0.5 ? "success" : score >= 0.15 ? "warning" : "secondary";
-        const label = score >= 0.5 ? "Likely relevant" : score >= 0.15 ? "Possibly relevant" : "Unlikely";
+        const topPercent = Math.max(1, Math.ceil((position.rank / position.total) * 100));
         return (
-          <Badge bg={bg} title={`${label}: estimated ${percent}% chance of being relevant`}>
-            {percent < 1 ? "<1" : percent}%
-          </Badge>
+          <div
+            className="rank-cell"
+            title={`Rank ${position.rank} of ${position.total} scored papers (top ${topPercent}%). Open the row to see why.`}
+          >
+            <strong>#{position.rank}</strong>
+            <small>of {position.total}</small>
+          </div>
         );
       },
       // Fixed px: the label, sort arrow and cell padding need ~135px, and a % width
       // (which overrides minWidth here) clipped "Suggested" on both sides.
-      width: "145px",
+      width: "150px",
       center: true,
       sortable: true,
     });
@@ -240,6 +262,7 @@ const CurationTable: FC<CurationTableProps> = ({
       subHeader
       expandableRows
       expandableRowsComponent={ResultDetails}
+      expandableRowsComponentProps={detailsProps}
       paginationResetDefaultPage={resetPaginationToggle}
       subHeaderComponent={subHeaderComponentMemo}
       fixedHeader

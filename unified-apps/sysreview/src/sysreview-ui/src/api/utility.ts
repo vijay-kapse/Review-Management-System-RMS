@@ -227,7 +227,7 @@ export const getPaperUrl = (result: resultType) => {
   )}&origin=inward`;
 };
 
-const normalizeResultTitle = (title?: string) =>
+export const normalizeResultTitle = (title?: string) =>
   (title || "")
     .trim()
     .replace(/[.\s]+$/g, "")
