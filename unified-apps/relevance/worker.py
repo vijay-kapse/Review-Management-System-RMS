@@ -92,19 +92,24 @@ def connect():
     )
 
 
+SCHEMA_COLUMNS = (
+    ("projects", "research_question", "text"),
+    ("search_results", "relevance_score", "float8"),
+    ("search_results", "relevance_logit", "float8"),
+    ("search_results", "relevance_model", "varchar(255)"),
+    ("search_results", "relevance_rq_hash", "varchar(255)"),
+    ("search_results", "relevance_scored_at", "timestamp"),
+    # JSON array of OpenAlex keyword strings; NULL = not fetched yet, '[]' = none exist.
+    ("relevance_abstracts", "keywords", "text"),
+)
+
+
 def ensure_schema(conn):
     # TRACE's entities map the same columns (ddl-auto=update); creating them here as well
     # means the worker does not depend on the order the two are deployed in.
+    # ALTER TABLE takes an exclusive lock even when the column already exists, which blocks
+    # TRACE's reads and deadlocked a concurrent scoring run, so only alter what is missing.
     with conn.cursor() as cur:
-        cur.execute("ALTER TABLE projects ADD COLUMN IF NOT EXISTS research_question text")
-        for column, kind in (
-            ("relevance_score", "float8"),
-            ("relevance_logit", "float8"),
-            ("relevance_model", "varchar(255)"),
-            ("relevance_rq_hash", "varchar(255)"),
-            ("relevance_scored_at", "timestamp"),
-        ):
-            cur.execute(f"ALTER TABLE search_results ADD COLUMN IF NOT EXISTS {column} {kind}")
         cur.execute(
             """CREATE TABLE IF NOT EXISTS relevance_abstracts (
                    title_key   text PRIMARY KEY,
@@ -114,8 +119,15 @@ def ensure_schema(conn):
                    fetched_at  timestamp NOT NULL
                )"""
         )
-        # JSON array of OpenAlex keyword strings; NULL = not fetched yet, '[]' = none exist.
-        cur.execute("ALTER TABLE relevance_abstracts ADD COLUMN IF NOT EXISTS keywords text")
+        cur.execute(
+            """SELECT table_name, column_name FROM information_schema.columns
+                WHERE table_schema = current_schema()
+                  AND table_name IN ('projects', 'search_results', 'relevance_abstracts')"""
+        )
+        existing = set(cur.fetchall())
+        for table, column, kind in SCHEMA_COLUMNS:
+            if (table, column) not in existing:
+                cur.execute(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {column} {kind}")
     conn.commit()
 
 
