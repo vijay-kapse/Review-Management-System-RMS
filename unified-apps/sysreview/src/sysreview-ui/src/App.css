@@ -2513,3 +2513,4 @@ a {
 .scoring-progress .progress { height: 0.5rem; margin-top: 0.3rem; }
 .rank-cell { font-variant-numeric: tabular-nums; line-height: 1.15; text-align: center; }
 .rank-cell small { display: block; color: #6b7280; font-size: 0.7rem; }
+.verdict-badge { display: block; margin: 0 auto 0.15rem; font-weight: 600; white-space: normal; }

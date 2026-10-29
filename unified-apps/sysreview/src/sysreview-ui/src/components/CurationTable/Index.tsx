@@ -4,6 +4,7 @@ import DataTable, { TableColumn } from "react-data-table-component";
 import { FiExternalLink } from "react-icons/fi";
 import ResultDetails, { ResultDetailsExtras } from "../ResultsTable/ResultDetails";
 import { queryTerm, rankByScore } from "../../utils/matchHighlight";
+import { VERDICT_BADGE, verdictFor } from "../../utils/relevanceVerdict";
 import { Badge, Dropdown } from "react-bootstrap";
 import { MdOutlineManageSearch } from "react-icons/md";
 import { CategorySymbol } from "../CategoryLabel";
@@ -139,8 +140,8 @@ const CurationTable: FC<CurationTableProps> = ({
   columns.push({
       id: "suggested",
       name: (
-        <span title="Suggested review order from a local model's reading of each paper against the project's research question. Rank 1 = look first. An ordering aid only: it never changes the category and is not a verdict on relevance.">
-          Suggested order
+        <span title="A local model's reading of each paper (title and abstract) against the project's research question: its rating, and the order to review papers in (#1 = look first). Reliable for ruling papers out, weak at confirming them. A suggestion only: it never changes the category.">
+          Model rating
         </span>
       ),
       // Unscored papers sort below every scored one.
@@ -155,19 +156,26 @@ const CurationTable: FC<CurationTableProps> = ({
           );
         }
         const topPercent = Math.max(1, Math.ceil((position.rank / position.total) * 100));
+        const verdict = verdictFor(res.relevanceLogit);
         return (
           <div
             className="rank-cell"
-            title={`Rank ${position.rank} of ${position.total} scored papers (top ${topPercent}%). Open the row to see why.`}
+            title={`${verdict ? `${verdict.label}: the model answered yes with ${Math.round(verdict.yesConfidence * 100)}% confidence. ` : ""}Rank ${position.rank} of ${position.total} scored papers (top ${topPercent}%). Open the row to see why.`}
           >
-            <strong>#{position.rank}</strong>
-            <small>of {position.total}</small>
+            {verdict && (
+              <Badge bg={VERDICT_BADGE[verdict.tone]} className="verdict-badge">
+                {verdict.label}
+              </Badge>
+            )}
+            <small>
+              #{position.rank} of {position.total}
+            </small>
           </div>
         );
       },
       // Fixed px: the label, sort arrow and cell padding need ~135px, and a % width
       // (which overrides minWidth here) clipped "Suggested" on both sides.
-      width: "150px",
+      width: "170px",
       center: true,
       sortable: true,
     });

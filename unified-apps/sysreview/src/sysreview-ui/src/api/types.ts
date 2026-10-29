@@ -71,6 +71,7 @@ export type resultType = {
   resultId: number;
   document: resultDocumentType;
   relevanceScore?: number | null;
+  relevanceLogit?: number | null;
   relevanceScoredAt?: string | null;
 };
 

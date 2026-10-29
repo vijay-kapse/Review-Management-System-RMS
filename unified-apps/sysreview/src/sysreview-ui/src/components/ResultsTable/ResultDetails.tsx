@@ -8,6 +8,7 @@ import {
   matchSummary,
   queryTerm,
 } from "../../utils/matchHighlight";
+import { verdictFor } from "../../utils/relevanceVerdict";
 
 export type ResultDetailsExtras = {
   // Cached abstract/keywords by normalized title; empty where the page has none.
@@ -16,6 +17,14 @@ export type ResultDetailsExtras = {
   terms?: queryTerm[];
   // Where this paper sits in the suggested review order, when it has been scored.
   rank?: (row: resultType) => { rank: number; total: number } | null;
+};
+
+const SOURCE_LABEL: Record<string, string> = {
+  openalex: "OpenAlex",
+  crossref: "Crossref",
+  sciencedirect: "ScienceDirect (Elsevier)",
+  ieee: "IEEE Xplore",
+  semanticscholar: "Semantic Scholar",
 };
 
 const KIND_LABEL = {
@@ -70,6 +79,7 @@ const ResultDetails: FC<
   );
   const cached = details?.get(normalizeResultTitle(document.title));
   const position = rank?.(data);
+  const verdict = verdictFor(data.relevanceLogit);
   const matches = matchSummary(
     [document.title, cached?.abstractText, ...(cached?.keywords || [])],
     terms
@@ -84,7 +94,14 @@ const ResultDetails: FC<
             </Block>
             <Block label="Abstract" tone="abstract">
               {cached?.abstractText ? (
-                <Highlighted text={cached.abstractText} terms={terms} />
+                <>
+                  <Highlighted text={cached.abstractText} terms={terms} />
+                  {cached.abstractSource && (
+                    <div className="paper-note">
+                      From {SOURCE_LABEL[cached.abstractSource] || cached.abstractSource}.
+                    </div>
+                  )}
+                </>
               ) : (
                 <span className="text-muted">
                   No abstract available; the suggested score for this paper
@@ -109,7 +126,16 @@ const ResultDetails: FC<
               )}
             </Block>
             {(position || matches.length > 0) && (
-              <Block label="Why this order" tone="why">
+              <Block label="Model rating" tone="why">
+                {verdict && (
+                  <div>
+                    <strong>{verdict.label}.</strong> The model answered yes with{" "}
+                    {Math.round(verdict.yesConfidence * 100)}% confidence
+                    {cached?.abstractText ? "" : ", from the title only"}. That is its own
+                    confidence, not the chance of inclusion: it is reliable for ruling
+                    papers out and weak at confirming them.
+                  </div>
+                )}
                 {position && (
                   <div>
                     Ranked #{position.rank} of {position.total} scored papers

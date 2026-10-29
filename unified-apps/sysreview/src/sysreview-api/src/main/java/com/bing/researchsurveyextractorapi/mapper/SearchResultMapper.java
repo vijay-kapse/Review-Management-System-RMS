@@ -33,6 +33,7 @@ public class SearchResultMapper {
                 .document(searchResult.getDocument())
                 .datasource(searchResult.getDatasource())
                 .relevanceScore(searchResult.getRelevanceScore())
+                .relevanceLogit(searchResult.getRelevanceLogit())
                 .relevanceScoredAt(searchResult.getRelevanceScoredAt() == null ? null : searchResult.getRelevanceScoredAt().toString())
                 .build();
     }

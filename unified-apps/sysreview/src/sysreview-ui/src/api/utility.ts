@@ -275,9 +275,14 @@ export const getProjectCurationResults = (
       const scores = occurrences
         .map(({ relevanceScore }) => relevanceScore)
         .filter((score): score is number => typeof score === "number");
+      // The score rises with the logit, so the highest of each comes from the same scoring.
+      const logits = occurrences
+        .map(({ relevanceLogit }) => relevanceLogit)
+        .filter((logit): logit is number => typeof logit === "number");
       const projectResult: projectResultType = {
         ...representative,
         relevanceScore: scores.length ? Math.max(...scores) : null,
+        relevanceLogit: logits.length ? Math.max(...logits) : null,
         curationSortPriority: representative.priority,
         duplicateCount: occurrences.length,
         duplicateResultIds: occurrences.map(({ resultId }) => resultId),

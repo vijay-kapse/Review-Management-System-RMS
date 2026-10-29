@@ -15,6 +15,7 @@ Usage:
     python worker.py calibrate --project 91512  # fit a, b on that project's human labels
     python worker.py rescale                  # recompute relevance_score from stored logits
     python worker.py backfill-keywords        # fetch OpenAlex keywords for cached abstracts (no model calls)
+    python worker.py backfill-abstracts       # retry papers with no abstract through every source; rescore found ones
 
 The score is a suggestion only: this worker never touches categories.
 """
@@ -52,6 +53,10 @@ MAX_ABSTRACT_WORDS = 350
 MIN_TITLE_MATCH = 0.92
 MAX_LOOKUP_FAILURES = 3
 DOI_PATTERN = re.compile(r"(10\.\d{4,9}/[^\s?#&]+)")
+SCOPUS_ID_PATTERN = re.compile(r"[?&]scp=(\d+)")
+IEEE_ARTICLE_PATTERN = re.compile(r"ieeexplore\.ieee\.org/document/(\d+)")
+# Same title key as normalize_title, in SQL (also used by TRACE's paper-details endpoint).
+TITLE_KEY_SQL = r"lower(regexp_replace(regexp_replace(btrim(sr.document->>'title'), '[.\s]+$', ''), '\s+', ' ', 'g'))"
 
 SYSTEM_PROMPT = (
     "You screen papers for a systematic literature review. A paper is relevant only if it "
@@ -67,13 +72,18 @@ def log(message):
 # ---------------------------------------------------------------- database
 
 
-def connect():
+def load_secrets():
     props = {}
     with open(SECRETS_PATH) as handle:
         for line in handle:
             if "=" in line and not line.lstrip().startswith("#"):
                 key, value = line.split("=", 1)
                 props[key.strip()] = value.strip()
+    return props
+
+
+def connect():
+    props = load_secrets()
     return psycopg2.connect(
         host="localhost",
         dbname=props.get("spring.datasource.name", "sysreview_vijay"),
@@ -192,11 +202,56 @@ def fetch_json(url, params=None):
     return None
 
 
+def fetch_optional(url, params=None, headers=None):
+    """For the supplementary abstract sources: a short retry, then None on any failure (not
+    entitled, not found, rate limited, down). They can only add an abstract, so they must
+    never stall or fail a pass."""
+    for delay in (2, 6, 15):
+        try:
+            response = requests.get(url, params=params, headers=headers, timeout=30)
+            if response.status_code == 200:
+                return response.json()
+            if response.status_code != 429 and response.status_code < 500:
+                return None
+            retry_after = response.headers.get("Retry-After", "")
+            delay = min(int(retry_after), 30) if retry_after.isdigit() else delay
+        except (requests.RequestException, ValueError):
+            pass
+        time.sleep(delay)
+    return None
+
+
+def elsevier_headers():
+    key = load_secrets().get("api.scopus.key")
+    return {"X-ELS-APIKey": key, "Accept": "application/json"} if key else None
+
+
+def first_match(pattern, urls):
+    for url in urls:
+        match = pattern.search(url or "")
+        if match:
+            return match.group(1)
+    return None
+
+
+def scopus_doi(urls):
+    """Scopus records link by scopus id (scp=...); its abstract record carries the DOI."""
+    scopus_id, headers = first_match(SCOPUS_ID_PATTERN, urls), elsevier_headers()
+    if not scopus_id or not headers:
+        return None
+    data = fetch_optional(f"https://api.elsevier.com/content/abstract/scopus_id/{scopus_id}", headers=headers)
+    coredata = (data or {}).get("abstracts-retrieval-response", {}).get("coredata") or {}
+    return coredata.get("prism:doi")
+
+
 def find_doi(title, urls):
     for url in urls:
         match = DOI_PATTERN.search(url or "")
         if match:
             return match.group(1).rstrip(".")
+    doi = scopus_doi(urls)
+    if doi:
+        return doi
     data = fetch_json(
         "https://api.crossref.org/works",
         {"rows": 5, "select": "DOI,title", "query.bibliographic": title},
@@ -217,22 +272,78 @@ def openalex_keywords(work):
     return [name for name in names if name][:12]
 
 
-def fetch_abstract(doi):
-    """OpenAlex by DOI first (free; searches are metered), then Crossref's deposited abstract.
-    Returns (abstract, source, keywords)."""
-    work = fetch_json(
-        f"https://api.openalex.org/works/doi:{doi}",
-        {"select": "abstract_inverted_index,keywords,topics"},
-    )
-    keywords = openalex_keywords(work)
-    abstract = reconstruct_abstract((work or {}).get("abstract_inverted_index"))
-    if abstract:
-        return abstract, "openalex", keywords
-    record = fetch_json(f"https://api.crossref.org/works/{urllib.parse.quote(doi)}")
-    jats = (record or {}).get("message", {}).get("abstract") or ""
-    abstract = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", jats)).strip()
-    abstract = re.sub(r"^Abstract\s+", "", abstract)
-    return (abstract, "crossref", keywords) if abstract else (None, None, keywords)
+def clean_abstract(text):
+    text = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", text or "")).strip()
+    return re.sub(r"^Abstract[:.]?\s+", "", text) or None
+
+
+def supplementary_abstract(doi, urls, title):
+    """Publishers that withhold abstracts from OpenAlex/Crossref (Elsevier, IEEE, many
+    Springer titles) still serve them through their own APIs or Semantic Scholar.
+    Returns (abstract, source)."""
+    doi = (doi or "").lower()
+    headers = elsevier_headers()
+    if doi.startswith("10.1016/") and headers:
+        data = fetch_optional(f"https://api.elsevier.com/content/article/doi/{doi}", headers=headers)
+        coredata = (data or {}).get("full-text-retrieval-response", {}).get("coredata") or {}
+        abstract = clean_abstract(coredata.get("dc:description"))
+        if abstract:
+            return abstract, "sciencedirect"
+    ieee_key = load_secrets().get("api.ieee.key")
+    article = first_match(IEEE_ARTICLE_PATTERN, urls)
+    if ieee_key and (article or doi.startswith("10.1109/")):
+        data = fetch_optional(
+            "https://ieeexploreapi.ieee.org/api/v1/search/articles",
+            {**({"article_number": article} if article else {"doi": doi}), "apikey": ieee_key},
+        )
+        articles = (data or {}).get("articles") or []
+        abstract = clean_abstract(articles[0].get("abstract")) if articles else None
+        if abstract:
+            return abstract, "ieee"
+    if doi:
+        data = fetch_optional(
+            f"https://api.semanticscholar.org/graph/v1/paper/DOI:{urllib.parse.quote(doi)}",
+            {"fields": "abstract"},
+        )
+        time.sleep(1.1)  # the unauthenticated pool allows about one request a second
+        abstract = clean_abstract((data or {}).get("abstract"))
+        if abstract:
+            return abstract, "semanticscholar"
+    if title:
+        data = fetch_optional(
+            "https://api.semanticscholar.org/graph/v1/paper/search/match",
+            {"query": title, "fields": "title,abstract"},
+        )
+        time.sleep(1.1)
+        match = ((data or {}).get("data") or [None])[0] or {}
+        similar = difflib.SequenceMatcher(
+            None, normalize_title(title), normalize_title(match.get("title"))
+        ).ratio()
+        abstract = clean_abstract(match.get("abstract")) if similar >= MIN_TITLE_MATCH else None
+        if abstract:
+            return abstract, "semanticscholar"
+    return None, None
+
+
+def fetch_abstract(doi, urls=(), title=None):
+    """OpenAlex by DOI first (free; searches are metered), then Crossref's deposited abstract,
+    then the publisher/Semantic Scholar sources. Returns (abstract, source, keywords)."""
+    keywords = None
+    if doi:
+        work = fetch_json(
+            f"https://api.openalex.org/works/doi:{doi}",
+            {"select": "abstract_inverted_index,keywords,topics"},
+        )
+        keywords = openalex_keywords(work)
+        abstract = reconstruct_abstract((work or {}).get("abstract_inverted_index"))
+        if abstract:
+            return abstract, "openalex", keywords
+        record = fetch_json(f"https://api.crossref.org/works/{urllib.parse.quote(doi)}")
+        abstract = clean_abstract((record or {}).get("message", {}).get("abstract"))
+        if abstract:
+            return abstract, "crossref", keywords
+    abstract, source = supplementary_abstract(doi, urls, title)
+    return abstract, source, keywords
 
 
 def get_abstract(conn, title_key, title, urls):
@@ -249,7 +360,7 @@ def get_abstract(conn, title_key, title, urls):
     if not title:
         return None
     doi = find_doi(title, urls)
-    abstract, source, keywords = fetch_abstract(doi) if doi else (None, None, None)
+    abstract, source, keywords = fetch_abstract(doi, urls, title)
     with conn.cursor() as cur:
         cur.execute(
             """INSERT INTO relevance_abstracts (title_key, doi, abstract, source, keywords, fetched_at)
@@ -561,6 +672,49 @@ def backfill_keywords(conn):
         time.sleep(0.2)
 
 
+def backfill_abstracts(conn):
+    """Retries every cached paper that has no abstract through the whole source ladder.
+    When one is found, its rows lose their rq hash so the loop rescores them with the
+    abstract; the old title-only score stays on screen until the new one replaces it."""
+    with conn.cursor() as cur:
+        cur.execute(
+            f"""SELECT ra.title_key, ra.doi, min(sr.document->>'title'),
+                       array_agg(DISTINCT coalesce(sr.document->>'url', ''))
+                  FROM relevance_abstracts ra
+                  JOIN search_results sr ON {TITLE_KEY_SQL} = ra.title_key
+                 WHERE ra.abstract IS NULL
+                 GROUP BY ra.title_key, ra.doi"""
+        )
+        pending = cur.fetchall()
+    log(f"retrying abstracts for {len(pending)} cached papers")
+    found = 0
+    for title_key, doi, title, urls in pending:
+        try:
+            doi = doi or find_doi(title, urls)
+            abstract, source, keywords = fetch_abstract(doi, urls, title)
+        except LookupUnavailable as exc:
+            log(f"lookup failed, will retry next run: {title[:60]!r}: {exc}")
+            continue
+        with conn.cursor() as cur:
+            cur.execute(
+                """UPDATE relevance_abstracts
+                      SET doi = %s, abstract = %s, source = %s,
+                          keywords = coalesce(%s, keywords), fetched_at = now()
+                    WHERE title_key = %s""",
+                (doi, abstract, source, json.dumps(keywords) if keywords is not None else None, title_key),
+            )
+            if abstract:
+                cur.execute(
+                    f"UPDATE search_results sr SET relevance_rq_hash = NULL WHERE {TITLE_KEY_SQL} = %s",
+                    (title_key,),
+                )
+        conn.commit()
+        if abstract:
+            found += 1
+            log(f"abstract from {source}: {title[:70]!r}")
+    log(f"found {found} of {len(pending)} missing abstracts; those papers will be rescored")
+
+
 # ---------------------------------------------------------------- main
 
 
@@ -584,7 +738,7 @@ def loop():
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("command", choices=["loop", "score", "calibrate", "rescale", "backfill-keywords"])
+    parser.add_argument("command", choices=["loop", "score", "calibrate", "rescale", "backfill-keywords", "backfill-abstracts"])
     parser.add_argument("--project", type=int)
     args = parser.parse_args()
     if args.command == "loop":
@@ -599,6 +753,8 @@ def main():
         rescale(conn)
     elif args.command == "backfill-keywords":
         backfill_keywords(conn)
+    elif args.command == "backfill-abstracts":
+        backfill_abstracts(conn)
 
 
 if __name__ == "__main__":

@@ -3,10 +3,16 @@ import { resultType } from "../api/types";
 
 const REFRESH_MS = 60000;
 
-type scoreMap = Map<number, number | null>;
+type scored = { score: number | null; logit: number | null };
+type scoreMap = Map<number, scored>;
 
 export const relevanceScoresById = (rows: resultType[]): scoreMap =>
-  new Map(rows.map((row) => [row.resultId, row.relevanceScore ?? null]));
+  new Map(
+    rows.map((row) => [
+      row.resultId,
+      { score: row.relevanceScore ?? null, logit: row.relevanceLogit ?? null },
+    ])
+  );
 
 // Copies fresh scores onto rows already on screen, leaving every other field
 // (category edits, selection, paging) untouched. Deduplicated project rows carry
@@ -19,11 +25,16 @@ export const withRelevanceScores = <T extends resultType>(
     const ids: number[] = (row as any).duplicateResultIds || [row.resultId];
     const known = ids
       .map((id) => scores.get(id))
-      .filter((score): score is number => typeof score === "number");
-    const score = known.length ? Math.max(...known) : row.relevanceScore ?? null;
-    return score === (row.relevanceScore ?? null)
+      .filter(
+        (entry): entry is { score: number; logit: number | null } =>
+          typeof entry?.score === "number"
+      );
+    if (!known.length) return row;
+    const best = known.reduce((a, b) => (b.score > a.score ? b : a));
+    return best.score === (row.relevanceScore ?? null) &&
+      best.logit === (row.relevanceLogit ?? null)
       ? row
-      : { ...row, relevanceScore: score };
+      : { ...row, relevanceScore: best.score, relevanceLogit: best.logit };
   });
 
 export const hasUnscored = (rows: resultType[]) =>

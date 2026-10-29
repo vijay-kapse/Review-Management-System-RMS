@@ -15,5 +15,7 @@ public class SearchResultDto {
     private int priority;
     private DatasourceApi datasource;
     private Double relevanceScore;
+    // The model's own yes-vs-no log-odds; the UI turns it into the relevance rating.
+    private Double relevanceLogit;
     private String relevanceScoredAt;
 }
