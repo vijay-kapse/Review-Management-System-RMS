@@ -27,6 +27,8 @@ import Loader from "../Loader";
 import SectionTitle from "../SectionTitle";
 import AppContext from "../../contexts/AppContext";
 import DateRangePicker from "./DateRangePicker";
+import KeywordAssistant from "./KeywordAssistant";
+import { HiOutlineSparkles } from "react-icons/hi";
 
 interface QueryDetailsProps {
   newId: string; // temp id for frontend
@@ -42,6 +44,10 @@ const QueryDetails: FC<QueryDetailsProps> = ({ newId, query }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showQueryBuilderModal, setShowQueryBuilderModal] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  // Open on a fresh query so the assistant is the obvious starting point; hidden once saved.
+  const [showAssistant, setShowAssistant] = useState(
+    !query.queryId && !query.searchText
+  );
 
   const buildQuery = (qId: string) => {
     setShowQueryBuilderModal(true);
@@ -234,7 +240,27 @@ const QueryDetails: FC<QueryDetailsProps> = ({ newId, query }) => {
                 </Button>
               </InputGroup>
             </Col>
+            {isNew && (
+              <Col md="2">
+                <Button
+                  className={`keyword-assistant-toggle ${
+                    showAssistant ? "is-open" : ""
+                  }`}
+                  aria-expanded={showAssistant}
+                  onClick={() => setShowAssistant(!showAssistant)}
+                >
+                  <HiOutlineSparkles /> Keywords
+                </Button>
+              </Col>
+            )}
           </Row>
+          {isNew && showAssistant && (
+            <KeywordAssistant
+              researchQuestion={project.researchQuestion}
+              currentQuery={query.searchText}
+              onUseQuery={handleQueryChange}
+            />
+          )}
           {datePickerComponent()}
           <Row>
             <Col sm={2}>

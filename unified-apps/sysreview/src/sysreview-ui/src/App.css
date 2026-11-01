@@ -2514,3 +2514,53 @@ a {
 .rank-cell { font-variant-numeric: tabular-nums; line-height: 1.15; text-align: center; }
 .rank-cell small { display: block; color: #6b7280; font-size: 0.7rem; }
 .verdict-badge { display: block; margin: 0 auto 0.15rem; font-weight: 600; white-space: normal; }
+
+/* Keyword assistant (new queries): model-suggested concept groups the user edits into a query */
+.keyword-assistant-toggle {
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  border-radius: 8px;
+  background: #ffffff !important;
+  color: var(--dashboard-ink) !important;
+  font-weight: 600;
+}
+.keyword-assistant-toggle.is-open { background: rgba(124, 58, 237, 0.1) !important; border-color: rgba(124, 58, 237, 0.35) !important; color: #5b21b6 !important; }
+.keyword-assistant {
+  margin: 0 0 1.25rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  border-left: 3px solid #7c3aed;
+  border-radius: 8px;
+  background: rgba(124, 58, 237, 0.04);
+}
+.keyword-assistant-head { display: flex; flex-wrap: wrap; gap: 0.25rem 0.75rem; align-items: baseline; margin-bottom: 0.6rem; }
+.keyword-assistant-head h6 { margin: 0; font-weight: 700; color: #5b21b6; }
+.keyword-assistant-head span, .keyword-assistant-hint { color: #4b5563; font-size: 0.85rem; }
+.keyword-assistant-hint { margin: 0.75rem 0 0.5rem; }
+.keyword-assistant-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: flex-end; margin-top: 0.5rem; }
+.keyword-assistant-error { margin: 0.6rem 0 0; padding: 0.5rem 0.75rem; font-size: 0.875rem; background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; }
+.keyword-and { margin: 0.35rem 0 0.35rem 0.9rem; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; color: #7c3aed; }
+.keyword-concept { padding: 0.6rem 0.75rem; border: 1px solid rgba(0, 0, 0, 0.08); border-radius: 8px; background: #ffffff; }
+.keyword-concept-head { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; }
+.keyword-concept-head strong { font-size: 0.9rem; text-transform: capitalize; }
+.keyword-concept-tools { display: inline-flex; gap: 0.25rem; }
+.keyword-concept-tools button { border: 0; background: none; padding: 0.1rem 0.35rem; border-radius: 4px; font-size: 0.75rem; color: #6b7280; }
+.keyword-concept-tools button:hover { background: rgba(0, 0, 0, 0.06); color: var(--dashboard-ink); }
+.keyword-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
+.keyword-chip { display: inline-flex; align-items: center; border-radius: 999px; border: 1px solid transparent; font-size: 0.85rem; }
+.keyword-chip button { border: 0; background: none; color: inherit; padding: 0.15rem 0.6rem; border-radius: 999px; }
+.keyword-chip.is-on { background: rgba(124, 58, 237, 0.12); border-color: rgba(124, 58, 237, 0.3); color: #4c1d95; }
+.keyword-chip.is-off { background: #ffffff; border-color: rgba(0, 0, 0, 0.15); color: #9ca3af; text-decoration: line-through; }
+.keyword-chip.is-user.is-on { background: rgba(15, 118, 110, 0.12); border-color: rgba(15, 118, 110, 0.35); color: #115e59; }
+.keyword-chip .keyword-chip-remove { padding: 0.15rem 0.45rem 0.15rem 0; display: inline-flex; }
+.keyword-add { min-width: 9rem; border: 1px dashed rgba(0, 0, 0, 0.2); border-radius: 999px; padding: 0.15rem 0.6rem; font-size: 0.85rem; background: transparent; }
+.keyword-add:focus { outline: none; border-style: solid; border-color: #7c3aed; background: #ffffff; }
+.keyword-add-concept { display: block; width: 100%; margin-top: 0.75rem; border-radius: 8px; padding: 0.4rem 0.75rem; }
+.keyword-preview { margin-top: 0.9rem; }
+.keyword-preview-label { display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #6b7280; margin-bottom: 0.3rem; }
+.keyword-preview code { white-space: pre-wrap; word-break: break-word; }
+.keyword-assistant-toggle svg { color: #7c3aed; stroke: #7c3aed; }
+.keyword-assistant .keyword-link { color: #5b21b6; font-size: 0.875rem; font-weight: 600; text-decoration: none; padding: 0.375rem 0.5rem; }
+.keyword-assistant .keyword-link:hover { text-decoration: underline; }

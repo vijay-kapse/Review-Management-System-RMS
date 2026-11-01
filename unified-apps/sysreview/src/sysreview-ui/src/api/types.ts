@@ -82,6 +82,11 @@ export type paperDetailsType = {
   abstractSource: string | null;
 };
 
+export type keywordSuggestionType = {
+  concepts: Array<{ concept: string; terms: string[] }>;
+  model: string;
+};
+
 export type projectResultOccurrenceType = resultType & {
   queryId: number;
   queryName: string;

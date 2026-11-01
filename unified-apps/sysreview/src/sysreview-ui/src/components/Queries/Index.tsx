@@ -84,6 +84,7 @@ const Index = () => {
                 />
                 {selectedQueryId && queries[selectedQueryId] && (
                   <QueryDetails
+                    key={selectedQueryId}
                     newId={selectedQueryId}
                     query={queries[selectedQueryId]}
                   />
