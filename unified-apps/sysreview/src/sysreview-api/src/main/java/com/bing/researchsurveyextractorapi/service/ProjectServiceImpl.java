@@ -8,8 +8,11 @@ import com.bing.researchsurveyextractorapi.repository.ProjectRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.util.List;
 
 @Service
@@ -18,6 +21,25 @@ public class ProjectServiceImpl implements ProjectService {
 
     final ProjectRepository projectRepository;
     final UserService userService;
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    // Children first, so no foreign key is ever violated. Deliberately not projectRepository.delete:
+    // Hibernate's cascade removed categories before the papers that reference them (500 on any
+    // project with papers), and collaborators are mapped cascade = ALL, so a JPA delete would also
+    // try to delete the collaborators' user accounts. Only the link rows are removed here.
+    private static final String[] DELETE_PROJECT_SQL = {
+            "DELETE FROM result_collections WHERE collection_id IN (SELECT collection_id FROM document_collections WHERE project_id = :projectId) "
+                    + "OR result_id IN (SELECT sr.result_id FROM search_results sr JOIN queries q ON q.query_id = sr.query_id WHERE q.project_id = :projectId)",
+            "DELETE FROM document_collections WHERE project_id = :projectId",
+            "DELETE FROM search_results WHERE query_id IN (SELECT query_id FROM queries WHERE project_id = :projectId)",
+            "DELETE FROM query_datasource_api_fetch_count WHERE query_query_id IN (SELECT query_id FROM queries WHERE project_id = :projectId)",
+            "DELETE FROM queries WHERE project_id = :projectId",
+            "DELETE FROM categories WHERE project_id = :projectId",
+            "DELETE FROM project_collaborators WHERE project_id = :projectId",
+            "DELETE FROM projects WHERE project_id = :projectId",
+    };
 
     @Override
     public List<Project> loadAllProjectsForUser(String username) {
@@ -66,11 +88,14 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
+    @Transactional
     public void deleteProject(long projectId) {
-        if (projectRepository.existsById(projectId)) {
-            projectRepository.deleteById(projectId);
-        } else {
+        if (!projectRepository.existsById(projectId)) {
             throw new ProjectNotFoundException(projectId);
         }
+        for (String sql : DELETE_PROJECT_SQL) {
+            entityManager.createNativeQuery(sql).setParameter("projectId", projectId).executeUpdate();
+        }
+        entityManager.clear();
     }
 }

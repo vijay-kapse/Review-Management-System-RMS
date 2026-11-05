@@ -66,7 +66,14 @@ public class QueryServiceImpl implements QueryService {
     }
 
     @Override
+    @Transactional
     public void deleteQuery(long queryId) {
+        // Papers in a document collection are referenced by result_collections; drop those links
+        // first or the delete fails on the foreign key.
+        entityManager.createNativeQuery(
+                        "DELETE FROM result_collections WHERE result_id IN (SELECT result_id FROM search_results WHERE query_id = :queryId)")
+                .setParameter("queryId", queryId)
+                .executeUpdate();
         queryRepository.deleteById(queryId);
     }
 

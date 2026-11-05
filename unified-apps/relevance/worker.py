@@ -289,6 +289,33 @@ def clean_abstract(text):
     return re.sub(r"^Abstract[:.]?\s+", "", text) or None
 
 
+# Springer, Nature, BMC: they withhold abstracts from OpenAlex/Crossref and block scraping, but serve
+# them through the Springer Nature Meta API (free Basic key: 500 requests a day).
+SPRINGER_DOI_PREFIXES = ("10.1007/", "10.1038/", "10.1186/", "10.1140/", "10.1057/")
+
+
+def springer_text(value):
+    if isinstance(value, str):
+        return value
+    if isinstance(value, list):
+        return " ".join(springer_text(item) for item in value)
+    if isinstance(value, dict):
+        # Structured abstracts come as {"h1": "Abstract", "p": [...]} or nested sections.
+        return " ".join(springer_text(item) for key, item in value.items() if key != "h1")
+    return ""
+
+
+def springer_abstract(doi, key):
+    data = fetch_optional(
+        "https://api.springernature.com/meta/v2/json",
+        {"q": f"doi:{doi}", "api_key": key},
+    )
+    for record in (data or {}).get("records") or []:
+        if (record.get("doi") or "").lower() == doi:
+            return clean_abstract(springer_text(record.get("abstract")))
+    return None
+
+
 def supplementary_abstract(doi, urls, title):
     """Publishers that withhold abstracts from OpenAlex/Crossref (Elsevier, IEEE, many
     Springer titles) still serve them through their own APIs or Semantic Scholar.
@@ -312,6 +339,11 @@ def supplementary_abstract(doi, urls, title):
         abstract = clean_abstract(articles[0].get("abstract")) if articles else None
         if abstract:
             return abstract, "ieee"
+    springer_key = load_secrets().get("api.springer.key")
+    if springer_key and doi.startswith(SPRINGER_DOI_PREFIXES):
+        abstract = springer_abstract(doi, springer_key)
+        if abstract:
+            return abstract, "springer"
     if doi:
         data = fetch_optional(
             f"https://api.semanticscholar.org/graph/v1/paper/DOI:{urllib.parse.quote(doi)}",

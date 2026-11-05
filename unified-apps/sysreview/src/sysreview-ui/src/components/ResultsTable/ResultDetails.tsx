@@ -27,6 +27,7 @@ const SOURCE_LABEL: Record<string, string> = {
   sciencedirect: "ScienceDirect (Elsevier)",
   ieee: "IEEE Xplore",
   semanticscholar: "Semantic Scholar",
+  springer: "Springer Nature",
   user: "a reviewer (added by hand)",
 };
 
@@ -193,7 +194,7 @@ const ResultDetails: FC<
                 <>
                   <span className="text-muted">
                     {cached
-                      ? "No abstract found in OpenAlex, Crossref, ScienceDirect, IEEE or Semantic Scholar, so the model rated this paper from its title only."
+                      ? "No abstract found in OpenAlex, Crossref, ScienceDirect, IEEE, Springer Nature or Semantic Scholar, so the model rated this paper from its title only."
                       : "No abstract yet. One is looked up when the model rates this paper."}
                   </span>
                   {onSaveAbstract && (
