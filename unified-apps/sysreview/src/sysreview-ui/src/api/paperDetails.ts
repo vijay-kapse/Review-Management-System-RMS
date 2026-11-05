@@ -1,5 +1,5 @@
 import axios from "axios";
-import { paperDetailsType } from "./types";
+import { abstractSaveType, paperDetailsType } from "./types";
 import { getConfig } from "./utility";
 import { API_URI } from "../constants";
 
@@ -14,4 +14,19 @@ const getPaperDetails: returnPaperDetails = async (projectId) => {
   return resp.data;
 };
 
-export { getPaperDetails };
+// A reviewer's abstract for a paper none of the lookups found; the model then rates it again.
+type returnSavedAbstract = (
+  projectId: number,
+  title: string,
+  abstractText: string
+) => Promise<abstractSaveType>;
+const saveAbstract: returnSavedAbstract = async (projectId, title, abstractText) => {
+  const resp = await axios.put(
+    API_URI + "/projects/" + projectId + "/paper-details/abstract",
+    { title, abstractText },
+    getConfig()
+  );
+  return resp.data;
+};
+
+export { getPaperDetails, saveAbstract };

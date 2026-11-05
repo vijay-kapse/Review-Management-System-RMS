@@ -13,6 +13,8 @@ type returnSearchType = (data: {
   queryText: string;
   dateRange?: { from: number; to: number };
   categories: categorySetType;
+  // Callers that report empty results themselves (the refetch dialog) skip the alert.
+  quiet?: boolean;
 }) => Promise<resultData>;
 
 const search: returnSearchType = async (data) => {
@@ -24,7 +26,7 @@ const search: returnSearchType = async (data) => {
     "/search/" +
     data.datasource.toUpperCase() +
     "?queryText=" +
-    data.queryText;
+    encodeURIComponent(data.queryText);
 
   if (data.dateRange) {
     url += "&from=" + data.dateRange.from + "&to=" + data.dateRange.to;
@@ -38,7 +40,7 @@ const search: returnSearchType = async (data) => {
     data.datasource as datasourceKeyType,
     data.categories
   );
-  if (!processedData.length)
+  if (!processedData.length && !data.quiet)
     alert("No results available for " + data.datasource);
   return {
     apiResultsCount: resp.data.apiResultsCount as number,

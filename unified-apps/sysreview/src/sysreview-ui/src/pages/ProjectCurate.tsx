@@ -19,7 +19,7 @@ import {
   resultType,
 } from "../api/types";
 import { getProject } from "../api/project";
-import { getPaperDetails } from "../api/paperDetails";
+import { getPaperDetails, saveAbstract } from "../api/paperDetails";
 import { buildQueryTerms } from "../utils/matchHighlight";
 import { getQueries, updateQuery } from "../api/query";
 import { getCategories } from "../api/category";
@@ -29,6 +29,7 @@ import {
   getCategoryLabel,
   getProjectCurationResults,
   mergeResults,
+  normalizeResultTitle,
 } from "../api/utility";
 import useRelevanceRefresh, {
   hasUnscored,
@@ -43,6 +44,7 @@ import CurationTable from "../components/CurationTable/Index";
 import { FiDatabase, FiGitMerge, FiPieChart } from "react-icons/fi";
 import { CategorySymbol } from "../components/CategoryLabel";
 import { openAnalyser } from "../api/analyser";
+import QueriesModal from "../components/Queries/QueriesModal";
 
 const emptyProject: projectType = {
   projectId: 0,
@@ -69,6 +71,10 @@ const ProjectCurate = () => {
     Map<string, paperDetailsType>
   >(new Map());
   const [showBulkActionModal, setShowBulkActionModal] = useState(false);
+  const [queriesModal, setQueriesModal] = useState<{
+    show: boolean;
+    queryId: number | null;
+  }>({ show: false, queryId: null });
 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -103,8 +109,8 @@ const ProjectCurate = () => {
       )
       .catch((e) => console.log("Paper details unavailable", e));
 
-  const loadProjectCuration = (id: number) => {
-    setIsLoading(true);
+  const loadProjectCuration = (id: number, quiet = false) => {
+    if (!quiet) setIsLoading(true);
     return Promise.all([getProject(id), getCategories(id), getQueries(id)])
       .then(([projectData, categoryData, queryData]) => {
         const categorySet = arrayToObject(
@@ -221,6 +227,29 @@ const ProjectCurate = () => {
   };
 
   const handleExtract = (rowData: resultType[]) => openAnalyser(rowData);
+
+  // A reviewer's abstract replaces "title only": store it, then show the paper as waiting to be
+  // rated again (the worker picks it up on its next pass and the refresh below fills it in).
+  const handleSaveAbstract = (row: resultType, abstractText: string) =>
+    saveAbstract(projectId, row.document.title, abstractText).then((saved) => {
+      setPaperDetails((current) => {
+        const next = new Map(current);
+        next.set(saved.details.titleKey, saved.details);
+        return next;
+      });
+      if (!saved.scoringPaused) {
+        const key = normalizeResultTitle(row.document.title);
+        const clear = <T extends resultType>(rows: T[]) =>
+          rows.map((result) =>
+            normalizeResultTitle(result.document.title) === key
+              ? { ...result, relevanceScore: null, relevanceLogit: null }
+              : result,
+          );
+        setResults(clear);
+        setFilteredResults(clear);
+      }
+      return saved;
+    });
 
   useEffect(() => {
     if (!projectId) {
@@ -361,11 +390,16 @@ const ProjectCurate = () => {
                 <span>{duplicateGroups}</span>
                 <small>Duplicate Groups</small>
               </div>
-              <div className="curation-stat">
+              <button
+                type="button"
+                className="curation-stat curation-stat-action"
+                title="See every query in full, with the research question, and edit or refetch one"
+                onClick={() => setQueriesModal({ show: true, queryId: null })}
+              >
                 <FiDatabase />
                 <span>{queries.length}</span>
-                <small>Queries</small>
-              </div>
+                <small>Queries · view &amp; edit</small>
+              </button>
             </section>
 
             <section className="curation-category-panel">
@@ -439,6 +473,10 @@ const ProjectCurate = () => {
                 setSelectedRows={setSelectedResults}
                 showProjectColumns
                 showDeduplication
+                onOpenQuery={(queryId) =>
+                  setQueriesModal({ show: true, queryId })
+                }
+                onSaveAbstract={handleSaveAbstract}
               />
             </section>
           </>
@@ -448,6 +486,15 @@ const ProjectCurate = () => {
           </div>
         )}
       </Container>
+      <QueriesModal
+        show={queriesModal.show}
+        initialQueryId={queriesModal.queryId}
+        onHide={() => setQueriesModal({ show: false, queryId: null })}
+        queries={queries}
+        project={project}
+        categories={categories}
+        onRefetched={() => loadProjectCuration(projectId, true)}
+      />
       <BulkActionModal
         show={showBulkActionModal}
         results={selectedResults}

@@ -3,6 +3,7 @@ package com.bing.researchsurveyextractorapi.controllers;
 import com.bing.researchsurveyextractorapi.mapper.QueryMapper;
 import com.bing.researchsurveyextractorapi.models.Query;
 import com.bing.researchsurveyextractorapi.pojo.query.QueryDto;
+import com.bing.researchsurveyextractorapi.pojo.query.QueryRefetchDto;
 import com.bing.researchsurveyextractorapi.pojo.query.QueryRequest;
 import com.bing.researchsurveyextractorapi.pojo.searchresult.SearchResultUpdateRequest;
 import com.bing.researchsurveyextractorapi.service.QueryService;
@@ -38,6 +39,13 @@ public class QueryController {
         return QueryMapper.toDto(savedQuery);
     }
 
+
+    // Saves an edited query with the papers its new search returned (fetched by the UI, as for a new
+    // query). Papers found again keep their rows; only API sources are replaced, MANUAL uploads stay.
+    @PostMapping("/{queryId}/refetch")
+    public QueryRefetchDto refetchQuery(@PathVariable long queryId, @RequestBody QueryRequest request) {
+        return queryService.refetchQuery(queryId, request);
+    }
 
     @PatchMapping("/results/{queryId}")
     public void patchResults(@PathVariable long queryId, @RequestBody List<SearchResultUpdateRequest> resultUpdateRequests) {

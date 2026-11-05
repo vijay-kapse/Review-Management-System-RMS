@@ -1,6 +1,7 @@
 package com.bing.researchsurveyextractorapi.service;
 
 import com.bing.researchsurveyextractorapi.models.Query;
+import com.bing.researchsurveyextractorapi.pojo.query.QueryRefetchDto;
 import com.bing.researchsurveyextractorapi.pojo.query.QueryRequest;
 import com.bing.researchsurveyextractorapi.pojo.searchresult.SearchResultUpdateRequest;
 
@@ -17,5 +18,7 @@ public interface QueryService {
     void patchSearchResults(long queryId, List<SearchResultUpdateRequest> resultUpdateRequests);
 
     void deleteQuery(long queryId);
+
+    QueryRefetchDto refetchQuery(long queryId, QueryRequest request);
 
 }

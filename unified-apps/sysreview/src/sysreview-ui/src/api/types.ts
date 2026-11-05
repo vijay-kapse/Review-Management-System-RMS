@@ -82,6 +82,20 @@ export type paperDetailsType = {
   abstractSource: string | null;
 };
 
+export type abstractSaveType = {
+  details: paperDetailsType;
+  queued: number;
+  scoringPaused: boolean;
+};
+
+export type queryRefetchType = {
+  query: queryType;
+  kept: number;
+  added: number;
+  removed: number;
+  removedFromCollections: number;
+};
+
 export type keywordSuggestionType = {
   concepts: Array<{ concept: string; terms: string[] }>;
   model: string;

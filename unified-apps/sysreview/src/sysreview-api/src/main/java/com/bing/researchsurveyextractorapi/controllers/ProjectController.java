@@ -2,6 +2,9 @@ package com.bing.researchsurveyextractorapi.controllers;
 
 import com.bing.researchsurveyextractorapi.mapper.ProjectMapper;
 import com.bing.researchsurveyextractorapi.models.User;
+import com.bing.researchsurveyextractorapi.models.Project;
+import com.bing.researchsurveyextractorapi.pojo.paperdetails.AbstractSaveDto;
+import com.bing.researchsurveyextractorapi.pojo.paperdetails.AbstractUpdateRequest;
 import com.bing.researchsurveyextractorapi.pojo.paperdetails.PaperDetailsDto;
 import com.bing.researchsurveyextractorapi.pojo.project.ProjectDto;
 import com.bing.researchsurveyextractorapi.pojo.project.ProjectRequest;
@@ -40,6 +43,16 @@ public class ProjectController {
         // Loading the project first keeps the same existence/access behaviour as the other endpoints.
         projectService.loadProjectById(projectId);
         return paperDetailsService.loadForProject(projectId);
+    }
+
+    // A reviewer's abstract for a paper the lookups could not find; the model then rates it again.
+    @PutMapping("/{projectId}/paper-details/abstract")
+    public AbstractSaveDto saveAbstract(@PathVariable long projectId, @RequestBody AbstractUpdateRequest request) {
+        Project project = projectService.loadProjectById(projectId);
+        boolean scoringActive = !project.isArchived()
+                && project.getResearchQuestion() != null
+                && !project.getResearchQuestion().trim().isEmpty();
+        return paperDetailsService.saveUserAbstract(projectId, request.getTitle(), request.getAbstractText(), scoringActive);
     }
 
     @PostMapping("")

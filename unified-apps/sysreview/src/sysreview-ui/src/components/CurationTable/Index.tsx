@@ -26,6 +26,10 @@ interface CurationTableProps {
   // Rows the suggested rank is computed over (the whole project even when a source filter
   // narrows what is shown); defaults to the rows shown.
   rankAmong?: resultType[];
+  // Opens a saved query (full text, research question, edit & refetch) from the Queries column.
+  onOpenQuery?: (queryId: number) => void;
+  // Saves a reviewer's abstract for a paper the lookups found none for.
+  onSaveAbstract?: ResultDetailsExtras["onSaveAbstract"];
 }
 
 const CurationTable: FC<CurationTableProps> = ({
@@ -39,6 +43,8 @@ const CurationTable: FC<CurationTableProps> = ({
   details,
   terms,
   rankAmong,
+  onOpenQuery,
+  onSaveAbstract,
 }) => {
   // Order is relative to every scored paper in the project, not just the rows on screen.
   const ranking = useMemo(
@@ -49,7 +55,7 @@ const CurationTable: FC<CurationTableProps> = ({
     typeof row.relevanceScore === "number"
       ? { rank: ranking.rankOf(row.relevanceScore), total: ranking.total }
       : null;
-  const detailsProps: ResultDetailsExtras = { details, terms, rank: rankFor };
+  const detailsProps: ResultDetailsExtras = { details, terms, rank: rankFor, onSaveAbstract };
   const categoriesByPriority = Object.values(categories).filter(
     (category, index, allCategories) =>
       allCategories.findIndex((cat) => cat.priority === category.priority) ===
@@ -90,14 +96,43 @@ const CurationTable: FC<CurationTableProps> = ({
       sortable: true,
       selector: (row) =>
         (row as any).duplicateQuerySummary || (row as any).queryName || "",
-      cell: (res) => (
-        <div
-          className="py-2 small"
-          title={(res as any).duplicateQuerySummary || (res as any).queryName}
-        >
-          {(res as any).duplicateQuerySummary || (res as any).queryName}
-        </div>
-      ),
+      cell: (res) => {
+        const occurrences: { queryId: number; queryName: string }[] =
+          (res as any).occurrences || [];
+        const linked = occurrences.filter(
+          (occurrence, index) =>
+            occurrence.queryId &&
+            occurrences.findIndex((o) => o.queryId === occurrence.queryId) === index
+        );
+        if (!onOpenQuery || !linked.length) {
+          return (
+            <div
+              className="py-2 small"
+              title={(res as any).duplicateQuerySummary || (res as any).queryName}
+            >
+              {(res as any).duplicateQuerySummary || (res as any).queryName}
+            </div>
+          );
+        }
+        return (
+          <div className="py-2 small query-links">
+            {linked.map((occurrence) => (
+              <button
+                type="button"
+                key={occurrence.queryId}
+                className="query-link"
+                title="Show the full query and research question"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenQuery(occurrence.queryId);
+                }}
+              >
+                {occurrence.queryName}
+              </button>
+            ))}
+          </div>
+        );
+      },
       width: "16%",
     });
   }

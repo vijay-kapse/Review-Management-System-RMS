@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 public interface SearchResultRepository extends JpaRepository<SearchResult, Long> {
     @Transactional
     @Modifying
@@ -14,4 +16,6 @@ public interface SearchResultRepository extends JpaRepository<SearchResult, Long
     int updateCategoryByResultId(Category category, Long resultId);
 
     boolean existsByCategory_CategoryId(Long categoryId);
+
+    List<SearchResult> findByQuery_Project_ProjectId(Long projectId);
 }

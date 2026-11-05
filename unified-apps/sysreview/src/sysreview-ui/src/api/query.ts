@@ -1,5 +1,5 @@
 import axios from "axios";
-import { queryType } from "./types";
+import { queryRefetchType, queryType } from "./types";
 import { API_URI } from "../constants";
 import {
   getConfig,
@@ -85,4 +85,33 @@ const updateQuery: returnUpdatedQuery = async (id, resultIds, priority) => {
   return resp.data;
 };
 
-export { getQueries, postQuery, getQuery, updateQuery, deleteQuery };
+// Saves an edited query with the papers its new search returned. Send only the API sources
+// that were searched again; MANUAL uploads stay on the server as they are.
+type returnRefetchedQuery = (
+  qId: number,
+  data: queryType
+) => Promise<queryRefetchType>;
+const refetchQuery: returnRefetchedQuery = async (qId, data) => {
+  const uniqueResults = filterResultsByTitle(data.searchResults);
+  const { results, countMap } = extractResultsAndApiCountMap(uniqueResults);
+  const body = {
+    ...data,
+    searchResults: results,
+    datasourceApiFetchCount: countMap,
+  };
+  const url = API_URI + "/queries/" + qId + "/refetch";
+  const resp = await axios.post(url, body, getConfig());
+  return {
+    ...resp.data,
+    query: processQueryResponse([resp.data.query])[0],
+  };
+};
+
+export {
+  getQueries,
+  postQuery,
+  getQuery,
+  updateQuery,
+  deleteQuery,
+  refetchQuery,
+};
